@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASCEND - Rotina</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Orbitron:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="css/style.css?v=20260429-2305" rel="stylesheet" />
+</head>
+
+<body>
+<a class="skip-link" href="#conteudo-principal">Pular para o conteudo principal</a>
+
+<section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" aria-hidden="false">
+  <div class="auth-showcase" aria-hidden="true">
+    <span class="auth-showcase-kicker">ASCEND METHOD</span>
+    <h2>Um sistema pessoal com presenca de produto premium.</h2>
+    <p>Planeje sua rotina, acompanhe progresso e transforme consistencia em evolucao com uma interface mais refinada e clara.</p>
+    <div class="auth-showcase-orbit"></div>
+    <div class="auth-showcase-grid">
+      <div class="auth-showcase-card">
+        <strong>Clareza</strong>
+        <span>Dashboard mais limpo para treino, estudo e missoes.</span>
+      </div>
+      <div class="auth-showcase-card">
+        <strong>Ritmo</strong>
+        <span>Indicadores, recompensas e foco diario em um fluxo mais elegante.</span>
+      </div>
+      <div class="auth-showcase-card">
+        <strong>Presenca</strong>
+        <span>Visual sofisticado com contraste melhor e hierarquia mais forte.</span>
+      </div>
+    </div>
+  </div>
+  <div class="auth-panel">
+    <div class="ascend-logo auth-logo" aria-label="ASCEND, sistema de evolucao pessoal">
+      ASCEND
+      <span>SISTEMA DE EVOLUCAO PESSOAL</span>
+    </div>
+
+    <div class="auth-tabs" role="tablist" aria-label="Acesso ao sistema">
+      <button class="auth-tab active" id="tab-login" type="button" role="tab" aria-selected="true" aria-controls="login-form" tabindex="0">Login</button>
+      <button class="auth-tab" id="tab-register" type="button" role="tab" aria-selected="false" aria-controls="register-form" tabindex="-1">Cadastro</button>
+    </div>
+
+    <form class="auth-form" id="login-form" role="tabpanel" aria-labelledby="tab-login" aria-hidden="false">
+      <h1 class="auth-title" id="auth-title">Acesse sua rotina</h1>
+      <label class="form-label" for="login-email">E-mail</label>
+      <input class="auth-input" id="login-email" name="email" type="email" autocomplete="email" required />
+
+      <label class="form-label" for="login-password">Senha</label>
+      <input class="auth-input" id="login-password" name="password" type="password" autocomplete="current-password" required />
+
+      <button class="auth-submit" type="submit">Entrar</button>
+    </form>
+
+    <form class="auth-form d-none" id="register-form" role="tabpanel" aria-labelledby="tab-register" aria-hidden="true" hidden>
+      <h1 class="auth-title" id="register-title">Crie sua conta</h1>
+      <label class="form-label" for="register-name">Nome</label>
+      <input class="auth-input" id="register-name" name="name" type="text" autocomplete="name" minlength="2" required />
+
+      <label class="form-label" for="register-email">E-mail</label>
+      <input class="auth-input" id="register-email" name="email" type="email" autocomplete="email" required />
+
+      <label class="form-label" for="register-password">Senha</label>
+      <input class="auth-input" id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" required />
+
+      <button class="auth-submit" type="submit">Cadastrar e entrar</button>
+    </form>
+
+    <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="page-wrap app-shell d-none" id="app-shell" aria-hidden="true">
+  <header class="ascend-topbar">
+    <div class="topbar-brand">
+      <button class="sidebar-toggle" id="btn-sidebar-toggle" type="button" aria-label="Abrir menu" aria-controls="app-sidebar" aria-expanded="false">
+        <i class="bi bi-list" aria-hidden="true"></i>
+      </button>
+      <div class="ascend-logo" aria-label="ASCEND, sistema de evolucao pessoal">
+        ASCEND
+        <span>SISTEMA DE EVOLUCAO PESSOAL</span>
+      </div>
+      <p class="topbar-copy">Rotina, foco e progresso organizados como um produto de alto nivel.</p>
+    </div>
+
+    <div class="topbar-actions" aria-label="Resumo do usuario">
+      <span class="streak-badge" id="streak-badge" aria-label="Sequencia atual: 0 dias">
+        <i class="bi bi-fire" aria-hidden="true"></i>
+        <span id="streak-val">0</span> DIAS
+      </span>
+      <span class="coins-badge" id="coins-badge" aria-label="Moedas atuais: 0">
+        <i class="bi bi-coin" aria-hidden="true"></i>
+        <span id="coins-val">0</span>
+      </span>
+      <button class="btn-timer" id="btn-theme-toggle" type="button" aria-pressed="false" aria-label="Ativar modo claro">
+        <i class="bi bi-sun" aria-hidden="true"></i> Tema
+      </button>
+      <button class="btn-timer active" id="btn-toggle-popup" type="button" aria-label="Abrir notificacoes do sistema" aria-controls="system-popup" aria-expanded="false">
+        <i class="bi bi-bell" aria-hidden="true"></i>
+      </button>
+      <button class="btn-timer" id="btn-logout" type="button">
+        <i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sair
+      </button>
+    </div>
+  </header>
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <div class="d-flex">
+    <aside class="sidebar" id="app-sidebar" aria-label="Menu principal">
+      <nav>
+        <div class="sidebar-header">
+          <div>
+            <span class="sidebar-eyebrow">CONTROL CENTER</span>
+            <p>Gerencie sua evolucao diaria com um painel mais refinado.</p>
+          </div>
+          <button class="sidebar-close" id="btn-sidebar-close" type="button" aria-label="Fechar menu">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="nav-section-label">NAVEGACAO</div>
+
+        <a href="#view-status" class="sidebar-link active" aria-current="page" data-view="status">
+          <i class="bi bi-person-badge" aria-hidden="true"></i> Status
+        </a>
+        <a href="#view-missions" class="sidebar-link" data-view="missions">
+          <i class="bi bi-list-check" aria-hidden="true"></i> Missoes
+        </a>
+        <a href="#view-training" class="sidebar-link" data-view="training">
+          <i class="bi bi-lightning-charge" aria-hidden="true"></i> Treino
+        </a>
+        <a href="#view-studies" class="sidebar-link" data-view="studies">
+          <i class="bi bi-book" aria-hidden="true"></i> Estudos
+        </a>
+        <a href="#view-calendar" class="sidebar-link" data-view="calendar">
+          <i class="bi bi-calendar3" aria-hidden="true"></i> Calendario
+        </a>
+        <a href="#view-ai" class="sidebar-link" data-view="ai">
+          <i class="bi bi-stars" aria-hidden="true"></i> ASCEND AI
+        </a>
+
+        <div class="nav-section-label mt-4">ECONOMIA</div>
+
+        <a href="#view-vault" class="sidebar-link" data-view="vault">
+          <i class="bi bi-safe2" aria-hidden="true"></i> The Vault
+        </a>
+        <a href="#view-shop" class="sidebar-link" data-view="shop">
+          <i class="bi bi-shop" aria-hidden="true"></i> Loja
+        </a>
+        <a href="#view-inventory" class="sidebar-link" data-view="inventory">
+          <i class="bi bi-backpack2" aria-hidden="true"></i> Inventario
+        </a>
+
+        <div class="nav-section-label mt-4">SISTEMA</div>
+
+        <a href="#view-achievements" class="sidebar-link" data-view="achievements">
+          <i class="bi bi-trophy" aria-hidden="true"></i> Conquistas
+        </a>
+        <a href="#view-ranking" class="sidebar-link" data-view="ranking">
+          <i class="bi bi-bar-chart-line" aria-hidden="true"></i> Ranking
+        </a>
+
+        <div class="sidebar-footer">
+          <span class="sidebar-footer-label">Premium Flow</span>
+          <strong>Consistencia antes de intensidade.</strong>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="main-content" id="conteudo-principal" tabindex="-1">
+      <section class="app-view active" id="view-status" data-view-panel="status" aria-label="Painel de status">
+        <section class="system-banner mb-3" aria-label="Resumo do sistema">
+          <div class="row g-3">
+            <div class="col-xl-4">
+              <article class="system-summary-card">
+                <div class="system-summary-kicker">HUNTER PROFILE</div>
+                <h2 class="system-summary-title">The System</h2>
+                <p class="system-summary-copy">Transforme treino, estudo, responsabilidades e financas em progressao diaria com rank, atributos e economia.</p>
+                <div class="system-chip-row">
+                  <span class="system-chip">Rank <strong id="banner-rank">E</strong></span>
+                  <span class="system-chip">Streak <strong id="banner-streak">0</strong></span>
+                  <span class="system-chip">Vault <strong id="banner-coins">0</strong></span>
+                </div>
+              </article>
+            </div>
+            <div class="col-xl-5">
+              <article class="system-summary-card">
+                <div class="system-summary-kicker">FOUR PILLARS</div>
+                <div class="pillar-grid" role="list" aria-label="Pilares de progresso">
+                  <div class="pillar-card pillar-fitness" role="listitem">
+                    <span class="pillar-label">Treino</span>
+                    <strong>Forca + Vitalidade</strong>
+                  </div>
+                  <div class="pillar-card pillar-study" role="listitem">
+                    <span class="pillar-label">Estudos</span>
+                    <strong>Inteligencia</strong>
+                  </div>
+                  <div class="pillar-card pillar-duty" role="listitem">
+                    <span class="pillar-label">Rotina</span>
+                    <strong>Agilidade</strong>
+                  </div>
+                  <div class="pillar-card pillar-spirit" role="listitem">
+                    <span class="pillar-label">Espirito</span>
+                    <strong>Social + Igreja</strong>
+                  </div>
+                </div>
+              </article>
+            </div>
+            <div class="col-xl-3">
+              <article class="system-summary-card penalty-card">
+                <div class="system-summary-kicker">SYSTEM ALERT</div>
+                <h2 class="system-summary-title system-summary-title--danger">Penalty Quest</h2>
+                <p class="system-summary-copy">Quando a penalty quest nao e concluida, o jogador perde EXP e ainda precisa pagar uma taxa fixa de 200 moedas no ciclo seguinte.</p>
+                <div class="debuff-pill">
+                  <i class="bi bi-exclamation-diamond" aria-hidden="true"></i>
+                  <span>Falha diaria agora custa -50 EXP e -200 moedas ate a recuperacao acontecer.</span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-4" aria-labelledby="calendar-title">
+          <div class="d-flex align-items-end justify-content-between gap-3 flex-wrap mb-3">
+            <div>
+              <h2 class="section-title mb-1" id="calendar-title">Calendário de rota</h2>
+              <p class="feature-copy mb-0">Veja os próximos dias com as missões, treino e blocos de foco organizados pela IA do sistema.</p>
+            </div>
+            <button class="btn-timer" id="btn-open-ai-calendar" type="button">Abrir AI</button>
+          </div>
+          <div class="calendar-shell">
+            <div class="calendar-summary" id="calendar-summary">
+              Aguardando plano inteligente para montar sua linha do tempo.
+            </div>
+            <div class="calendar-grid" id="calendar-grid" role="list" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <div class="row g-3 mb-3">
+          <section class="col-lg-7" aria-labelledby="status-title">
+            <h1 class="section-title" id="status-title">Janela de status</h1>
+
+            <div class="player-card">
+              <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="player-avatar" aria-hidden="true">
+                  <i class="bi bi-shield-shaded"></i>
+                </div>
+                <div>
+                  <div class="player-name" id="player-name">Novo usuario</div>
+                  <div class="player-handle" id="player-handle">@usuario | Nivel <span id="player-level">1</span></div>
+                </div>
+                <div class="ms-auto">
+                  <div class="rank-badge rank-e" id="rank-badge" aria-label="Rank E">E</div>
+                </div>
+              </div>
+
+              <div class="mb-1 d-flex justify-content-between">
+                <span class="exp-label">EXP</span>
+                <span class="exp-label" id="exp-label">0 / 1000</span>
+              </div>
+              <div class="exp-bar-wrap mb-4" id="exp-progress" role="progressbar" aria-label="Progresso de experiencia" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-describedby="exp-label">
+                <div class="exp-bar-fill" id="exp-bar" data-progress="0"></div>
+              </div>
+
+              <div class="status-subgrid mb-4" role="list" aria-label="Resumo tatico">
+                <div class="status-subcard" role="listitem">
+                  <span class="status-subcard-label">Classe</span>
+                  <strong>Solo Routine Hunter</strong>
+                </div>
+                <div class="status-subcard" role="listitem">
+                  <span class="status-subcard-label">Core Loop</span>
+                  <strong>Quest -> EXP -> Rank</strong>
+                </div>
+                <div class="status-subcard" role="listitem">
+                  <span class="status-subcard-label">Modo</span>
+                  <strong>Dark Neon / PWA</strong>
+                </div>
+              </div>
+
+              <div class="row g-2" role="list" aria-label="Atributos do jogador">
+                <div class="col-4" role="listitem"><div class="mini-card"><div class="mini-card-icon" aria-hidden="true"><i class="bi bi-lightning-charge"></i></div><div class="mini-card-value" id="stat-forca">18</div><div class="mini-card-label">Forca</div></div></div>
+                <div class="col-4" role="listitem"><div class="mini-card"><div class="mini-card-icon" aria-hidden="true"><i class="bi bi-wind"></i></div><div class="mini-card-value" id="stat-agilidade">14</div><div class="mini-card-label">Agilidade</div></div></div>
+                <div class="col-4" role="listitem"><div class="mini-card"><div class="mini-card-icon" aria-hidden="true"><i class="bi bi-heart-pulse"></i></div><div class="mini-card-value" id="stat-vitalidade">22</div><div class="mini-card-label">Vitalidade</div></div></div>
+                <div class="col-4" role="listitem"><div class="mini-card"><div class="mini-card-icon" aria-hidden="true"><i class="bi bi-book"></i></div><div class="mini-card-value" id="stat-int">16</div><div class="mini-card-label">Inteligencia</div></div></div>
+                <div class="col-4" role="listitem"><div class="mini-card"><div class="mini-card-icon" aria-hidden="true"><i class="bi bi-stars"></i></div><div class="mini-card-value" id="stat-espirito">9</div><div class="mini-card-label">Espirito</div></div></div>
+                <div class="col-4" role="listitem"><div class="mini-card"><div class="mini-card-icon" aria-hidden="true"><i class="bi bi-trophy"></i></div><div class="mini-card-value" id="stat-missoes">47</div><div class="mini-card-label">Missoes</div></div></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="col-lg-5" aria-labelledby="status-overview-title">
+            <h2 class="section-title" id="status-overview-title">Resumo de progresso</h2>
+
+            <article class="feature-panel h-100">
+              <div class="feature-kicker">TACTICAL OVERVIEW</div>
+              <h3 class="feature-title">Seu foco atual</h3>
+              <p class="feature-copy">Acompanhe seu rank, atributos e recompensas ativas aqui. As abas ao lado separam estudo, treino e missoes para deixar a navegacao mais limpa.</p>
+              <div class="status-subgrid" role="list" aria-label="Resumo rapido do jogador">
+                <div class="status-subcard" role="listitem">
+                  <span class="status-subcard-label">Rank Atual</span>
+                  <strong id="status-rank-overview">Hunter E</strong>
+                </div>
+                <div class="status-subcard" role="listitem">
+                  <span class="status-subcard-label">Sequencia</span>
+                  <strong><span id="status-streak-overview">0</span> dias</strong>
+                </div>
+                <div class="status-subcard" role="listitem">
+                  <span class="status-subcard-label">Saldo</span>
+                  <strong><span id="status-coins-overview">0</span> moedas</strong>
+                </div>
+              </div>
+            </article>
+          </section>
+        </div>
+
+        <section class="mb-4" aria-labelledby="active-rewards-title">
+          <h2 class="section-title" id="active-rewards-title">Recompensas ativas</h2>
+          <div class="dashboard-grid reward-grid" id="active-rewards-grid" aria-live="polite"></div>
+        </section>
+      </section>
+
+      <section class="app-view" id="view-studies" data-view-panel="studies" aria-labelledby="studies-title" hidden>
+        <div class="row g-3 mb-4">
+          <section class="col-lg-5" aria-labelledby="timer-title">
+            <h1 class="section-title" id="studies-title">Estudos</h1>
+            <h2 class="section-title" id="timer-title">Tecnica de Pomodoro</h2>
+
+            <div class="stat-panel mb-3">
+              <div class="timer-ring-wrap">
+                <div class="timer-ring" role="timer" aria-live="polite" aria-label="Tempo restante: 25 minutos">
+                  <svg width="140" height="140" viewBox="0 0 140 140" aria-hidden="true" focusable="false">
+                    <circle class="timer-ring-bg" cx="70" cy="70" r="60"/>
+                    <circle class="timer-ring-fill" id="timer-circle" cx="70" cy="70" r="60"/>
+                  </svg>
+                  <div class="timer-center">
+                    <div class="timer-display" id="timer-display">25:00</div>
+                    <div class="timer-label">DUNGEON RUN</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="timer-controls">
+                <button class="btn-timer" id="btn-start" type="button" aria-pressed="false">INICIAR</button>
+                <button class="btn-timer" id="btn-reset" type="button">RESET</button>
+              </div>
+
+              <div class="timer-cycle-info text-center mt-2">
+                Ciclos: <span id="cycle-count">0</span> | EXP por ciclo: <span class="timer-cycle-exp">+10</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="col-lg-7" aria-labelledby="study-focus-title">
+            <h2 class="section-title" id="study-focus-title">Sessao de foco</h2>
+            <article class="feature-panel h-100">
+              <div class="feature-kicker">DEEP STUDY MODE</div>
+              <h3 class="feature-title">Use blocos curtos e intensos</h3>
+              <p class="feature-copy">Entre em uma sessao de foco, execute um ciclo de 25 minutos e acompanhe sua consistencia sem distracoes de outras areas do sistema.</p>
+              <div class="status-subgrid" role="list" aria-label="Passos da tecnica pomodoro">
+                <div class="status-subcard" role="listitem">
+                  <span class="status-subcard-label">1</span>
+                  <strong>Escolha uma materia</strong>
+                </div>
+                <div class="status-subcard" role="listitem">
+                  <span class="status-subcard-label">2</span>
+                  <strong>Foque por 25 minutos</strong>
+                </div>
+                <div class="status-subcard" role="listitem">
+                  <span class="status-subcard-label">3</span>
+                  <strong>Descanse e repita</strong>
+                </div>
+              </div>
+            </article>
+          </section>
+        </div>
+
+        <section class="mb-4" aria-labelledby="planner-title">
+          <h2 class="section-title" id="planner-title">Assistente inteligente</h2>
+          <div class="row g-3">
+            <div class="col-xl-5">
+              <article class="feature-panel planner-panel">
+                <div class="feature-kicker">ASCEND AI PROFILE</div>
+                <h3 class="feature-title">Configure sua rotina real</h3>
+                <p class="feature-copy planner-copy">Descreva metas, prioridades, contexto e desafios. O sistema usa isso para montar missoes diarias, semanais e mensais alinhadas ao seu momento.</p>
+                <form id="planner-form" class="planner-form">
+                  <label class="form-label" for="planner-goals">Metas principais</label>
+                  <textarea class="auth-input planner-input" id="planner-goals" name="primaryGoals" rows="3" placeholder="Ex.: passar em calculo, entregar projeto do trabalho, voltar a treinar 4x na semana"></textarea>
+
+                  <label class="form-label" for="planner-priorities">Prioridades desta fase</label>
+                  <textarea class="auth-input planner-input" id="planner-priorities" name="currentPriorities" rows="2" placeholder="O que nao pode ficar para depois?"></textarea>
+
+                  <label class="form-label" for="planner-routine">Rotina atual</label>
+                  <textarea class="auth-input planner-input" id="planner-routine" name="routineSummary" rows="3" placeholder="Conte como seus dias funcionam hoje e onde voce perde tracao."></textarea>
+
+                  <div class="planner-grid">
+                    <div>
+                      <label class="form-label" for="planner-study">Estudos</label>
+                      <input class="auth-input planner-input" id="planner-study" name="studyFocus" type="text" placeholder="Materia, curso ou prova" />
+                    </div>
+                    <div>
+                      <label class="form-label" for="planner-work">Trabalho</label>
+                      <input class="auth-input planner-input" id="planner-work" name="workFocus" type="text" placeholder="Projeto, entrega ou carreira" />
+                    </div>
+                    <div>
+                      <label class="form-label" for="planner-health">Saude</label>
+                      <input class="auth-input planner-input" id="planner-health" name="healthFocus" type="text" placeholder="Treino, sono ou alimentacao" />
+                    </div>
+                    <div>
+                      <label class="form-label" for="planner-project">Projetos</label>
+                      <input class="auth-input planner-input" id="planner-project" name="projectFocus" type="text" placeholder="Projeto pessoal ou negocio" />
+                    </div>
+                  </div>
+
+                  <label class="form-label" for="planner-habit">Habito-chave</label>
+                  <input class="auth-input planner-input" id="planner-habit" name="habitFocus" type="text" placeholder="Ex.: estudar cedo, caminhar, revisar agenda" />
+
+                  <div class="planner-grid">
+                    <div>
+                      <label class="form-label" for="planner-available">Minutos livres por dia</label>
+                      <input class="auth-input planner-input" id="planner-available" name="availableMinutesPerDay" type="number" min="20" max="480" step="5" />
+                    </div>
+                    <div>
+                      <label class="form-label" for="planner-energy">Padrao de energia</label>
+                      <input class="auth-input planner-input" id="planner-energy" name="energyPattern" type="text" placeholder="manha forte, tarde cansada..." />
+                    </div>
+                  </div>
+
+                  <div class="planner-training-block">
+                    <div class="planner-training-header">
+                      <div>
+                        <div class="feature-kicker">TRAINING SPLIT</div>
+                        <h4 class="feature-title planner-training-title">Monte a divisao do treino</h4>
+                      </div>
+                      <p class="feature-copy planner-training-copy">Informe os dias disponiveis e o tipo corporal para o sistema montar uma ficha dividida como orientacao inicial de personal.</p>
+                    </div>
+
+                    <label class="form-label">Dias de treino</label>
+                    <div class="planner-days-grid" role="group" aria-label="Dias disponiveis para treino">
+                      <label class="planner-day-option"><input type="checkbox" name="workoutDays" value="segunda" /> <span>Seg</span></label>
+                      <label class="planner-day-option"><input type="checkbox" name="workoutDays" value="terca" /> <span>Ter</span></label>
+                      <label class="planner-day-option"><input type="checkbox" name="workoutDays" value="quarta" /> <span>Qua</span></label>
+                      <label class="planner-day-option"><input type="checkbox" name="workoutDays" value="quinta" /> <span>Qui</span></label>
+                      <label class="planner-day-option"><input type="checkbox" name="workoutDays" value="sexta" /> <span>Sex</span></label>
+                      <label class="planner-day-option"><input type="checkbox" name="workoutDays" value="sabado" /> <span>Sab</span></label>
+                      <label class="planner-day-option"><input type="checkbox" name="workoutDays" value="domingo" /> <span>Dom</span></label>
+                    </div>
+
+                    <div class="planner-grid">
+                      <div>
+                        <label class="form-label" for="planner-body-type">Tipo de corpo</label>
+                        <select class="auth-input planner-input" id="planner-body-type" name="bodyType">
+                          <option value="ectomorfo">Ectomorfo</option>
+                          <option value="mesomorfo">Mesomorfo</option>
+                          <option value="endomorfo">Endomorfo</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="form-label" for="planner-training-goal">Objetivo do treino</label>
+                        <select class="auth-input planner-input" id="planner-training-goal" name="trainingGoal">
+                          <option value="hipertrofia">Hipertrofia</option>
+                          <option value="emagrecimento">Emagrecimento</option>
+                          <option value="condicionamento">Condicionamento</option>
+                          <option value="forca">Forca</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="form-label" for="planner-training-level">Nivel atual</label>
+                        <select class="auth-input planner-input" id="planner-training-level" name="trainingLevel">
+                          <option value="iniciante">Iniciante</option>
+                          <option value="intermediario">Intermediario</option>
+                          <option value="avancado">Avancado</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <label class="form-label" for="planner-obstacles">Maior bloqueio</label>
+                  <input class="auth-input planner-input" id="planner-obstacles" name="obstacles" type="text" placeholder="Ex.: procrastinacao, excesso de demandas, cansaco" />
+
+                  <label class="form-label" for="planner-style">Estilo de motivacao</label>
+                  <input class="auth-input planner-input" id="planner-style" name="motivationStyle" type="text" placeholder="Ex.: progresso visivel, desafios curtos, recompensas" />
+
+                  <div class="planner-actions">
+                    <button class="auth-submit planner-submit" id="planner-submit" type="submit">Gerar plano inteligente</button>
+                    <button class="btn-timer" id="planner-reset" type="button">Restaurar base</button>
+                  </div>
+                </form>
+              </article>
+            </div>
+            <div class="col-xl-7">
+              <article class="feature-panel planner-briefing">
+                <div class="planner-header">
+                  <div>
+                    <div class="feature-kicker" id="planner-assistant-name">ASCEND AI</div>
+                    <h3 class="planner-headline" id="planner-headline">Mapeando sua rotina para criar missoes melhores.</h3>
+                  </div>
+                  <div class="planner-status-chip" id="planner-status-chip">ANALISANDO</div>
+                </div>
+                <div class="planner-assistant-shell" aria-label="Avatar e sinais da assistente">
+                  <img class="planner-assistant-avatar" id="planner-assistant-avatar" src="assets/ascend-ai-avatar.png" alt="Mini avatar da assistente ASCEND AI" />
+                  <div class="planner-assistant-presence">
+                    <div class="planner-assistant-pill" id="planner-assistant-mode">MODO ADAPTIVO</div>
+                    <div class="planner-assistant-signal" id="planner-assistant-focus">Lendo metas e prioridades principais.</div>
+                    <div class="planner-assistant-signal" id="planner-assistant-trace">Aguardando perfil para calibrar ritmo, foco e treino.</div>
+                  </div>
+                </div>
+                <p class="feature-copy planner-summary" id="planner-summary">Assim que voce preencher o perfil, o sistema monta um plano de progressao diario, semanal e mensal com foco no que realmente importa agora.</p>
+                <p class="planner-adaptation" id="planner-adaptation">O assistente tambem ajusta o peso das tarefas conforme sua fase atual e sua consistencia.</p>
+                <div class="planner-insights" id="planner-insights" aria-live="polite"></div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="app-view" id="view-calendar" data-view-panel="calendar" aria-labelledby="calendar-page-title" hidden>
+        <div class="calendar-screen">
+          <div class="calendar-screen-header">
+            <div>
+              <h1 class="section-title" id="calendar-page-title">Calendario</h1>
+              <p class="feature-copy">Visual estilo Samsung Calendar com mes, agenda do dia e eventos vindos do seu plano.</p>
+            </div>
+            <div class="calendar-screen-actions">
+              <button class="btn-timer" id="calendar-prev-month" type="button">Anterior</button>
+              <button class="btn-timer" id="calendar-today" type="button">Hoje</button>
+              <button class="btn-timer" id="calendar-next-month" type="button">Proximo</button>
+            </div>
+          </div>
+
+          <div class="calendar-app-grid">
+            <section class="calendar-month-panel">
+              <div class="calendar-month-header">
+                <div class="calendar-month-title" id="calendar-month-title">Julho 2026</div>
+                <button class="btn-timer" id="calendar-open-ai" type="button">Perguntar a AI</button>
+              </div>
+              <div class="calendar-weekdays" aria-hidden="true">
+                <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+              </div>
+              <div class="calendar-month-grid" id="calendar-month-grid" role="grid" aria-label="Calendario mensal"></div>
+            </section>
+
+            <aside class="calendar-agenda-panel">
+              <div class="calendar-agenda-header">
+                <h2 class="feature-title mb-0" id="calendar-agenda-title">Agenda do dia</h2>
+                <div class="calendar-agenda-date" id="calendar-agenda-date">Selecione um dia</div>
+              </div>
+              <div class="calendar-agenda-list" id="calendar-agenda-list"></div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="app-view" id="view-ai" data-view-panel="ai" aria-labelledby="ai-page-title" hidden>
+        <div class="ai-screen">
+          <div class="calendar-screen-header">
+            <div>
+              <h1 class="section-title" id="ai-page-title">ASCEND AI</h1>
+              <p class="feature-copy">Converse com a IA real do sistema. Ela usa seu perfil, status e calendario para responder.</p>
+            </div>
+            <button class="btn-timer" id="ai-open-calendar" type="button">Abrir Calendario</button>
+          </div>
+          <div class="ai-chat-panel">
+            <div class="ai-chat-history" id="ai-chat-history" aria-live="polite"></div>
+            <form class="ai-chat-form" id="ai-chat-form">
+              <textarea class="auth-input ai-chat-input" id="ai-chat-input" rows="3" placeholder="Pergunte sobre sua rotina, metas, agenda ou treino..."></textarea>
+              <div class="ai-chat-actions">
+                <button class="auth-submit" type="submit">Enviar</button>
+                <button class="btn-timer" id="ai-chat-clear" type="button">Limpar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="app-view" id="view-missions" data-view-panel="missions" aria-labelledby="missoes-diarias" hidden>
+        <section aria-labelledby="missoes-diarias">
+          <h1 class="section-title" id="missoes-diarias">Missoes</h1>
+          <div class="d-flex flex-column gap-2 mb-4" id="missions-list" role="list"></div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+              <article class="feature-panel roadmap-panel">
+                <div class="feature-kicker">WEEKLY ARC</div>
+                <h3 class="feature-title">Missoes semanais</h3>
+                <div class="roadmap-list" id="weekly-missions-list" role="list"></div>
+              </article>
+            </div>
+            <div class="col-lg-6">
+              <article class="feature-panel roadmap-panel">
+                <div class="feature-kicker">MONTHLY ARC</div>
+                <h3 class="feature-title">Missoes mensais</h3>
+                <div class="roadmap-list" id="monthly-missions-list" role="list"></div>
+              </article>
+            </div>
+          </div>
+
+          <section class="feature-panel vault-history mt-3" aria-labelledby="vault-history-title">
+            <h2 class="feature-title vault-history-title" id="vault-history-title">Historico de transacoes</h2>
+            <div id="vault-history-list"></div>
+          </section>
+        </section>
+      </section>
+
+      <section class="app-view" id="view-training" data-view-panel="training" aria-labelledby="training-title" hidden>
+        <h1 class="section-title" id="training-title">Treino</h1>
+        <div class="dashboard-grid training-overview-grid">
+          <article class="feature-panel highlight-panel">
+            <div class="feature-kicker">PERSONAL SPLIT</div>
+            <div class="feature-value" id="training-split-badge">3 dias</div>
+            <p class="feature-copy" id="training-split-summary">Selecione seus dias de treino no assistente para gerar uma divisao personalizada.</p>
+          </article>
+          <article class="feature-panel">
+            <div class="feature-kicker">BIOTIPO</div>
+            <h2 class="feature-title" id="training-bodytype-title">Mesomorfo</h2>
+            <p class="feature-copy" id="training-bodytype-copy">Resposta muscular equilibrada, com foco em progressao de carga e volume moderado.</p>
+          </article>
+          <article class="feature-panel">
+            <div class="feature-kicker">FOCO DA FASE</div>
+            <h2 class="feature-title" id="training-goal-title">Hipertrofia</h2>
+            <p class="feature-copy" id="training-goal-copy">Volume bem distribuido, exercicios base e constancia semanal para crescer com estrutura.</p>
+          </article>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-xl-8">
+            <article class="feature-panel training-plan-panel">
+              <div class="training-panel-header">
+                <div>
+                  <div class="feature-kicker">WEEKLY DIVISION</div>
+                  <h2 class="feature-title">Ficha dividida por dia</h2>
+                </div>
+                <p class="feature-copy training-panel-copy" id="training-plan-copy">A divisao respeita os dias informados e alterna grupos musculares para manter recuperacao e progressao.</p>
+              </div>
+              <div class="training-days-list" id="training-days-list" role="list"></div>
+            </article>
+          </div>
+          <div class="col-xl-4">
+            <article class="feature-panel training-guide-panel">
+              <div class="feature-kicker">COMO IDENTIFICAR</div>
+              <h2 class="feature-title">Qual e o seu tipo corporal?</h2>
+              <img class="training-bodytype-guide" src="assets/body-types-guide.svg" alt="Guia visual com tres tipos corporais. Ectomorfo: estrutura fina e dificuldade para ganhar peso. Mesomorfo: estrutura atletica e ganho muscular equilibrado. Endomorfo: estrutura mais larga e facilidade para ganhar peso." />
+              <div class="training-guide-notes" id="training-guide-notes"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="app-view" id="view-vault" data-view-panel="vault" aria-labelledby="vault-title" hidden>
+        <h1 class="section-title" id="vault-title">The Vault</h1>
+        <div class="dashboard-grid">
+          <article class="feature-panel highlight-panel">
+            <div class="feature-kicker">SALDO DISPONIVEL</div>
+            <div class="feature-value"><span id="vault-balance">0</span> moedas</div>
+            <p class="feature-copy">Use suas moedas para comprar recompensas na loja e acompanhar sua economia pessoal.</p>
+          </article>
+          <article class="feature-panel">
+            <div class="feature-kicker">ENTRADAS DO DIA</div>
+            <div class="feature-value">+0</div>
+            <p class="feature-copy">Conclua missoes para aumentar seu saldo.</p>
+          </article>
+          <article class="feature-panel">
+            <div class="feature-kicker">SAIDAS DO DIA</div>
+            <div class="feature-value">0</div>
+            <p class="feature-copy">Compras da loja aparecerao aqui.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="app-view" id="view-shop" data-view-panel="shop" aria-labelledby="shop-title" hidden>
+        <h1 class="section-title" id="shop-title">Loja</h1>
+        <div class="dashboard-grid">
+          <article class="feature-panel shop-item">
+            <div>
+              <div class="feature-kicker">RECOMPENSA</div>
+              <h2 class="feature-title">Pausa estrategica</h2>
+              <p class="feature-copy">Troque moedas por 30 minutos de descanso planejado.</p>
+            </div>
+            <button class="btn-complete" type="button" data-shop-item="pausa-estrategica">120 moedas</button>
+          </article>
+          <article class="feature-panel shop-item">
+            <div>
+              <div class="feature-kicker">UPGRADE</div>
+              <h2 class="feature-title">Equipamento de treino</h2>
+              <p class="feature-copy">Registre uma melhoria real para sua rotina fisica.</p>
+            </div>
+            <button class="btn-complete" type="button" data-shop-item="equipamento-treino">300 moedas</button>
+          </article>
+          <article class="feature-panel shop-item">
+            <div>
+              <div class="feature-kicker">FOCO</div>
+              <h2 class="feature-title">Sessao premium</h2>
+              <p class="feature-copy">Reserve um bloco especial para estudo profundo.</p>
+            </div>
+            <button class="btn-complete" type="button" data-shop-item="sessao-premium">200 moedas</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="app-view" id="view-inventory" data-view-panel="inventory" aria-labelledby="inventory-title" hidden>
+        <h1 class="section-title" id="inventory-title">Inventario</h1>
+        <div class="dashboard-grid inventory-summary-grid mb-3">
+          <article class="feature-panel highlight-panel">
+            <div class="feature-kicker">ITENS ACUMULADOS</div>
+            <div class="feature-value" id="inventory-total-items">0</div>
+            <p class="feature-copy">Tudo o que voce comprou na loja fica salvo aqui para uso e consulta.</p>
+          </article>
+          <article class="feature-panel">
+            <div class="feature-kicker">RECOMPENSAS ATIVAS</div>
+            <div class="feature-value" id="inventory-active-items">0</div>
+            <p class="feature-copy">Itens com duracao em andamento aparecem com cronometro em tempo real.</p>
+          </article>
+        </div>
+        <div class="dashboard-grid" id="inventory-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="app-view" id="view-achievements" data-view-panel="achievements" aria-labelledby="achievements-title" hidden>
+        <h1 class="section-title" id="achievements-title">Conquistas</h1>
+        <div class="dashboard-grid">
+          <article class="feature-panel achievement unlocked">
+            <i class="bi bi-fire" aria-hidden="true"></i>
+            <div>
+              <h2 class="feature-title">Primeira sequencia</h2>
+              <p class="feature-copy">Mantenha uma rotina ativa por 3 dias.</p>
+            </div>
+          </article>
+          <article class="feature-panel achievement">
+            <i class="bi bi-book" aria-hidden="true"></i>
+            <div>
+              <h2 class="feature-title">Mente afiada</h2>
+              <p class="feature-copy">Complete 10 missoes de estudo.</p>
+            </div>
+          </article>
+          <article class="feature-panel achievement">
+            <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+            <div>
+              <h2 class="feature-title">Corpo em evolucao</h2>
+              <p class="feature-copy">Complete 10 missoes de treino.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="app-view" id="view-ranking" data-view-panel="ranking" aria-labelledby="ranking-title" hidden>
+        <h1 class="section-title" id="ranking-title">Ranking</h1>
+        <div class="ranking-list" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="system-popup" id="system-popup" role="status" aria-live="polite" aria-atomic="true" hidden>
+  <div class="popup-header">SISTEMA | NOTIFICACAO</div>
+  <div class="popup-title" id="popup-title">Missao concluida!</div>
+  <div class="popup-body" id="popup-body">Voce completou a missao com sucesso.</div>
+  <div class="popup-rewards" id="popup-rewards">
+    <span class="popup-reward-chip" id="popup-exp">+50 EXP</span>
+    <span class="popup-reward-chip popup-reward-coins" id="popup-coins">+10 moedas</span>
+  </div>
+</div>
+
+<button class="ai-fab" id="ai-fab" type="button" aria-label="Abrir assistente ASCEND AI">
+  <i class="bi bi-stars" aria-hidden="true"></i>
+</button>
+
+<script src="js/script.js?v=20260429-2305" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+</body>
+</html>
