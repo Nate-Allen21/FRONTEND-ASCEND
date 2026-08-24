@@ -381,7 +381,7 @@ function normalizeApiBaseUrl(value) {
 
 function buildDefaultApiBaseUrls() {
   const urls = [];
-  const preferredPorts = ['8082', '8081', '8080'];
+  const preferredPorts = ['8080', '8081', '8082'];
   const hosts = ['localhost', '127.0.0.1'];
 
   if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
@@ -438,7 +438,7 @@ function buildApiBaseUrlCandidates() {
   try {
     const currentUrl = new URL(apiBaseUrl);
     const fallbackHosts = [window.location.hostname, 'localhost', '127.0.0.1'].filter(Boolean);
-    const fallbackPorts = ['8082', '8081', '8080'];
+    const fallbackPorts = ['8080', '8081', '8082'];
 
     fallbackHosts.forEach((host) => {
       fallbackPorts.forEach((port) => {
@@ -481,7 +481,7 @@ async function discoverApiBaseUrl() {
 
   throw new Error(
     'Nao encontrei a API ASCEND em ' + apiBaseUrlCandidates.join(' ou ') +
-    '. Inicie o backend e, se necessario, use ?apiBase=http://IP-DO-PC:8082/api.'
+    '. Inicie o backend e, se necessario, use ?apiBase=http://IP-DO-PC:8080/api.'
   );
 }
 

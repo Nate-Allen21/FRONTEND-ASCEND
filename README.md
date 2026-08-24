@@ -29,7 +29,7 @@ python -m http.server 3000 --directory frontend
 
 The frontend tries to find the backend automatically on:
 
-- `http://localhost:8082/api`
+- `http://localhost:8080/api`
 - `http://localhost:8081/api`
 - `http://localhost:8080/api`
 
