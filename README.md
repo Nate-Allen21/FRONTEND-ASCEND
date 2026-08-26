@@ -1,6 +1,6 @@
 # ASCEND Frontend
 
-Static frontend for the ASCEND platform.
+Frontend for the ASCEND platform, built with Vite.
 
 ## What is included
 
@@ -27,13 +27,15 @@ python -m http.server 3000 --directory frontend
 
 ## API configuration
 
-The frontend tries to find the backend automatically on:
+For Vite deployments, define the backend URL with:
 
-- `http://localhost:8080/api`
-- `http://localhost:8081/api`
-- `http://localhost:8082/api`
+```text
+VITE_API_URL=https://nome-do-servico.onrender.com/api
+```
 
-You can also set the backend URL manually with:
+The value must include `/api`. Vite injects this variable during the build.
+
+You can override the backend URL manually with:
 
 ```text
 ?apiBase=https://your-backend-domain.com/api

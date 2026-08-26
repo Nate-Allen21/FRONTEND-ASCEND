@@ -379,43 +379,22 @@ function normalizeApiBaseUrl(value) {
   return value.trim().replace(/\/+$/, '');
 }
 
-function buildDefaultApiBaseUrls() {
-  const urls = [];
-  const preferredPorts = ['8080', '8081', '8082'];
-  const hosts = ['localhost', '127.0.0.1'];
-
-  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-    hosts.unshift(window.location.hostname);
-  }
-
-  hosts.forEach((host) => {
-    preferredPorts.forEach((port) => {
-      const candidate = window.location.protocol === 'http:' || window.location.protocol === 'https:'
-        ? window.location.protocol + '//' + host + ':' + port + '/api'
-        : 'http://' + host + ':' + port + '/api';
-
-      if (!urls.includes(candidate)) {
-        urls.push(candidate);
-      }
-    });
-  });
-
-  return urls;
-}
-
 function resolveApiBaseUrl() {
+  const viteValue = typeof import.meta !== 'undefined' && import.meta.env
+    ? import.meta.env.VITE_API_URL
+    : '';
   const queryValue = new URLSearchParams(window.location.search).get('apiBase');
   const storedValue = localStorage.getItem(API_BASE_URL_STORAGE_KEY);
-  const configuredValue = normalizeApiBaseUrl(queryValue || storedValue);
+  const configuredValue = normalizeApiBaseUrl(queryValue || viteValue || storedValue);
 
   if (configuredValue) {
-    if (queryValue) {
+    if (queryValue || viteValue) {
       localStorage.setItem(API_BASE_URL_STORAGE_KEY, configuredValue);
     }
     return configuredValue;
   }
 
-  return buildDefaultApiBaseUrls()[0];
+  return '';
 }
 
 const apiBaseUrl = resolveApiBaseUrl();
@@ -423,39 +402,7 @@ let activeApiBaseUrl = null;
 let apiDiscoveryPromise = null;
 
 function buildApiBaseUrlCandidates() {
-  const candidates = [];
-
-  if (apiBaseUrl) {
-    candidates.push(apiBaseUrl);
-  }
-
-  buildDefaultApiBaseUrls().forEach((candidate) => {
-    if (!candidates.includes(candidate)) {
-      candidates.push(candidate);
-    }
-  });
-
-  try {
-    const currentUrl = new URL(apiBaseUrl);
-    const fallbackHosts = [window.location.hostname, 'localhost', '127.0.0.1'].filter(Boolean);
-    const fallbackPorts = ['8080', '8081', '8082'];
-
-    fallbackHosts.forEach((host) => {
-      fallbackPorts.forEach((port) => {
-        if (currentUrl.hostname === host && currentUrl.port === port) return;
-
-        const fallbackUrl = currentUrl.protocol + '//' + host + ':' + port + currentUrl.pathname;
-
-        if (!candidates.includes(fallbackUrl)) {
-          candidates.push(fallbackUrl);
-        }
-      });
-    });
-  } catch (error) {
-    // Mantem apenas a URL principal quando ela nao puder ser analisada.
-  }
-
-  return candidates;
+  return apiBaseUrl ? [apiBaseUrl] : [];
 }
 
 const apiBaseUrlCandidates = buildApiBaseUrlCandidates();
@@ -480,8 +427,7 @@ async function discoverApiBaseUrl() {
   }
 
   throw new Error(
-    'Nao encontrei a API ASCEND em ' + apiBaseUrlCandidates.join(' ou ') +
-    '. Inicie o backend e, se necessario, use ?apiBase=http://IP-DO-PC:8080/api.'
+    'URL da API ASCEND nao configurada. Defina VITE_API_URL ou use ?apiBase=https://seu-backend.com/api.'
   );
 }
 
