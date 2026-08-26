@@ -31,7 +31,7 @@ The frontend tries to find the backend automatically on:
 
 - `http://localhost:8080/api`
 - `http://localhost:8081/api`
-- `http://localhost:8080/api`
+- `http://localhost:8082/api`
 
 You can also set the backend URL manually with:
 
