@@ -1,5 +1,6 @@
 const STORAGE_RESET_VERSION = '2026-04-27-reset-1';
 const API_BASE_URL_STORAGE_KEY = 'ascend.api.baseUrl';
+const DEFAULT_PUBLIC_API_BASE_URL = 'https://backend-ascend.onrender.com/api';
 const AUTH_TOKEN_KEY = 'ascend.auth.token.' + STORAGE_RESET_VERSION;
 const VAULT_HISTORY_KEY = 'ascend.vault.history.' + STORAGE_RESET_VERSION;
 const SHOP_PURCHASES_KEY = 'ascend.shop.purchases.' + STORAGE_RESET_VERSION;
@@ -402,7 +403,10 @@ let activeApiBaseUrl = null;
 let apiDiscoveryPromise = null;
 
 function buildApiBaseUrlCandidates() {
-  return apiBaseUrl ? [apiBaseUrl] : [];
+  return Array.from(new Set([
+    apiBaseUrl,
+    DEFAULT_PUBLIC_API_BASE_URL
+  ].filter(Boolean)));
 }
 
 const apiBaseUrlCandidates = buildApiBaseUrlCandidates();

@@ -35,6 +35,8 @@ VITE_API_URL=https://nome-do-servico.onrender.com/api
 
 The value must include `/api`. Vite injects this variable during the build.
 
+If the variable is not present, the frontend falls back to the public ASCEND backend at `https://backend-ascend.onrender.com/api`.
+
 You can override the backend URL manually with:
 
 ```text
