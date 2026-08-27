@@ -11,19 +11,33 @@ Frontend for the ASCEND platform, built with Vite.
 
 ## Local run
 
-Open `index.html` with a local static server.
-
-Examples:
+Install dependencies and run Vite:
 
 ```powershell
-npx serve frontend
+npm install
+npm run dev
 ```
 
-or
+For a production build:
 
 ```powershell
-python -m http.server 3000 --directory frontend
+npm run build
 ```
+
+## Vercel Deploy
+
+This repo includes `vercel.json` configured for Vite:
+
+- build command: `npm run build`
+- output directory: `dist`
+
+In Vercel, add this environment variable:
+
+```text
+VITE_API_URL=https://YOUR-RENDER-SERVICE.onrender.com/api
+```
+
+The value must include `/api`.
 
 ## API configuration
 
@@ -48,3 +62,9 @@ The chosen value is saved in `localStorage`, so the frontend keeps using it on t
 ## GitHub Pages or static hosting
 
 If you publish this folder on GitHub Pages, Netlify, Vercel, or similar, make sure the backend allows that domain through CORS. See the backend README for the `ASCEND_CORS_ALLOWED_ORIGINS` variable.
+
+For the Supabase + Vercel + Render setup, the request path is:
+
+```text
+Vercel frontend -> Render backend -> Supabase PostgreSQL + AI provider
+```
