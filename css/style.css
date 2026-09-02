@@ -6,6 +6,9 @@
       --bg-panel:       #080c18;
       --bg-card:        #0b1121;
       --bg-card-hover:  #0d1528;
+      --surface-strong:  linear-gradient(180deg, rgba(9, 15, 30, 0.98), rgba(8, 12, 24, 0.92));
+      --surface-soft:    rgba(11, 17, 33, 0.95);
+      --surface-tint:    rgba(0, 200, 255, 0.06);
 
       --neon-blue:      #00c8ff;
       --neon-cyan:      #00ffe7;
@@ -66,6 +69,9 @@
       --bg-panel:       #f7fbff;
       --bg-card:        #ffffff;
       --bg-card-hover:  #f1f7ff;
+      --surface-strong:  linear-gradient(180deg, #ffffff, #f7fbff);
+      --surface-soft:    #ffffff;
+      --surface-tint:    rgba(0, 119, 255, 0.08);
 
       --neon-blue:      #0077ff;
       --neon-cyan:      #0099c7;
@@ -398,6 +404,7 @@
       border-radius: 8px;
       padding: 18px;
       min-height: 132px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
     }
 
     .highlight-panel {
@@ -1389,12 +1396,20 @@
       background: var(--bg-card);
       border: 1px solid var(--border-glow);
       border-radius: 8px;
-      padding: 20px;
+      padding: 16px;
       box-shadow: var(--shadow-neon);
       z-index: 1000;
       transform: translateX(380px);
       transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       display: none;
+    }
+
+    .popup-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
     }
 
     .system-popup.show {
@@ -1415,7 +1430,26 @@
       letter-spacing: 0.2em;
       color: var(--neon-blue);
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 0;
+    }
+
+    .popup-close {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      border: 1px solid var(--border-dim);
+      background: var(--surface-tint);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    .popup-close:hover {
+      border-color: var(--border-glow);
+      color: var(--neon-blue);
+      background: var(--bg-card-hover);
     }
 
     .popup-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
@@ -1435,35 +1469,10 @@
       color: var(--neon-blue);
     }
 
-    .ai-fab {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      width: 62px;
-      height: 62px;
-      border-radius: 50%;
-      border: 1px solid rgba(0, 200, 255, 0.35);
-      background: radial-gradient(circle at 30% 30%, rgba(123, 47, 255, 0.95), rgba(0, 200, 255, 0.92));
-      color: #ffffff;
-      box-shadow: 0 12px 30px rgba(0, 200, 255, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-      display: grid;
-      place-items: center;
-      font-size: 1.35rem;
-      cursor: pointer;
-      z-index: 1002;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      animation: ai-fab-float 3.5s ease-in-out infinite;
-    }
-
-    .ai-fab:hover {
-      transform: translateY(-2px) scale(1.03);
-      box-shadow: 0 16px 36px rgba(0, 200, 255, 0.36), 0 0 24px rgba(123, 47, 255, 0.24);
-    }
-
     .calendar-shell {
-      background: linear-gradient(180deg, rgba(9, 15, 30, 0.98), rgba(8, 12, 24, 0.92));
+      background: var(--surface-strong);
       border: 1px solid var(--border-dim);
-      border-radius: 20px;
+      border-radius: 8px;
       padding: 18px;
       box-shadow: var(--shadow-neon);
     }
@@ -1481,9 +1490,9 @@
     }
 
     .calendar-day {
-      background: rgba(11, 17, 33, 0.95);
+      background: var(--surface-soft);
       border: 1px solid rgba(0, 200, 255, 0.12);
-      border-radius: 16px;
+      border-radius: 8px;
       padding: 14px;
       min-height: 220px;
       display: flex;
@@ -1523,9 +1532,9 @@
     }
 
     .calendar-task {
-      background: rgba(0, 200, 255, 0.06);
+      background: var(--surface-tint);
       border: 1px solid rgba(0, 200, 255, 0.1);
-      border-radius: 12px;
+      border-radius: 8px;
       padding: 10px 12px;
     }
 
@@ -1576,9 +1585,9 @@
     .calendar-month-panel,
     .calendar-agenda-panel,
     .ai-chat-panel {
-      background: linear-gradient(180deg, rgba(9, 15, 30, 0.98), rgba(8, 12, 24, 0.92));
+      background: var(--surface-strong);
       border: 1px solid var(--border-dim);
-      border-radius: 24px;
+      border-radius: 8px;
       padding: 18px;
       box-shadow: var(--shadow-neon);
     }
@@ -1615,9 +1624,9 @@
 
     .calendar-day-cell {
       min-height: 112px;
-      background: rgba(11, 17, 33, 0.95);
+      background: var(--surface-soft);
       border: 1px solid rgba(0, 200, 255, 0.12);
-      border-radius: 18px;
+      border-radius: 8px;
       padding: 10px;
       display: flex;
       flex-direction: column;
@@ -1676,9 +1685,9 @@
 
     .agenda-item,
     .chat-bubble {
-      background: rgba(0, 200, 255, 0.06);
+      background: var(--surface-tint);
       border: 1px solid rgba(0, 200, 255, 0.1);
-      border-radius: 16px;
+      border-radius: 8px;
       padding: 12px 14px;
     }
 
@@ -2987,4 +2996,73 @@
       body.sidebar-open {
         overflow: hidden;
       }
+    }
+
+    body[data-theme='light'] .auth-panel,
+    body[data-theme='light'] .feature-panel,
+    body[data-theme='light'] .player-card,
+    body[data-theme='light'] .stat-panel,
+    body[data-theme='light'] .mission-card,
+    body[data-theme='light'] .mini-card,
+    body[data-theme='light'] .status-subcard,
+    body[data-theme='light'] .system-summary-card,
+    body[data-theme='light'] .calendar-month-panel,
+    body[data-theme='light'] .calendar-agenda-panel,
+    body[data-theme='light'] .calendar-day-cell,
+    body[data-theme='light'] .agenda-item,
+    body[data-theme='light'] .system-popup {
+      background: #ffffff;
+      color: var(--text-primary);
+      border-color: rgba(20, 69, 130, 0.16);
+      box-shadow: 0 12px 34px rgba(34, 72, 116, 0.1);
+    }
+
+    body[data-theme='light'] .sidebar,
+    body[data-theme='light'] .ascend-topbar {
+      background: rgba(247, 251, 255, 0.96);
+      border-color: rgba(20, 69, 130, 0.14);
+    }
+
+    body[data-theme='light'] .btn-timer,
+    body[data-theme='light'] .auth-tab,
+    body[data-theme='light'] .auth-input,
+    body[data-theme='light'] .planner-day-option span {
+      background: #ffffff;
+      color: var(--text-primary);
+      border-color: rgba(20, 69, 130, 0.18);
+    }
+
+    body[data-theme='light'] .auth-input::placeholder,
+    body[data-theme='light'] .feature-copy,
+    body[data-theme='light'] .system-summary-copy,
+    body[data-theme='light'] .popup-body,
+    body[data-theme='light'] .calendar-agenda-date,
+    body[data-theme='light'] .calendar-empty,
+    body[data-theme='light'] .calendar-task-meta,
+    body[data-theme='light'] .agenda-item-meta {
+      color: #506580;
+    }
+
+    body[data-theme='light'] .btn-timer:hover,
+    body[data-theme='light'] .sidebar-link:hover,
+    body[data-theme='light'] .sidebar-link.active,
+    body[data-theme='light'] .popup-close:hover {
+      background: #eef6ff;
+      color: #005fcc;
+    }
+
+    body[data-theme='light'] .auth-submit {
+      background: #005fcc;
+      border-color: #005fcc;
+      color: #ffffff;
+    }
+
+    body[data-theme='light'] .planner-training-block,
+    body[data-theme='light'] .calendar-task,
+    body[data-theme='light'] .popup-reward-chip,
+    body[data-theme='light'] .system-chip,
+    body[data-theme='light'] .debuff-pill {
+      background: rgba(0, 119, 255, 0.08);
+      border-color: rgba(0, 95, 204, 0.16);
+      color: var(--text-primary);
     }

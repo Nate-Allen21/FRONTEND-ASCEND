@@ -116,8 +116,8 @@
       <nav>
         <div class="sidebar-header">
           <div>
-            <span class="sidebar-eyebrow">CONTROL CENTER</span>
-            <p>Gerencie sua evolucao diaria com um painel mais refinado.</p>
+            <span class="sidebar-eyebrow">PAINEL</span>
+            <p>Acesse cada area da rotina com menos ruido visual.</p>
           </div>
           <button class="sidebar-close" id="btn-sidebar-close" type="button" aria-label="Fechar menu">
             <i class="bi bi-x-lg" aria-hidden="true"></i>
@@ -140,10 +140,6 @@
         <a href="#view-calendar" class="sidebar-link" data-view="calendar">
           <i class="bi bi-calendar3" aria-hidden="true"></i> Calendario
         </a>
-        <a href="#view-ai" class="sidebar-link" data-view="ai">
-          <i class="bi bi-stars" aria-hidden="true"></i> ASCEND AI
-        </a>
-
         <div class="nav-section-label mt-4">ECONOMIA</div>
 
         <a href="#view-vault" class="sidebar-link" data-view="vault">
@@ -222,22 +218,6 @@
                 </div>
               </article>
             </div>
-          </div>
-        </section>
-
-        <section class="mb-4" aria-labelledby="calendar-title">
-          <div class="d-flex align-items-end justify-content-between gap-3 flex-wrap mb-3">
-            <div>
-              <h2 class="section-title mb-1" id="calendar-title">Calendário de rota</h2>
-              <p class="feature-copy mb-0">Veja os próximos dias com as missões, treino e blocos de foco organizados pela IA do sistema.</p>
-            </div>
-            <button class="btn-timer" id="btn-open-ai-calendar" type="button">Abrir AI</button>
-          </div>
-          <div class="calendar-shell">
-            <div class="calendar-summary" id="calendar-summary">
-              Aguardando plano inteligente para montar sua linha do tempo.
-            </div>
-            <div class="calendar-grid" id="calendar-grid" role="list" aria-live="polite"></div>
           </div>
         </section>
 
@@ -379,12 +359,12 @@
           </section>
         </div>
 
-        <section class="mb-4" aria-labelledby="planner-title">
-          <h2 class="section-title" id="planner-title">Assistente inteligente</h2>
+        <section class="mb-4" id="routine-planner-section" aria-labelledby="planner-title">
+          <h2 class="section-title" id="planner-title">Configuracao da rotina</h2>
           <div class="row g-3">
             <div class="col-xl-5">
               <article class="feature-panel planner-panel">
-                <div class="feature-kicker">ASCEND AI PROFILE</div>
+                <div class="feature-kicker">PERFIL DE ROTINA</div>
                 <h3 class="feature-title">Configure sua rotina real</h3>
                 <p class="feature-copy planner-copy">Descreva metas, prioridades, contexto e desafios. O sistema usa isso para montar missoes diarias, semanais e mensais alinhadas ao seu momento.</p>
                 <form id="planner-form" class="planner-form">
@@ -496,13 +476,13 @@
               <article class="feature-panel planner-briefing">
                 <div class="planner-header">
                   <div>
-                    <div class="feature-kicker" id="planner-assistant-name">ASCEND AI</div>
+                    <div class="feature-kicker" id="planner-assistant-name">ASSISTENTE DE ROTINA</div>
                     <h3 class="planner-headline" id="planner-headline">Mapeando sua rotina para criar missoes melhores.</h3>
                   </div>
                   <div class="planner-status-chip" id="planner-status-chip">ANALISANDO</div>
                 </div>
                 <div class="planner-assistant-shell" aria-label="Avatar e sinais da assistente">
-                  <img class="planner-assistant-avatar" id="planner-assistant-avatar" src="assets/ascend-ai-avatar.png" alt="Mini avatar da assistente ASCEND AI" />
+                  <img class="planner-assistant-avatar" id="planner-assistant-avatar" src="assets/ascend-ai-avatar.png" alt="Mini avatar da assistente de rotina" />
                   <div class="planner-assistant-presence">
                     <div class="planner-assistant-pill" id="planner-assistant-mode">MODO ADAPTIVO</div>
                     <div class="planner-assistant-signal" id="planner-assistant-focus">Lendo metas e prioridades principais.</div>
@@ -536,7 +516,7 @@
             <section class="calendar-month-panel">
               <div class="calendar-month-header">
                 <div class="calendar-month-title" id="calendar-month-title">Julho 2026</div>
-                <button class="btn-timer" id="calendar-open-ai" type="button">Perguntar a AI</button>
+                <button class="btn-timer" id="calendar-open-ai" type="button">Configurar rotina</button>
               </div>
               <div class="calendar-weekdays" aria-hidden="true">
                 <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
@@ -551,28 +531,6 @@
               </div>
               <div class="calendar-agenda-list" id="calendar-agenda-list"></div>
             </aside>
-          </div>
-        </div>
-      </section>
-
-      <section class="app-view" id="view-ai" data-view-panel="ai" aria-labelledby="ai-page-title" hidden>
-        <div class="ai-screen">
-          <div class="calendar-screen-header">
-            <div>
-              <h1 class="section-title" id="ai-page-title">ASCEND AI</h1>
-              <p class="feature-copy">Converse com a IA real do sistema. Ela usa seu perfil, status e calendario para responder.</p>
-            </div>
-            <button class="btn-timer" id="ai-open-calendar" type="button">Abrir Calendario</button>
-          </div>
-          <div class="ai-chat-panel">
-            <div class="ai-chat-history" id="ai-chat-history" aria-live="polite"></div>
-            <form class="ai-chat-form" id="ai-chat-form">
-              <textarea class="auth-input ai-chat-input" id="ai-chat-input" rows="3" placeholder="Pergunte sobre sua rotina, metas, agenda ou treino..."></textarea>
-              <div class="ai-chat-actions">
-                <button class="auth-submit" type="submit">Enviar</button>
-                <button class="btn-timer" id="ai-chat-clear" type="button">Limpar</button>
-              </div>
-            </form>
           </div>
         </div>
       </section>
@@ -608,6 +566,7 @@
 
       <section class="app-view" id="view-training" data-view-panel="training" aria-labelledby="training-title" hidden>
         <h1 class="section-title" id="training-title">Treino</h1>
+        <div id="training-routine-config"></div>
         <div class="dashboard-grid training-overview-grid">
           <article class="feature-panel highlight-panel">
             <div class="feature-kicker">PERSONAL SPLIT</div>
@@ -754,7 +713,12 @@
 </div>
 
 <div class="system-popup" id="system-popup" role="status" aria-live="polite" aria-atomic="true" hidden>
-  <div class="popup-header">SISTEMA | NOTIFICACAO</div>
+  <div class="popup-topline">
+    <div class="popup-header">NOTIFICACAO</div>
+    <button class="popup-close" id="popup-close" type="button" aria-label="Fechar notificacao">
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>
+  </div>
   <div class="popup-title" id="popup-title">Missao concluida!</div>
   <div class="popup-body" id="popup-body">Voce completou a missao com sucesso.</div>
   <div class="popup-rewards" id="popup-rewards">
@@ -762,10 +726,6 @@
     <span class="popup-reward-chip popup-reward-coins" id="popup-coins">+10 moedas</span>
   </div>
 </div>
-
-<button class="ai-fab" id="ai-fab" type="button" aria-label="Abrir assistente ASCEND AI">
-  <i class="bi bi-stars" aria-hidden="true"></i>
-</button>
 
 <script type="module" src="js/script.js?v=20260429-2305"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>

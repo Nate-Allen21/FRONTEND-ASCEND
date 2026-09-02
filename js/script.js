@@ -941,7 +941,7 @@ async function handlePlannerSubmit(event) {
     await loadAdaptivePlan(profile, false);
     showPopup('Plano atualizado!', 0, 0);
     setText('popup-body', 'As missoes agora refletem sua rotina, prioridades e objetivos atuais.');
-    setText('popup-exp', 'ASCEND AI');
+    setText('popup-exp', 'ROTINA');
     setText('popup-coins', 'PERSONALIZADO');
   } catch (error) {
     showPopup('Falha ao gerar plano', 0, 0);
@@ -1128,7 +1128,7 @@ async function loadAdaptivePlan(profileOverride = null, persistProfile = false) 
 
 function renderAdaptivePlan(plan) {
   currentAdaptivePlan = plan;
-  setText('planner-assistant-name', plan.assistantName || 'ASCEND AI');
+  setText('planner-assistant-name', 'ASSISTENTE DE ROTINA');
   setText('planner-headline', plan.headline || 'Plano inteligente carregado.');
   setText('planner-summary', plan.summary || 'O assistente montou um novo roteiro.');
   setText('planner-adaptation', plan.adaptationNote || '');
@@ -1140,7 +1140,6 @@ function renderAdaptivePlan(plan) {
   renderTrainingPlan(currentRoutineProfile || getRoutineProfile());
   renderCalendar(plan, currentRoutineProfile || getRoutineProfile());
   renderSamsungCalendar(plan, currentRoutineProfile || getRoutineProfile());
-  renderAiChat();
 }
 
 function renderCalendar(plan, profile) {
@@ -1410,7 +1409,7 @@ function renderAiChat() {
   if (aiConversation.length === 0) {
     aiConversation.push({
       role: 'assistant',
-      content: 'Eu sou a ASCEND AI. Pergunte sobre seu calendário, rotina, estudo, treino ou próximas ações.'
+      content: 'Sou o assistente de rotina. Pergunte sobre seu calendário, rotina, estudo, treino ou próximas ações.'
     });
   }
 
@@ -1419,7 +1418,7 @@ function renderAiChat() {
     bubble.className = 'chat-bubble chat-bubble--' + (message.role === 'user' ? 'user' : 'assistant');
     const title = document.createElement('div');
     title.className = 'chat-bubble-title';
-    title.textContent = message.role === 'user' ? 'Você' : 'ASCEND AI';
+    title.textContent = message.role === 'user' ? 'Você' : 'Assistente';
     const meta = document.createElement('div');
     meta.className = 'chat-bubble-meta';
     meta.textContent = message.content;
@@ -1585,7 +1584,7 @@ function buildLocalAdaptivePlan(profile) {
   });
 
   return {
-    assistantName: 'ASCEND AI',
+    assistantName: 'ASSISTENTE DE ROTINA',
     headline: 'Missoes inteligentes para ' + truncatePlannerText(normalizedProfile.primaryGoals, 64),
     summary: 'Plano gerado a partir das metas, prioridades e rotina informadas no seu perfil.',
     adaptationNote: 'O plano foi calibrado para manter constancia antes de escalar dificuldade.',
@@ -2178,7 +2177,7 @@ function renderMissions(missions, completedMissionIds = []) {
     title.textContent = 'Nenhuma missao gerada ainda';
     const copy = document.createElement('p');
     copy.className = 'reward-empty';
-    copy.textContent = 'Preencha seu perfil para o ASCEND AI montar suas proximas missoes.';
+    copy.textContent = 'Preencha seu perfil para o assistente montar suas proximas missoes.';
     empty.append(title, copy);
     missionsList.appendChild(empty);
     return;
@@ -3132,9 +3131,19 @@ function togglePopup() {
   hidePopup();
 }
 
+function mountRoutinePlannerInTraining() {
+  const plannerSection = getElement('routine-planner-section');
+  const target = getElement('training-routine-config');
+  if (!plannerSection || !target || target.contains(plannerSection)) return;
+
+  target.appendChild(plannerSection);
+}
+
 function openAiAssistant() {
-  showView('ai');
-  renderAiChat();
+  mountRoutinePlannerInTraining();
+  showView('training');
+  const plannerSection = getElement('routine-planner-section');
+  if (plannerSection) plannerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function openCalendarScreen() {
@@ -3275,13 +3284,13 @@ function bindEvents() {
   const registerForm = getElement('register-form');
   const themeToggleButton = getElement('btn-theme-toggle');
   const popupButton = getElement('btn-toggle-popup');
+  const popupCloseButton = getElement('popup-close');
   const logoutButton = getElement('btn-logout');
   const startButton = getElement('btn-start');
   const resetButton = getElement('btn-reset');
   const missionsList = getElement('missions-list');
   const plannerForm = getElement('planner-form');
   const plannerResetButton = getElement('planner-reset');
-  const aiFabButton = getElement('ai-fab');
   const aiCalendarButton = getElement('btn-open-ai-calendar');
   const calendarOpenAiButton = getElement('calendar-open-ai');
   const aiOpenCalendarButton = getElement('ai-open-calendar');
@@ -3299,12 +3308,12 @@ function bindEvents() {
   if (registerForm) registerForm.addEventListener('submit', handleRegister);
   if (themeToggleButton) themeToggleButton.addEventListener('click', toggleTheme);
   if (popupButton) popupButton.addEventListener('click', togglePopup);
+  if (popupCloseButton) popupCloseButton.addEventListener('click', hidePopup);
   if (logoutButton) logoutButton.addEventListener('click', handleLogout);
   if (startButton) startButton.addEventListener('click', startTimer);
   if (resetButton) resetButton.addEventListener('click', resetTimer);
   if (plannerForm) plannerForm.addEventListener('submit', handlePlannerSubmit);
   if (plannerResetButton) plannerResetButton.addEventListener('click', handlePlannerReset);
-  if (aiFabButton) aiFabButton.addEventListener('click', openAiAssistant);
   if (aiCalendarButton) aiCalendarButton.addEventListener('click', openAiAssistant);
   if (calendarOpenAiButton) calendarOpenAiButton.addEventListener('click', openAiAssistant);
   if (aiOpenCalendarButton) aiOpenCalendarButton.addEventListener('click', openCalendarScreen);
@@ -3330,6 +3339,7 @@ function bindEvents() {
   });
 
   initSidebarDrawer();
+  mountRoutinePlannerInTraining();
 
   if (missionsList) {
     missionsList.addEventListener('click', (event) => {
