@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#050814">
+  <title>ASCEND | Progresso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"><link rel="stylesheet" href="css/mockup.css">
+</head>
+<body>
+  <header class="topbar"><div class="brand-lockup"><a class="brand" href="dashboard.html">ASCEND</a><span class="brand-caption">SISTEMA DE EVOLUCAO PESSOAL</span></div><span class="topbar-note">PROTOTIPO · DADOS FICTICIOS <i class="signal-dot"></i></span></header>
+  <div class="app-layout">
+    <aside class="sidebar" aria-label="Navegacao principal"><p class="sidebar-label">SISTEMA</p><a class="nav-link" href="index.html">Acesso</a><a class="nav-link" href="personagem.html">Personagem</a><a class="nav-link" href="dashboard.html">Painel</a><a class="nav-link" href="missoes.html">Missoes</a><a class="nav-link active" aria-current="page" href="progresso.html">Progresso</a><div class="sidebar-foot"><span class="eyebrow">STATUS DA REDE</span><strong><i class="signal-dot"></i> PRONTA</strong></div></aside>
+    <main class="main-content">
+      <div class="page-heading"><div><p class="eyebrow">REGISTRO DE JORNADA</p><h1>Progresso</h1><p class="lede">Cada missao concluida deixa um rastro.</p></div><a class="button button-quiet" href="dashboard.html">Voltar ao painel <span aria-hidden="true">&rarr;</span></a></div>
+      <section class="summary-grid" aria-label="Resumo de progresso"><article class="panel summary-tile"><p class="eyebrow">XP TOTAL</p><strong>960</strong><span>+225 nesta semana</span></article><article class="panel summary-tile"><p class="eyebrow">MISSOES</p><strong>12</strong><span>3 areas trabalhadas</span></article><article class="panel summary-tile"><p class="eyebrow">SEQUENCIA</p><strong>04 dias</strong><span>Melhor: 7 dias</span></article></section>
+      <section class="panel history-panel" aria-labelledby="history-title"><div class="section-heading"><div><p class="eyebrow">ULTIMAS ATIVIDADES</p><h2 id="history-title">Historico</h2></div><span class="section-meta">SETEMBRO 2026</span></div>
+        <div class="history-list">
+          <article class="history-row"><time datetime="2026-09-30">30 SET <small>HOJE · 08:42</small></time><span class="history-marker marker-study"></span><div><h3>Revisar os conceitos do modulo</h3><p>Estudo · +60 XP · +1 Inteligencia</p></div><span class="history-check">OK</span></article>
+          <article class="history-row"><time datetime="2026-09-29">29 SET <small>TER · 18:10</small></time><span class="history-marker marker-health"></span><div><h3>Caminhada ao ar livre</h3><p>Saude · +45 XP · +1 Vitalidade</p></div><span class="history-check">OK</span></article>
+          <article class="history-row"><time datetime="2026-09-28">28 SET <small>SEG · 09:15</small></time><span class="history-marker marker-habit"></span><div><h3>Planejar a semana em 10 minutos</h3><p>Habito · +40 XP · +1 Espirito</p></div><span class="history-check">OK</span></article>
+          <article class="history-row"><time datetime="2026-09-27">27 SET <small>DOM · 11:30</small></time><span class="history-marker marker-study"></span><div><h3>Ler um capitulo do curso</h3><p>Estudo · +50 XP · +1 Inteligencia</p></div><span class="history-check">OK</span></article>
+        </div>
+      </section>
+      <section class="state-grid history-states" aria-label="Estados do historico"><article class="state-card state-empty"><span class="state-indicator">--</span><div><strong>Seu historico comeca aqui</strong><p>Conclua uma missao para registrar a primeira atividade.</p></div></article><article class="state-card state-error"><span class="state-indicator">!</span><div><strong>Historico indisponivel</strong><p>Nao foi possivel sincronizar seus registros.</p></div></article></section>
+      <p class="demo-note">REGISTROS FICTICIOS PARA DEMONSTRACAO DE LAYOUT.</p>
+    </main>
+  </div>
+  <script src="js/bottom-tabs.js" defer></script>
+</body>
+</html>
