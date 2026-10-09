@@ -18,6 +18,15 @@ npm install
 npm run dev
 ```
 
+Neste ambiente, o container `ascend-local-backend` publica a API em
+`http://localhost:8081/api`. O arquivo local `.env.development.local` conecta
+o Vite a esse backend apenas no modo de desenvolvimento. A porta 8080 pertence
+a outro projeto. Verifique a API em `http://localhost:8081/api/health`.
+
+Arquivos `.env*.local` não são versionados. Para reproduzir esta configuração,
+crie `.env.development.local` com `VITE_API_URL=http://localhost:8081/api`.
+O build de produção continua usando a configuração do ambiente de deploy.
+
 For a production build:
 
 ```powershell
@@ -49,7 +58,7 @@ VITE_API_URL=https://nome-do-servico.onrender.com/api
 
 The value must include `/api`. Vite injects this variable during the build.
 
-If the variable is not present, the frontend falls back to the public ASCEND backend at `https://backend-ascend.onrender.com/api`.
+Without an environment, URL-query or previously saved API setting, the frontend uses `https://backend-ascend.onrender.com/api`. An explicitly selected backend is never silently replaced by the public backend when unavailable.
 
 You can override the backend URL manually with:
 
@@ -68,3 +77,11 @@ For the Supabase + Vercel + Render setup, the request path is:
 ```text
 Vercel frontend -> Render backend -> Supabase PostgreSQL + AI provider
 ```
+
+## ASCEND v2 — API da loja e IA
+
+A loja passou a registrar moedas/compras **no backend**. Atualize/deploy o backend v2 **antes** de publicar este frontend, pois é obrigatório oferecer `GET /api/shop` e `POST /api/shop/purchase`.
+
+O menu **Assistente IA** abre uma tela nova e o botão `?` abre a FAQ pesquisável. Com a API Groq configurada no backend, marque o consentimento explícito para autorizar envio de conteúdo e contexto ao provedor. Sem consentimento, não há requisição à IA externa.
+
+Variáveis do navegador, por exemplo `VITE_API_URL`, são públicas: nunca armazene a chave de IA nelas.

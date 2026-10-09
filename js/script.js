@@ -1,3 +1,6 @@
+import { initExperience } from './experience.js';
+import { renderAssistantMessage } from './chat-format.js';
+
 const STORAGE_RESET_VERSION = '2026-04-27-reset-1';
 const API_BASE_URL_STORAGE_KEY = 'ascend.api.baseUrl';
 const DEFAULT_PUBLIC_API_BASE_URL = 'https://backend-ascend.onrender.com/api';
@@ -34,6 +37,7 @@ let totalSeconds = 25 * 60;
 let remaining = 25 * 60;
 let cycles = 0;
 let running = false;
+let timerDeadline = null;
 let currentPlayerStatus = null;
 let currentStorageScope = 'guest';
 let currentRoutineProfile = null;
@@ -41,6 +45,8 @@ let currentAdaptivePlan = null;
 let currentCalendarMonth = new Date();
 let selectedCalendarDateKey = null;
 let aiConversation = [];
+let shopPurchasePending = false;
+let aiChatPending = false;
 const LEGENDARY_SHOP_ITEM_ID = 'reliquia-ascendente';
 
 const circumference = 2 * Math.PI * 60;
@@ -403,10 +409,9 @@ let activeApiBaseUrl = null;
 let apiDiscoveryPromise = null;
 
 function buildApiBaseUrlCandidates() {
-  return Array.from(new Set([
-    apiBaseUrl,
-    DEFAULT_PUBLIC_API_BASE_URL
-  ].filter(Boolean)));
+  // An explicitly selected server owns this account's data. Do not silently
+  // send credentials to a different environment when that server is offline.
+  return [apiBaseUrl || DEFAULT_PUBLIC_API_BASE_URL];
 }
 
 const apiBaseUrlCandidates = buildApiBaseUrlCandidates();
@@ -414,7 +419,7 @@ const apiBaseUrlCandidates = buildApiBaseUrlCandidates();
 async function discoverApiBaseUrl() {
   for (const baseUrl of apiBaseUrlCandidates) {
     try {
-      const response = await fetch(baseUrl + '/health');
+      const response = await fetch(baseUrl + '/health', { signal: AbortSignal.timeout(12000) });
       if (!response.ok) {
         continue;
       }
@@ -431,7 +436,7 @@ async function discoverApiBaseUrl() {
   }
 
   throw new Error(
-    'URL da API ASCEND nao configurada. Defina VITE_API_URL ou use ?apiBase=https://seu-backend.com/api.'
+    'Não foi possível conectar ao servidor ASCEND. Verifique sua conexão e se o backend está em execução; depois tente novamente.'
   );
 }
 
@@ -681,18 +686,24 @@ async function apiRequest(path, options = {}) {
 
   const baseUrl = await resolveWorkingApiBaseUrl();
   let response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
 
   try {
     response = await fetch(baseUrl + path, {
       ...options,
-      headers
+      headers,
+      signal: options.signal || controller.signal
     });
   } catch (error) {
+    if (error.name === 'AbortError') throw new Error('O servidor demorou para responder. Tente novamente em instantes.');
     activeApiBaseUrl = null;
     throw new Error(
       'Perdi a conexao com a API ASCEND em ' + baseUrl +
       '. Verifique se o backend continua ativo.'
     );
+  } finally {
+    clearTimeout(timeout);
   }
 
   if (!response.ok) {
@@ -703,7 +714,9 @@ async function apiRequest(path, options = {}) {
     } catch (ignored) {
       // Mantem a mensagem padrao quando a resposta nao tem JSON.
     }
-    throw new Error(message);
+    const apiError = new Error(message);
+    apiError.status = response.status;
+    throw apiError;
   }
 
   if (response.status === 204) {
@@ -722,6 +735,7 @@ function getFormValue(form, fieldName) {
 }
 
 function showAuthScreen() {
+  closeSidebar();
   const authScreen = getElement('auth-screen');
   const appShell = getElement('app-shell');
   if (authScreen) authScreen.classList.remove('d-none');
@@ -737,9 +751,17 @@ function showAppShell() {
   if (authScreen) authScreen.setAttribute('aria-hidden', 'true');
   if (appShell) appShell.classList.remove('d-none');
   if (appShell) appShell.setAttribute('aria-hidden', 'false');
+  const view = location.hash.replace('#view-', '') || 'status';
+  showView(document.getElementById('view-' + view) ? view : 'status', null, false);
 }
 
-function showView(viewName, activeLink = null) {
+function showView(viewName, activeLink = null, updateHistory = true) {
+  const target = document.getElementById('view-' + viewName);
+  if (!target?.matches('[data-view-panel]')) return;
+  if (updateHistory && location.hash !== '#view-' + viewName) history.pushState(null, '', '#view-' + viewName);
+  const label = document.querySelector('.sidebar-link[data-view="' + viewName + '"]')?.textContent.trim();
+  document.title = 'ASCEND · ' + (label || 'Sua evolução');
+  closeSidebar();
   document.querySelectorAll('[data-view-panel]').forEach((panel) => {
     const isActive = panel.dataset.viewPanel === viewName;
     panel.classList.toggle('active', isActive);
@@ -759,7 +781,8 @@ function showView(viewName, activeLink = null) {
 
   const mainContent = getElement('conteudo-principal');
   if (mainContent) {
-    mainContent.focus();
+    mainContent.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
 }
 
@@ -928,6 +951,10 @@ async function handleLogout() {
     dailyRefreshInterval = null;
   }
   resetTimer();
+  cycles = 0;
+  setText('cycle-count', 0);
+  aiConversation = [];
+  renderAiChat();
   showAuthScreen();
   setAuthMessage('Sessao encerrada.');
 }
@@ -974,6 +1001,11 @@ async function loadRoutine() {
     cleanupDailyShopPurchases();
     const status = await apiRequest('/player/status');
     renderPlayerStatus(status);
+    try {
+      await syncShopFromServer();
+    } catch (shopError) {
+      setShopMessage('A loja está temporariamente indisponível: ' + shopError.message);
+    }
     const profile = getRoutineProfile();
     hydratePlannerForm(profile);
     renderTrainingPlan(profile);
@@ -987,15 +1019,22 @@ async function loadRoutine() {
     }
     showAppShell();
   } catch (error) {
-    clearAuthToken();
-    showAuthScreen();
-    setAuthMessage(error.message);
+    // Não apaga a sessão por um erro temporário de rede/hosting.
+    if (error.status === 401 || error.status === 403) {
+      clearAuthToken();
+      showAuthScreen();
+      setAuthMessage(error.message);
+    } else {
+      showAuthScreen();
+      setAuthMessage('Servidor indisponível: ' + error.message + ' Seus dados de login foram preservados; recarregue para tentar novamente.');
+    }
   }
 }
 
 function renderPlayerStatus(status) {
   cleanupDailyShopPurchases();
   lastDailyDateKey = getDateKeyInTimeZone();
+  const previousStatus = currentPlayerStatus;
   currentPlayerStatus = status;
   currentStorageScope = status.handle || getAuthToken() || 'guest';
   setText('player-name', status.name);
@@ -1036,6 +1075,34 @@ function renderPlayerStatus(status) {
   ensureRewardInterval();
   renderAchievements(status);
   loadRanking();
+  if (previousStatus && previousStatus.handle === status.handle && Number(status.level) > Number(previousStatus.level)) {
+    showLevelUp(status.level);
+  }
+}
+
+let levelUpTimer = null;
+let levelUpPreviousFocus = null;
+
+function closeLevelUp() {
+  const overlay = getElement('level-up-overlay');
+  if (!overlay || overlay.hidden) return;
+  overlay.hidden = true;
+  if (levelUpTimer) clearTimeout(levelUpTimer);
+  levelUpTimer = null;
+  levelUpPreviousFocus?.focus?.();
+  levelUpPreviousFocus = null;
+}
+
+function showLevelUp(level) {
+  const overlay = getElement('level-up-overlay');
+  const levelNumber = getElement('level-up-number');
+  if (!overlay || !levelNumber) return;
+  levelUpPreviousFocus = document.activeElement;
+  levelNumber.textContent = String(level);
+  overlay.hidden = false;
+  overlay.querySelector('.level-up-card')?.focus();
+  if (levelUpTimer) clearTimeout(levelUpTimer);
+  levelUpTimer = setTimeout(closeLevelUp, 7000);
 }
 
 function hydratePlannerForm(profile) {
@@ -1264,6 +1331,11 @@ function renderSamsungCalendar(plan, profile) {
   monthGrid.textContent = '';
 
   const events = buildCalendarEvents(plan, normalizedProfile);
+  const monthSummary = getElement('calendar-month-summary');
+  if (monthSummary) {
+    const activeDays = new Set(events.map((event) => event.dateKey)).size;
+    monthSummary.textContent = activeDays + (activeDays === 1 ? ' dia planejado' : ' dias planejados');
+  }
   const selectedDate = selectedCalendarDateKey || getDateKeyForDate(new Date());
 
   for (let index = 0; index < firstDayOfWeek; index++) {
@@ -1271,6 +1343,7 @@ function renderSamsungCalendar(plan, profile) {
     filler.className = 'calendar-day-cell calendar-day-cell--muted';
     filler.type = 'button';
     filler.setAttribute('aria-hidden', 'true');
+    filler.tabIndex = -1;
     monthGrid.appendChild(filler);
   }
 
@@ -1284,6 +1357,9 @@ function renderSamsungCalendar(plan, profile) {
     cell.dataset.dateKey = dateKey;
     cell.setAttribute('role', 'gridcell');
     cell.classList.toggle('calendar-day-cell--selected', dateKey === selectedDate);
+    cell.classList.toggle('calendar-day-cell--today', dateKey === getDateKeyForDate(new Date()));
+    cell.setAttribute('aria-selected', String(dateKey === selectedDate));
+    cell.setAttribute('aria-label', new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(date) + ', ' + dayEvents.length + (dayEvents.length === 1 ? ' evento' : ' eventos'));
 
     const number = document.createElement('div');
     number.className = 'calendar-day-number';
@@ -1421,7 +1497,8 @@ function renderAiChat() {
     title.textContent = message.role === 'user' ? 'Você' : 'Assistente';
     const meta = document.createElement('div');
     meta.className = 'chat-bubble-meta';
-    meta.textContent = message.content;
+    if (message.role === 'user') meta.textContent = message.content;
+    else renderAssistantMessage(meta, message.content);
     bubble.append(title, meta);
     history.appendChild(bubble);
   });
@@ -1754,7 +1831,12 @@ function renderTrainingPlan(profile) {
       notes.className = 'training-day-notes';
       notes.textContent = dayPlan.notes;
 
-      card.append(dayHeader, focus, prescription, exerciseList, notes);
+      const guidance = document.createElement('details');
+      guidance.className = 'training-guidance';
+      const guidanceTitle = document.createElement('summary');
+      guidanceTitle.textContent = 'Orientações';
+      guidance.append(guidanceTitle, notes);
+      card.append(dayHeader, focus, prescription, exerciseList, guidance);
       container.appendChild(card);
     });
   }
@@ -1779,7 +1861,7 @@ function buildTrainingPlan(profile) {
 
   return {
     days: days.map((dayKey, index) => buildTrainingDayPlan(dayKey, template[index], bodyTypeMeta, goalMeta, profile.trainingLevel)),
-    summary: 'Divisao montada para ' + days.map((day) => WORKOUT_DAY_LABELS[day]).join(', ') + '.',
+    summary: 'Divisão montada para ' + days.map((day) => WORKOUT_DAY_LABELS[day]).join(', ') + '.',
     bodyTypeLabel: bodyTypeMeta.label,
     bodyTypeCopy: bodyTypeMeta.copy,
     goalLabel: goalMeta.label,
@@ -1805,7 +1887,7 @@ function buildTrainingDayPlan(dayKey, template, bodyTypeMeta, goalMeta, training
 function buildTrainingSplitTemplate(dayCount, goalKey) {
   if (dayCount <= 1) {
     return [
-      createTrainingTemplate('Full Body', 'Corpo inteiro com base nos padroes fundamentais.', [
+      createTrainingTemplate('Full Body', 'Corpo inteiro com base nos padrões fundamentais.', [
         'Agachamento livre ou guiado',
         'Supino reto com halteres',
         'Remada curvada ou baixa',
@@ -1818,20 +1900,20 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
 
   if (dayCount === 2) {
     return [
-      createTrainingTemplate('Upper', 'Peito, costas, ombros e bracos com foco em base forte.', [
+      createTrainingTemplate('Upper', 'Peito, costas, ombros e braços com foco em base forte.', [
         'Supino reto',
         'Remada fechada',
         'Desenvolvimento militar',
         'Puxada alta',
         'Rosca direta',
-        'Triceps pulley'
+        'Tríceps pulley'
       ]),
       createTrainingTemplate('Lower', 'Pernas completas e core para sustentar progresso global.', [
         'Agachamento',
         'Leg press',
         'Cadeira extensora',
         'Mesa flexora',
-        'Panturrilha em pe',
+        'Panturrilha em pé',
         'Abdominal infra'
       ])
     ];
@@ -1839,14 +1921,14 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
 
   if (dayCount === 3) {
     return [
-      createTrainingTemplate('Push', 'Empurrar: peito, ombros e triceps.', [
+      createTrainingTemplate('Push', 'Empurrar: peito, ombros e tríceps.', [
         'Supino inclinado',
-        'Crucifixo maquina',
+        'Crucifixo máquina',
         'Desenvolvimento halteres',
-        'Elevacao lateral',
-        'Triceps corda'
+        'Elevação lateral',
+        'Tríceps corda'
       ]),
-      createTrainingTemplate('Pull', 'Puxar: costas, deltoide posterior e biceps.', [
+      createTrainingTemplate('Pull', 'Puxar: costas, deltoide posterior e bíceps.', [
         'Puxada frontal',
         'Remada baixa',
         'Remada unilateral',
@@ -1856,7 +1938,7 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
       createTrainingTemplate('Legs', 'Pernas e core com prioridade em base e estabilidade.', [
         'Agachamento hack',
         'Stiff',
-        'Avanco',
+        'Avanço',
         'Mesa flexora',
         'Panturrilha sentada',
         'Prancha com carga'
@@ -1880,12 +1962,12 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
         'Cadeira extensora',
         'Abdominal cable'
       ]),
-      createTrainingTemplate('Upper B', 'Ombros, dorsais e bracos em volume complementar.', [
-        'Desenvolvimento maquina',
+      createTrainingTemplate('Upper B', 'Ombros, dorsais e braços em volume complementar.', [
+        'Desenvolvimento máquina',
         'Remada articulada',
         'Puxada aberta',
-        'Elevacao lateral',
-        'Triceps frances'
+        'Elevação lateral',
+        'Tríceps frances'
       ]),
       createTrainingTemplate('Lower B', 'Posterior, gluteos e panturrilhas.', [
         'Terra romeno',
@@ -1899,21 +1981,21 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
 
   if (dayCount === 5) {
     return [
-      createTrainingTemplate('Push', 'Peito, ombros e triceps com bloco principal.', [
+      createTrainingTemplate('Push', 'Peito, ombros e tríceps com bloco principal.', [
         'Supino reto',
         'Supino inclinado',
         'Desenvolvimento halteres',
-        'Elevacao lateral',
-        'Triceps testa'
+        'Elevação lateral',
+        'Tríceps testa'
       ]),
-      createTrainingTemplate('Pull', 'Costas e biceps com enfase em espessura.', [
+      createTrainingTemplate('Pull', 'Costas e bíceps com enfase em espessura.', [
         'Barra guiada ou puxada',
         'Remada cavalinho',
         'Remada unilateral',
         'Pulldown',
         'Rosca martelo'
       ]),
-      createTrainingTemplate('Legs', 'Pernas completas com foco em progressao.', [
+      createTrainingTemplate('Legs', 'Pernas completas com foco em progressão.', [
         'Agachamento livre',
         'Stiff',
         'Leg press',
@@ -1938,13 +2020,13 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
   }
 
   return [
-    createTrainingTemplate('Push A', 'Primeiro bloco de empurrar com foco tecnico.', ['Supino reto', 'Desenvolvimento', 'Crucifixo', 'Elevacao lateral', 'Triceps corda']),
-    createTrainingTemplate('Pull A', 'Primeiro bloco de puxar com dorsais e biceps.', ['Puxada frontal', 'Remada curvada', 'Pulldown', 'Face pull', 'Rosca direta']),
+    createTrainingTemplate('Push A', 'Primeiro bloco de empurrar com foco tecnico.', ['Supino reto', 'Desenvolvimento', 'Crucifixo', 'Elevação lateral', 'Tríceps corda']),
+    createTrainingTemplate('Pull A', 'Primeiro bloco de puxar com dorsais e bíceps.', ['Puxada frontal', 'Remada curvada', 'Pulldown', 'Face pull', 'Rosca direta']),
     createTrainingTemplate('Legs A', 'Pernas base com quadriceps e core.', ['Agachamento', 'Leg press', 'Extensora', 'Panturrilha', 'Prancha']),
-    createTrainingTemplate('Push B', 'Variacao de peito e ombros para repetir estimulo sem saturar.', ['Supino inclinado', 'Desenvolvimento halteres', 'Cross over', 'Elevacao frontal', 'Triceps frances']),
-    createTrainingTemplate('Pull B', 'Variacao de costas e bracos com volume complementar.', ['Remada baixa', 'Puxada neutra', 'Remada unilateral', 'Encolhimento', 'Rosca martelo']),
+    createTrainingTemplate('Push B', 'Variacao de peito e ombros para repetir estimulo sem saturar.', ['Supino inclinado', 'Desenvolvimento halteres', 'Cross over', 'Elevação frontal', 'Tríceps frances']),
+    createTrainingTemplate('Pull B', 'Variacao de costas e braços com volume complementar.', ['Remada baixa', 'Puxada neutra', 'Remada unilateral', 'Encolhimento', 'Rosca martelo']),
     createTrainingTemplate('Legs B', 'Posterior, gluteos e panturrilhas em segundo estimulo.', ['Terra romeno', 'Mesa flexora', 'Hip thrust', 'Passada', 'Panturrilha sentada']),
-    createTrainingTemplate('Recuperacao Ativa', 'Dia leve para mobilidade, caminhada e restauracao.', ['Mobilidade quadril', 'Mobilidade toracica', 'Caminhada inclinada', 'Alongamento posterior', 'Respiracao diafragmatica'])
+    createTrainingTemplate('Recuperação Ativa', 'Dia leve para mobilidade, caminhada e restauração.', ['Mobilidade quadril', 'Mobilidade torácica', 'Caminhada inclinada', 'Alongamento posterior', 'Respiração diafragmatica'])
   ];
 }
 
@@ -1957,40 +2039,40 @@ function getBodyTypeMeta(bodyType) {
     case 'ectomorfo':
       return {
         label: 'Ectomorfo',
-        copy: 'Estrutura mais fina, metabolismo acelerado e melhor resposta com progressao de carga, compostos e cardio controlado.',
+        copy: 'Estrutura mais fina, metabolismo acelerado e melhor resposta com progressão de carga, compostos e cardio controlado.',
         rest: '75-90s',
         finishers: ['Mobilidade escapular'],
-        notePrefix: 'Priorize exercicios compostos, pouco cardio extra e alimentacao suficiente para recuperar.',
+        notePrefix: 'Priorize exercícios compostos, pouco cardio extra e alimentação suficiente para recuperar.',
         guideNotes: [
           'Ectomorfo: punhos e ombros mais estreitos, dificuldade maior para ganhar peso e massa.',
-          'Se voce seca facil e demora para encher a musculatura, esse perfil pode fazer sentido.',
-          'A referencia visual ajuda, mas avaliacao profissional e composicao corporal sao mais confiaveis.'
+          'Se você seca fácil e demora para encher a musculatura, esse perfil pode fazer sentido.',
+          'A referência visual ajuda, mas avaliação profissional e composição corporal são mais confiáveis.'
         ]
       };
     case 'endomorfo':
       return {
         label: 'Endomorfo',
-        copy: 'Estrutura mais larga, maior facilidade para ganhar peso e boa resposta com musculacao consistente mais blocos metabolicos.',
+        copy: 'Estrutura mais larga, maior facilidade para ganhar peso e boa resposta com musculação consistente mais blocos metabólicos.',
         rest: '45-60s',
         finishers: ['Finalizador cardio 10-15 min'],
-        notePrefix: 'Mantenha ritmo entre series, use boa amplitude e adicione gasto energetico controlado ao final.',
+        notePrefix: 'Mantenha ritmo entre séries, use boa amplitude e adicione gasto energético controlado ao final.',
         guideNotes: [
           'Endomorfo: tronco e quadril mais largos, facilidade maior para acumular peso.',
-          'Se voce ganha massa e gordura com facilidade, tende a se aproximar desse perfil.',
-          'Treino, sono e alimentacao contam mais que o rotulo isolado do biotipo.'
+          'Se você ganha massa e gordura com facilidade, tende a se aproximar desse perfil.',
+          'Treino, sono e alimentação contam mais que o rótulo isolado do biotipo.'
         ]
       };
     default:
       return {
         label: 'Mesomorfo',
-        copy: 'Estrutura atletica e resposta equilibrada ao treino, permitindo combinar carga, volume e progresso semanal.',
+        copy: 'Estrutura atlética e resposta equilibrada ao treino, permitindo combinar carga, volume e progresso semanal.',
         rest: '60-75s',
-        finishers: ['Core anti-rotacao'],
-        notePrefix: 'Trabalhe progressao de carga sem sacrificar tecnica e mantenha volume moderado para evoluir com consistencia.',
+        finishers: ['Core anti-rotação'],
+        notePrefix: 'Trabalhe progressão de carga sem sacrificar técnica e mantenha volume moderado para evoluir com consistência.',
         guideNotes: [
-          'Mesomorfo: estrutura naturalmente mais atletica, com facilidade moderada para ganhar massa.',
+          'Mesomorfo: estrutura naturalmente mais atlética, com facilidade moderada para ganhar massa.',
           'Se seu corpo responde relativamente bem a treino e dieta, esse perfil costuma se encaixar.',
-          'Biotipo serve como orientacao inicial, nao como regra fixa de treino.'
+          'Biotipo serve como orientação inicial, não como regra fixa de treino.'
         ]
       };
   }
@@ -2002,33 +2084,33 @@ function getTrainingGoalMeta(goal) {
       return {
         key: 'emagrecimento',
         label: 'Emagrecimento',
-        copy: 'Sessoes com musculacao base, menor descanso e finalizadores para aumentar gasto energetico sem perder massa.',
+        copy: 'Sessões com musculação base, menor descanso e finalizadores para aumentar gasto energético sem perder massa.',
         repRange: '10-15 reps',
-        note: 'Feche cada treino com intensidade sustentavel e regularidade semanal.'
+        note: 'Feche cada treino com intensidade sustentável e regularidade semanal.'
       };
     case 'condicionamento':
       return {
         key: 'condicionamento',
         label: 'Condicionamento',
-        copy: 'Estrutura focada em resistencia muscular, tecnica e capacidade de manter rendimento ao longo da semana.',
+        copy: 'Estrutura focada em resistência muscular, técnica e capacidade de manter rendimento ao longo da semana.',
         repRange: '12-15 reps',
         note: 'Controle pausas e mantenha boa densidade de treino.'
       };
     case 'forca':
       return {
         key: 'forca',
-        label: 'Forca',
-        copy: 'Mais prioridade para multiarticulares, descansos um pouco maiores e foco em progressao objetiva.',
+        label: 'Força',
+        copy: 'Mais prioridade para multiarticulares, descansos um pouco maiores e foco em progressão objetiva.',
         repRange: '4-8 reps',
-        note: 'Busque carga progressiva com execucao limpa nos movimentos base.'
+        note: 'Busque carga progressiva com execução limpa nos movimentos base.'
       };
     default:
       return {
         key: 'hipertrofia',
         label: 'Hipertrofia',
-        copy: 'Volume bem distribuido para estimular crescimento muscular com recuperacao coerente entre os grupos.',
+        copy: 'Volume bem distribuído para estimular crescimento muscular com recuperação coerente entre os grupos.',
         repRange: '8-12 reps',
-        note: 'Aproxime-se da falha com tecnica boa nas ultimas series.'
+        note: 'Aproxime-se da falha com técnica boa nas últimas séries.'
       };
   }
 }
@@ -2037,18 +2119,18 @@ function getTrainingLevelMeta(level) {
   switch (level) {
     case 'avancado':
       return {
-        series: '4-5 series por exercicio',
-        note: 'Use progressao de carga ou repeticoes semanalmente e acompanhe fadiga.'
+        series: '4-5 séries por exercício',
+        note: 'Use progressão de carga ou repetições semanalmente e acompanhe fadiga.'
       };
     case 'intermediario':
       return {
-        series: '3-4 series por exercicio',
-        note: 'Mantenha 1 a 2 repeticoes em reserva na maior parte do treino.'
+        series: '3-4 séries por exercício',
+        note: 'Mantenha 1 a 2 repetições em reserva na maior parte do treino.'
       };
     default:
       return {
-        series: '2-3 series por exercicio',
-        note: 'Comece consolidando tecnica, amplitude e regularidade antes de escalar carga.'
+        series: '2-3 séries por exercício',
+        note: 'Comece consolidando técnica, amplitude e regularidade antes de escalar carga.'
       };
   }
 }
@@ -2154,6 +2236,7 @@ function renderStats(stats) {
     missions: 'stat-missoes'
   };
 
+  Object.values(fieldMap).forEach((id) => setText(id, '0'));
   stats.forEach((stat) => {
     const elementId = fieldMap[stat.key];
     if (elementId) {
@@ -2858,61 +2941,80 @@ function getCurrentCoins() {
   return currentPlayerStatus ? currentPlayerStatus.coins : 0;
 }
 
-function handleShopPurchase(itemId) {
+function setShopMessage(message) {
+  setText('shop-feedback', message);
+}
+
+/** Compras confirmadas pelo servidor; o navegador nunca altera saldo por conta propria. */
+function applyShopServerState(state) {
+  if (!state || !Array.isArray(state.purchases)) throw new Error('Resposta invalida da loja.');
+  saveShopPurchases(state.purchases.map((p) => ({ itemId: p.dailyId, createdAt: p.createdAt })));
+  // Reconstrói recibos de compras de outros dispositivos no inventário local.
+  const inventory = getInventoryItems();
+  const knownDailyIds = new Set(inventory.map((entry) => entry.dailyId));
+  for (const purchase of state.purchases) {
+    if (knownDailyIds.has(purchase.dailyId)) continue;
+    const definition = SHOP_ITEM_POOL.find((entry) => entry.id === purchase.itemId);
+    if (!definition) continue;
+    inventory.push(createInventoryEntry({ ...definition, dailyId: purchase.dailyId }));
+    knownDailyIds.add(purchase.dailyId);
+  }
+  saveInventoryItems(inventory);
+  if (currentPlayerStatus) {
+    currentPlayerStatus = { ...currentPlayerStatus, coins: Number(state.coins) || 0 };
+    renderPlayerStatus(currentPlayerStatus);
+  }
+}
+
+async function syncShopFromServer() {
+  const state = await apiRequest('/shop');
+  applyShopServerState(state);
+  setShopMessage('');
+}
+
+async function handleShopPurchase(itemId) {
   const item = getDailyShopItems().find((entry) => entry.dailyId === itemId);
+  if (!item || !currentPlayerStatus || shopPurchasePending) return;
   const purchasedIds = new Set(getShopPurchases().map((entry) => entry.itemId));
-
-  if (!item || !currentPlayerStatus) {
-    return;
-  }
-
   if (purchasedIds.has(item.dailyId)) {
-    showPopup('Item ja resgatado', 0, 0);
-    setText('popup-body', 'Esse item ja foi resgatado na rotacao de hoje para este perfil.');
-    setText('popup-exp', 'LOJA');
-    setText('popup-coins', 'SEM ALTERACAO');
+    setShopMessage('Esse item já foi resgatado hoje.');
     return;
   }
-
   if (getCurrentCoins() < item.custo) {
-    showPopup('Moedas insuficientes', 0, 0);
-    setText('popup-body', 'Voce precisa de ' + formatCurrencyValue(item.custo) + ' moedas para resgatar este item.');
-    setText('popup-exp', 'LOJA');
-    setText('popup-coins', 'SALDO BAIXO');
+    setShopMessage('Saldo insuficiente para resgatar ' + item.nome + '.');
     return;
   }
 
-  const purchases = getShopPurchases();
-  purchases.unshift({
-    itemId: item.dailyId,
-    createdAt: new Date().toISOString()
-  });
-  saveShopPurchases(purchases);
-
-  const purchaseResult = storePurchasedItem(item);
-  let activatedNow = false;
-
-  if (purchaseResult.entry.rewardType === 'timer' && confirmItemActivation(purchaseResult.entry)) {
-    activatedNow = activateInventoryItem(purchaseResult.entry.instanceId);
+  shopPurchasePending = true;
+  renderShopState();
+  setShopMessage('Confirmando compra com o servidor...');
+  try {
+    const state = await apiRequest('/shop/purchase', {
+      method: 'POST',
+      body: JSON.stringify({ itemId: item.id })
+    });
+    // Registra inventário somente depois da confirmação do backend.
+    applyShopServerState(state);
+    registerVaultTransaction('saida', 'Loja: ' + item.nome, item.custo);
+    renderVault(getCurrentCoins());
+    const savedItem = getInventoryItems().find((entry) => entry.dailyId === item.dailyId);
+    let activatedNow = false;
+    if (savedItem && savedItem.rewardType === 'timer' && confirmItemActivation(savedItem)) {
+      activatedNow = activateInventoryItem(savedItem.instanceId);
+    }
+    setShopMessage(item.nome + ' resgatado. ' + (activatedNow ? 'Recompensa ativada.' : 'Disponível no inventário.'));
+    showPopup('Compra realizada!', 0, item.custo);
+    setText('popup-body', 'Compra registrada no banco de dados.');
+    setText('popup-exp', activatedNow ? 'ATIVO' : 'INVENTARIO');
+    setText('popup-coins', '-' + formatCurrencyValue(item.custo) + ' moedas');
+  } catch (error) {
+    setShopMessage('Não foi possível comprar: ' + error.message);
+    // Em respostas perdidas, consulta servidor: a compra pode ter sido concluída.
+    try { await syncShopFromServer(); } catch (ignored) { /* preserva o erro original */ }
+  } finally {
+    shopPurchasePending = false;
+    renderShopState();
   }
-
-  currentPlayerStatus = {
-    ...currentPlayerStatus,
-    coins: currentPlayerStatus.coins - item.custo
-  };
-
-  registerVaultTransaction('saida', 'Loja: ' + item.nome, item.custo);
-  renderPlayerStatus(currentPlayerStatus);
-
-  showPopup('Compra realizada!', 0, item.custo);
-  setText(
-    'popup-body',
-    activatedNow
-      ? '"' + item.nome + '" foi ativado e agora aparece no painel de recompensas ativas.'
-      : '"' + item.nome + '" foi enviado para o seu inventario para uso posterior.'
-  );
-  setText('popup-exp', activatedNow ? 'ATIVO' : 'INVENTARIO');
-  setText('popup-coins', '-' + formatCurrencyValue(item.custo) + ' moedas');
 }
 
 function renderShop() {
@@ -2929,7 +3031,7 @@ function renderShop() {
     const content = document.createElement('div');
     const kicker = document.createElement('div');
     kicker.className = 'feature-kicker' + (item.raridade === 'LENDARIO' ? ' feature-kicker--legendary' : '');
-    kicker.textContent = item.raridade ? item.categoria + ' | ' + item.raridade : item.categoria;
+    kicker.textContent = item.raridade || item.categoria;
     const title = document.createElement('h2');
     title.className = 'feature-title';
     title.textContent = item.nome;
@@ -2940,8 +3042,8 @@ function renderShop() {
     const definition = getShopItemDefinition(item.id);
     if (definition && definition.rewardType === 'timer') {
       const duration = document.createElement('p');
-      duration.className = 'feature-copy';
-      duration.textContent = 'Ativa um contador visivel de ' + formatDurationLabel(definition.durationMinutes * 60) + '.';
+      duration.className = 'shop-duration';
+      duration.textContent = formatDurationLabel(definition.durationMinutes * 60) + ' de duração';
       content.append(kicker, title, description, duration);
     } else {
       content.append(kicker, title, description);
@@ -2968,7 +3070,7 @@ function renderShopState(items = getDailyShopItems()) {
     if (!item) return;
 
     button.classList.remove('btn-purchased');
-    button.disabled = false;
+    button.disabled = shopPurchasePending;
 
     if (purchasedIds.has(item.dailyId)) {
       button.textContent = 'RESGATADO';
@@ -3155,7 +3257,16 @@ async function handleAiChatSubmit(event) {
   event.preventDefault();
   const input = getElement('ai-chat-input');
   const message = input ? input.value.trim() : '';
-  if (!message) return;
+  if (!message || aiChatPending) return;
+  if (message.length > 2000) {
+    input.setCustomValidity('Máximo de 2.000 caracteres.');
+    input.reportValidity();
+    return;
+  }
+  input.setCustomValidity('');
+  aiChatPending = true;
+  const sendButton = event.currentTarget.querySelector('button[type="submit"]');
+  if (sendButton) sendButton.disabled = true;
 
   aiConversation.push({ role: 'user', content: message });
   if (input) input.value = '';
@@ -3170,8 +3281,9 @@ async function handleAiChatSubmit(event) {
       method: 'POST',
       body: JSON.stringify({
         message,
-        conversation: aiConversation.filter((entry) => entry !== typingMessage).slice(-10),
-        profile: currentRoutineProfile || getRoutineProfile()
+        conversation: aiConversation.filter((entry) => entry !== typingMessage).slice(0, -1).slice(-10),
+        profile: currentRoutineProfile || getRoutineProfile(),
+        externalConsent: Boolean(getElement('ai-external-consent')?.checked)
       })
     });
 
@@ -3186,6 +3298,8 @@ async function handleAiChatSubmit(event) {
   }
 
   renderAiChat();
+  aiChatPending = false;
+  if (sendButton) sendButton.disabled = false;
 }
 
 function clearAiChat() {
@@ -3229,52 +3343,117 @@ function updateTimerUI() {
   }
 }
 
-function startTimer() {
-  const startButton = getElement('btn-start');
-  if (!startButton) return;
+function tickTimer() {
+  if (!running) return;
+  remaining = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
+  updateTimerUI();
+  if (remaining > 0) return;
+  const isBreak = totalSeconds === 5 * 60;
+  clearInterval(timerInterval);
+  running = false;
+  timerDeadline = null;
+  if (!isBreak) setText('cycle-count', ++cycles);
+  setText('focus-feedback', isBreak ? 'Pausa concluída. Pronto para o próximo desafio?' : 'Ciclo concluído! Faça uma pausa e recupere a energia.');
+  setText('btn-start', 'INICIAR');
+  setAria('btn-start', 'aria-pressed', 'false');
+  showPopup(isBreak ? 'Pausa concluída!' : 'Foco concluído!', 0, 0);
+  setText('popup-body', isBreak ? 'Hora de escolher sua próxima missão.' : 'Mais um passo na sua evolução. Seu ciclo de foco foi concluído.');
+  remaining = totalSeconds;
+  updateTimerUI();
+}
 
+function startTimer() {
   if (running) {
+    tickTimer();
+    if (!running) return;
     clearInterval(timerInterval);
     running = false;
-    startButton.textContent = 'INICIAR';
-    startButton.setAttribute('aria-pressed', 'false');
+    timerDeadline = null;
+    setText('btn-start', 'CONTINUAR');
+    setAria('btn-start', 'aria-pressed', 'false');
+    setText('focus-feedback', 'Sessão pausada. Continue quando estiver pronto.');
     return;
   }
-
   running = true;
-  startButton.textContent = 'PAUSAR';
-  startButton.setAttribute('aria-pressed', 'true');
-
-  timerInterval = setInterval(() => {
-    remaining--;
-    updateTimerUI();
-
-    if (remaining <= 0) {
-      clearInterval(timerInterval);
-      running = false;
-      cycles++;
-      setText('cycle-count', cycles);
-      startButton.textContent = 'INICIAR';
-      startButton.setAttribute('aria-pressed', 'false');
-      remaining = totalSeconds;
-      updateTimerUI();
-      showPopup('Ciclo Pomodoro completo!', 10, 0);
-    }
-  }, 1000);
+  timerDeadline = Date.now() + remaining * 1000;
+  setText('btn-start', 'PAUSAR');
+  setAria('btn-start', 'aria-pressed', 'true');
+  setText('focus-feedback', totalSeconds === 300 ? 'Respire. Este tempo é seu.' : 'Uma tarefa. Toda a sua atenção.');
+  timerInterval = setInterval(tickTimer, 250);
 }
 
 function resetTimer() {
   clearInterval(timerInterval);
   running = false;
+  timerDeadline = null;
   remaining = totalSeconds;
-
-  const startButton = getElement('btn-start');
-  if (startButton) {
-    startButton.textContent = 'INICIAR';
-    startButton.setAttribute('aria-pressed', 'false');
-  }
-
+  setText('btn-start', 'INICIAR');
+  setAria('btn-start', 'aria-pressed', 'false');
+  setText('focus-feedback', 'Seu tempo de foco, no seu ritmo.');
   updateTimerUI();
+}
+
+function setFocusDuration(minutes) {
+  totalSeconds = minutes * 60;
+  resetTimer();
+}
+
+
+const ASCEND_FAQ = [
+  { question: 'Como ganho moedas?', answer: 'Conclua missões do dia. O backend credita experiência e moedas ao confirmar cada missão.' },
+  { question: 'Como funciona a loja?', answer: 'Cada compra custa moedas virtuais da sua conta. O preço é validado no backend e o item vai para seu inventário. Os itens diários podem ser resgatados uma vez por dia.' },
+  { question: 'Minha compra sumiu?', answer: 'Atualize a página para sincronizar compras e moedas. Temporizadores ativados continuam armazenados neste dispositivo.' },
+  { question: 'Como monto minha rotina?', answer: 'Abra Treino, configure horários, prioridades e dias disponíveis no planejador. Depois, gere o plano adaptativo.' },
+  { question: 'A IA é gratuita?', answer: 'O ASCEND funciona sem chave, mas nesse caso o assistente oferece dicas locais. O administrador pode configurar a API Groq, com cota gratuita sujeita a limites.' },
+  { question: 'Posso usar no celular?', answer: 'Sim. O site é responsivo e existe também um aplicativo Expo/React Native separado, conectado ao mesmo backend.' }
+];
+
+function toggleHelp(open) {
+  const help = getElement('ascend-help');
+  const button = getElement('btn-help');
+  if (!help) return;
+  const next = typeof open === 'boolean' ? open : help.hidden;
+  help.hidden = !next;
+  if (button) button.setAttribute('aria-expanded', String(next));
+  if (next) {
+    renderFaq('');
+    const search = getElement('help-search');
+    if (search) search.focus();
+  } else if (button) button.focus();
+}
+
+function renderFaq(query) {
+  const container = getElement('help-faq');
+  if (!container) return;
+  container.textContent = '';
+  const term = String(query || '').trim().toLocaleLowerCase('pt-BR');
+  const faqs = ASCEND_FAQ.filter((faq) => (faq.question + ' ' + faq.answer).toLocaleLowerCase('pt-BR').includes(term));
+  if (!faqs.length) {
+    const notice = document.createElement('p');
+    notice.textContent = 'Não encontrei essa dúvida. Tente perguntar à IA.';
+    container.appendChild(notice);
+  }
+  faqs.forEach((faq) => {
+    const details = document.createElement('details');
+    details.className = 'help-faq-item';
+    const summary = document.createElement('summary');
+    summary.textContent = faq.question;
+    const p = document.createElement('p');
+    p.textContent = faq.answer;
+    details.append(summary, p);
+    container.appendChild(details);
+  });
+}
+
+function helpAskAi() {
+  toggleHelp(false);
+  showView('ai');
+  renderAiChat();
+  const chat = getElement('ai-chat-input');
+  if (chat) {
+    chat.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    chat.focus({ preventScroll: true });
+  }
 }
 
 function bindEvents() {
@@ -3299,6 +3478,10 @@ function bindEvents() {
   const calendarTodayButton = getElement('calendar-today');
   const aiChatForm = getElement('ai-chat-form');
   const aiChatClear = getElement('ai-chat-clear');
+  const helpButton = getElement('btn-help');
+  const helpCloseButton = getElement('help-close');
+  const helpSearch = getElement('help-search');
+  const helpAiButton = getElement('help-ask-ai');
 
   if (tabLogin) tabLogin.addEventListener('click', () => switchAuthTab('login'));
   if (tabRegister) tabRegister.addEventListener('click', () => switchAuthTab('register'));
@@ -3324,8 +3507,30 @@ function bindEvents() {
     selectedCalendarDateKey = getDateKeyForDate(currentCalendarMonth);
     renderSamsungCalendar(currentAdaptivePlan || buildLocalAdaptivePlan(currentRoutineProfile || getRoutineProfile()), currentRoutineProfile || getRoutineProfile());
   });
+  getElement('level-up-close')?.addEventListener('click', closeLevelUp);
+  getElement('level-up-continue')?.addEventListener('click', closeLevelUp);
+  getElement('level-up-overlay')?.addEventListener('click', (event) => {
+    if (event.target.id === 'level-up-overlay') closeLevelUp();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeLevelUp();
+  });
   if (aiChatForm) aiChatForm.addEventListener('submit', handleAiChatSubmit);
   if (aiChatClear) aiChatClear.addEventListener('click', clearAiChat);
+  document.querySelectorAll('[data-ai-suggestion]').forEach((suggestion) => {
+    suggestion.addEventListener('click', () => {
+      const input = getElement('ai-chat-input');
+      if (input) {input.value = suggestion.dataset.aiSuggestion; input.focus();}
+    });
+  });
+  renderAiChat();
+  if (helpButton) helpButton.addEventListener('click', () => toggleHelp());
+  if (helpCloseButton) helpCloseButton.addEventListener('click', () => toggleHelp(false));
+  if (helpSearch) helpSearch.addEventListener('input', () => renderFaq(helpSearch.value));
+  if (helpAiButton) helpAiButton.addEventListener('click', helpAskAi);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleHelp(false); });
+  const helpPanel = getElement('ascend-help');
+  if (helpPanel) helpPanel.addEventListener('click', (e) => { if (e.target === helpPanel) toggleHelp(false); });
 
   document.querySelectorAll('.sidebar-link[data-view]').forEach((link) => {
     link.addEventListener('click', (event) => {
@@ -3354,6 +3559,9 @@ function bindEvents() {
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme(getStoredTheme());
   bindEvents();
+  initExperience({ navigate: showView, setFocusDuration });
+  window.addEventListener('popstate', () => showView(location.hash.replace('#view-', '') || 'status', null, false));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tickTimer(); });
   selectedCalendarDateKey = getDateKeyForDate(new Date());
   currentCalendarMonth = new Date();
   updateTimerUI();
