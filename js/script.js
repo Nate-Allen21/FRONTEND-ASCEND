@@ -10,6 +10,14 @@ const SHOP_PURCHASES_KEY = 'ascend.shop.purchases.' + STORAGE_RESET_VERSION;
 const INVENTORY_ITEMS_KEY = 'ascend.inventory.items.' + STORAGE_RESET_VERSION;
 const ACTIVE_REWARDS_KEY = 'ascend.active.rewards.' + STORAGE_RESET_VERSION;
 const THEME_STORAGE_KEY = 'ascend.theme';
+const CUSTOMIZATION_STORAGE_KEY = 'ascend.customization.v1';
+const ACCENT_STORAGE_KEY = 'ascend.accent';
+const THEME_PRESETS = {
+  crimson: { label: 'Crimson', accent: '#df2531', secondary: '#ffffff', bg: '#000000', panel: '#202020', panelRgb: '32, 32, 32', ambient: '#df2531' },
+  lime: { label: 'Lime', accent: '#5dd62c', secondary: '#337418', bg: '#0f0f0f', panel: '#202020', panelRgb: '32, 32, 32', ambient: '#5dd62c' },
+  purple: { label: 'Purple', accent: '#7b45f0', secondary: '#a981ff', bg: '#34117e', panel: '#491ab1', panelRgb: '73, 26, 177', ambient: '#6631db' },
+  blue: { label: 'Blue', accent: '#4a74a7', secondary: '#dceaf7', bg: '#081426', panel: '#142a44', panelRgb: '20, 42, 68', ambient: '#4a74a7' }
+};
 const ROUTINE_PROFILE_KEY = 'ascend.routine.profile.' + STORAGE_RESET_VERSION;
 const APP_TIME_ZONE = 'America/Sao_Paulo';
 const DEFAULT_WORKOUT_DAYS = ['segunda', 'quarta', 'sexta'];
@@ -411,7 +419,21 @@ let apiDiscoveryPromise = null;
 function buildApiBaseUrlCandidates() {
   // An explicitly selected server owns this account's data. Do not silently
   // send credentials to a different environment when that server is offline.
-  return [apiBaseUrl || DEFAULT_PUBLIC_API_BASE_URL];
+  const queryValue = new URLSearchParams(window.location.search).get('apiBase');
+  const viteValue = typeof import.meta !== 'undefined' && import.meta.env
+    ? import.meta.env.VITE_API_URL
+    : '';
+  const storedValue = normalizeApiBaseUrl(localStorage.getItem(API_BASE_URL_STORAGE_KEY));
+  const candidates = [apiBaseUrl || DEFAULT_PUBLIC_API_BASE_URL];
+
+  // A stale value left by a previous local session should not brick the app.
+  // Explicit query/env configuration still remains isolated to its own server.
+  const isStalePersistedValue = Boolean(storedValue && !queryValue && !viteValue && storedValue === apiBaseUrl);
+  if (isStalePersistedValue && storedValue !== DEFAULT_PUBLIC_API_BASE_URL) {
+    candidates.push(DEFAULT_PUBLIC_API_BASE_URL);
+  }
+
+  return [...new Set(candidates)];
 }
 
 const apiBaseUrlCandidates = buildApiBaseUrlCandidates();
@@ -649,6 +671,138 @@ function applyTheme(theme) {
   if (icon) {
     icon.className = 'bi ' + (isLight ? 'bi-moon-stars' : 'bi-sun');
   }
+}
+
+function normalizeAccent(value) {
+  const candidate = String(value || '').trim();
+  return /^#[0-9a-f]{6}$/i.test(candidate) ? candidate.toLowerCase() : '#70e6d3';
+}
+
+function hexToRgb(hex) {
+  const normalized = normalizeAccent(hex).slice(1);
+  return [parseInt(normalized.slice(0, 2), 16), parseInt(normalized.slice(2, 4), 16), parseInt(normalized.slice(4, 6), 16)];
+}
+
+function applyAccent(value, options = {}) {
+  const accent = normalizeAccent(value);
+  const [red, green, blue] = hexToRgb(accent);
+  const root = document.documentElement;
+  const perceivedBrightness = (red * 299 + green * 587 + blue * 114) / 1000;
+  const contrast = perceivedBrightness > 155 ? '#241b20' : '#fff8f0';
+  const accentRgb = `${red}, ${green}, ${blue}`;
+  root.style.setProperty('--accent', accent);
+  root.style.setProperty('--accent-rgb', accentRgb);
+  root.style.setProperty('--accent-soft', `rgba(${accentRgb}, .10)`);
+  root.style.setProperty('--accent-medium', `rgba(${accentRgb}, .18)`);
+  root.style.setProperty('--accent-border', `rgba(${accentRgb}, .38)`);
+  root.style.setProperty('--accent-glow', `rgba(${accentRgb}, .28)`);
+  root.style.setProperty('--accent-contrast', contrast);
+  root.style.setProperty('--accent-gradient', `linear-gradient(120deg, ${accent}, rgba(${accentRgb}, .72))`);
+  root.style.setProperty('--neon-cyan', accent);
+  root.style.setProperty('--neon-blue', accent);
+  root.style.setProperty('--neon-purple', accent);
+  root.style.setProperty('--neon-gold', accent);
+  root.style.setProperty('--mobile-pink', accent);
+  root.style.setProperty('--mobile-purple', accent);
+  root.style.setProperty('--mobile-blue', accent);
+  root.style.setProperty('--mobile-blue-soft', accent);
+  root.style.setProperty('--mobile-blue-glow', accent);
+  root.style.setProperty('--border-glow', `rgba(${accentRgb}, .46)`);
+  root.style.setProperty('--surface-tint', `rgba(${accentRgb}, .10)`);
+  const picker = getElement('accent-color');
+  if (picker) picker.value = accent;
+  const trigger = getElement('btn-accent-picker');
+  if (trigger) trigger.style.setProperty('--picker-color', accent);
+}
+
+function getStoredCustomization() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(CUSTOMIZATION_STORAGE_KEY));
+    if (stored && THEME_PRESETS[stored.preset]) return { preset: stored.preset, glow: Number(stored.glow) || 72, glass: Number(stored.glass) || 58, ambient: stored.ambient !== false };
+  } catch (error) { /* Usa o padrão abaixo. */ }
+  const legacyAccent = localStorage.getItem(ACCENT_STORAGE_KEY);
+  return { preset: 'blue', glow: 72, glass: 58, ambient: true, legacyAccent: legacyAccent || '' };
+}
+
+function saveCustomization(customization) {
+  localStorage.setItem(CUSTOMIZATION_STORAGE_KEY, JSON.stringify(customization));
+}
+
+function applyCustomization(customization) {
+  const presetKey = THEME_PRESETS[customization.preset] ? customization.preset : 'ember';
+  const preset = THEME_PRESETS[presetKey];
+  const glow = Math.max(0, Math.min(100, Number(customization.glow) || 72));
+  const glass = Math.max(25, Math.min(85, Number(customization.glass) || 58));
+  const ambient = customization.ambient !== false;
+  const root = document.documentElement;
+  const [red, green, blue] = hexToRgb(preset.accent);
+  const rgb = `${red}, ${green}, ${blue}`;
+  root.style.setProperty('--accent', preset.accent);
+  root.style.setProperty('--accent-rgb', rgb);
+  root.style.setProperty('--accent-secondary', preset.secondary);
+  root.style.setProperty('--custom-bg', preset.bg);
+  root.style.setProperty('--custom-panel', preset.panel);
+  root.style.setProperty('--custom-panel-rgb', preset.panelRgb);
+  root.style.setProperty('--custom-ambient', preset.ambient);
+  root.style.setProperty('--custom-glow', String(glow / 100));
+  root.style.setProperty('--custom-glass-alpha', String(glass / 100));
+  root.style.setProperty('--custom-blur', `${Math.round(10 + (glass / 100) * 24)}px`);
+  root.style.setProperty('--custom-ambient-opacity', ambient ? String(.12 + glow / 1000) : '0');
+  applyAccent(preset.accent);
+
+  document.body.dataset.customSkin = presetKey;
+  const glowInput = getElement('customization-glow');
+  const glassInput = getElement('customization-glass');
+  const ambientInput = getElement('customization-ambient');
+  if (glowInput) glowInput.value = String(glow);
+  if (glassInput) glassInput.value = String(glass);
+  if (ambientInput) ambientInput.checked = ambient;
+  document.querySelectorAll('[data-theme-preset]').forEach((button) => {
+    const selected = button.dataset.themePreset === presetKey;
+    button.classList.toggle('is-selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  setText('customization-theme-label', preset.label);
+  setText('customization-preview-theme', preset.label);
+  return { preset: presetKey, glow, glass, ambient };
+}
+
+function updateCustomization() {
+  const current = getStoredCustomization();
+  const next = {
+    preset: document.querySelector('[data-theme-preset].is-selected')?.dataset.themePreset || current.preset,
+    glow: Number(getElement('customization-glow')?.value || current.glow),
+    glass: Number(getElement('customization-glass')?.value || current.glass),
+    ambient: Boolean(getElement('customization-ambient')?.checked)
+  };
+  saveCustomization(next);
+  applyCustomization(next);
+}
+
+function getStoredAccent() {
+  return normalizeAccent(localStorage.getItem(ACCENT_STORAGE_KEY));
+}
+
+function chooseAccent() {
+  const picker = getElement('accent-color');
+  if (picker) picker.click();
+}
+
+function toggleCustomization(force) {
+  const panel = getElement('customization-panel');
+  const trigger = getElement('btn-customize');
+  if (!panel) return;
+  const shouldOpen = typeof force === 'boolean' ? force : panel.hidden;
+  panel.hidden = !shouldOpen;
+  if (trigger) trigger.setAttribute('aria-expanded', String(shouldOpen));
+  document.body.classList.toggle('customization-open', shouldOpen);
+  if (shouldOpen) getElement('customization-glow')?.focus();
+}
+
+function updateAccent(event) {
+  const accent = normalizeAccent(event.target.value);
+  localStorage.setItem(ACCENT_STORAGE_KEY, accent);
+  applyAccent(accent);
 }
 
 function toggleTheme() {
@@ -895,6 +1049,7 @@ async function handleLogin(event) {
     });
 
     setAuthToken(data.token);
+    setAuthMessage('Login confirmado. Carregando seu painel...');
     await loadRoutine();
   } catch (error) {
     setAuthMessage(error.message);
@@ -928,6 +1083,52 @@ async function handleRegister(event) {
   } finally {
     submitButton.disabled = false;
   }
+}
+
+async function handleGoogleCredential(response) {
+  if (!response?.credential) {
+    setAuthMessage('O Google não retornou uma credencial válida.');
+    return;
+  }
+  const button = getElement('btn-google-login');
+  if (button) button.disabled = true;
+  setAuthMessage('Validando sua conta Google...');
+  try {
+    const data = await apiRequest('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential: response.credential })
+    });
+    setAuthToken(data.token);
+    setAuthMessage('Login Google confirmado. Carregando seu painel...');
+    await loadRoutine();
+  } catch (error) {
+    setAuthMessage(error.message);
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function initGoogleSignIn() {
+  const button = getElement('btn-google-login');
+  const container = getElement('google-signin-container');
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  if (!button) return;
+  if (!clientId) {
+    button.addEventListener('click', () => setAuthMessage('Configure VITE_GOOGLE_CLIENT_ID para ativar o login Google.'));
+    return;
+  }
+  const waitForGoogle = () => {
+    if (!window.google?.accounts?.id) {
+      window.setTimeout(waitForGoogle, 100);
+      return;
+    }
+    window.google.accounts.id.initialize({ client_id: clientId, callback: handleGoogleCredential });
+    if (container) {
+      window.google.accounts.id.renderButton(container, { type: 'standard', theme: 'outline', size: 'large', width: 280 });
+    }
+    button.addEventListener('click', () => container?.querySelector('[role="button"]')?.click());
+  };
+  waitForGoogle();
 }
 
 async function handleLogout() {
@@ -997,10 +1198,12 @@ async function handlePlannerReset() {
 
 async function loadRoutine() {
   try {
+    setAuthMessage('Carregando seu status...');
     ensureDailyRefreshWatcher();
     cleanupDailyShopPurchases();
     const status = await apiRequest('/player/status');
     renderPlayerStatus(status);
+    setAuthMessage('Sincronizando sua rotina...');
     try {
       await syncShopFromServer();
     } catch (shopError) {
@@ -3462,6 +3665,10 @@ function bindEvents() {
   const loginForm = getElement('login-form');
   const registerForm = getElement('register-form');
   const themeToggleButton = getElement('btn-theme-toggle');
+  const customizeButton = getElement('btn-customize');
+  const customizeClose = getElement('customization-close');
+  const customizationPanel = getElement('customization-panel');
+  const customizationReset = getElement('customization-reset');
   const popupButton = getElement('btn-toggle-popup');
   const popupCloseButton = getElement('popup-close');
   const logoutButton = getElement('btn-logout');
@@ -3483,13 +3690,49 @@ function bindEvents() {
   const helpSearch = getElement('help-search');
   const helpAiButton = getElement('help-ask-ai');
 
+  document.querySelectorAll('.password-toggle').forEach((toggle) => toggle.addEventListener('click', () => {
+    const input = toggle.closest('.auth-field')?.querySelector('input');
+    if (!input) return;
+    const visible = input.type === 'text';
+    input.type = visible ? 'password' : 'text';
+    toggle.setAttribute('aria-label', visible ? 'Mostrar senha' : 'Ocultar senha');
+    toggle.innerHTML = `<i class="bi bi-eye${visible ? '-slash' : ''}" aria-hidden="true"></i>`;
+  }));
+
+  const authScreen = getElement('auth-screen');
+  if (authScreen && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    authScreen.addEventListener('pointermove', (event) => {
+      const x = (event.clientX / window.innerWidth - .5) * 2;
+      const y = (event.clientY / window.innerHeight - .5) * 2;
+      authScreen.style.setProperty('--pointer-x', `${x * 10}px`);
+      authScreen.style.setProperty('--pointer-y', `${y * 10}px`);
+    });
+  }
+
   if (tabLogin) tabLogin.addEventListener('click', () => switchAuthTab('login'));
   if (tabRegister) tabRegister.addEventListener('click', () => switchAuthTab('register'));
   if (tabLogin) tabLogin.addEventListener('keydown', handleAuthTabKeydown);
   if (tabRegister) tabRegister.addEventListener('keydown', handleAuthTabKeydown);
   if (loginForm) loginForm.addEventListener('submit', handleLogin);
   if (registerForm) registerForm.addEventListener('submit', handleRegister);
+  initGoogleSignIn();
   if (themeToggleButton) themeToggleButton.addEventListener('click', toggleTheme);
+  if (customizeButton) customizeButton.addEventListener('click', () => toggleCustomization());
+  if (customizeClose) customizeClose.addEventListener('click', () => toggleCustomization(false));
+  if (customizationPanel) customizationPanel.addEventListener('click', (event) => { if (event.target === customizationPanel) toggleCustomization(false); });
+  document.querySelectorAll('[data-theme-preset]').forEach((button) => button.addEventListener('click', () => {
+    const current = getStoredCustomization();
+    const next = { ...current, preset: button.dataset.themePreset };
+    saveCustomization(next);
+    applyCustomization(next);
+  }));
+  ['customization-glow', 'customization-glass', 'customization-ambient'].forEach((id) => getElement(id)?.addEventListener('input', updateCustomization));
+  if (customizationReset) customizationReset.addEventListener('click', () => {
+    const defaults = { preset: 'blue', glow: 72, glass: 58, ambient: true };
+    saveCustomization(defaults);
+    applyCustomization(defaults);
+  });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') toggleCustomization(false); });
   if (popupButton) popupButton.addEventListener('click', togglePopup);
   if (popupCloseButton) popupCloseButton.addEventListener('click', hidePopup);
   if (logoutButton) logoutButton.addEventListener('click', handleLogout);
@@ -3558,6 +3801,7 @@ function bindEvents() {
 
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme(getStoredTheme());
+  applyCustomization(getStoredCustomization());
   bindEvents();
   initExperience({ navigate: showView, setFocusDuration });
   window.addEventListener('popstate', () => showView(location.hash.replace('#view-', '') || 'status', null, false));

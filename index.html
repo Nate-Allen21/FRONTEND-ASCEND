@@ -1,33 +1,49 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark-space">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASCEND · Sua próxima evolução</title>
-  <meta name="theme-color" content="#080c18" />
+  <meta name="theme-color" content="#05070d" />
+  <link rel="icon" type="image/png" href="assets/ascend-symbol.png" />
   <meta name="description" content="Transforme sua rotina em evolução. Organize missões, treinos, estudos e recompensas no ASCEND." />
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
-  <link href="css/style.css?v=20261009-dark-calendar" rel="stylesheet" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    try {
+      const saved = JSON.parse(localStorage.getItem('ascend.appearance.v2') || 'null');
+      document.documentElement.dataset.theme = saved?.theme || 'dark-space';
+    } catch (_) {}
+  </script>
+  <link href="css/style.css?v=20261104-cyber-shell-fix" rel="stylesheet" />
   <link href="css/experience.css" rel="stylesheet" />
+  <link href="css/cyber-shell.css?v=20261104" rel="stylesheet" />
+  <link href="css/ascend.css?v=2027-liquid-1" rel="stylesheet" />
 </head>
 
 <body>
 <a class="skip-link" href="#conteudo-principal">Pular para o conteudo principal</a>
 
 <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" aria-hidden="false">
+  <div class="auth-cosmos" aria-hidden="true"><div class="cosmos-glow cosmos-glow-one"></div><div class="cosmos-glow cosmos-glow-two"></div><div class="cosmos-stars"></div><div class="cosmos-scanline"></div></div>
+  <div class="auth-hud auth-hud-top" aria-hidden="true"><span class="hud-dot"></span> ASCEND // SYSTEM ONLINE <span class="hud-coordinates">SYS_07 · 03 NOV 2026</span></div>
+  <div class="auth-hud auth-hud-bottom" aria-hidden="true">EVOLVE <span>◆</span> CONQUER <span>◆</span> ASCEND</div>
   <div class="auth-showcase">
+    <div class="showcase-sigil" aria-hidden="true"><span>A</span></div>
+    <div class="auth-character-energy" aria-hidden="true"></div>
+    <img class="auth-character auth-character-summoner" src="assets/conjurador-energia.png" alt="Conjurador Cibernético de Energia" fetchpriority="high" />
+    <img class="auth-character auth-character-witch" src="assets/feiticeira-energia-azul.png" alt="Feiticeira Tecnomágica da Energia Azul" fetchpriority="high" />
+    <div class="auth-showcase-caption"><span>DOIS PODERES. UMA ASCENSÃO.</span><strong>Sua próxima evolução começa.</strong></div>
     <span class="auth-showcase-kicker">SEU PRÓXIMO NÍVEL</span>
     <h2>Sua rotina.<br /><em>Sua evolução.</em></h2>
     <p>Organize seus treinos, estudos e missões.<br />Um passo de cada vez.</p>
   </div>
   <div class="auth-panel">
-    <div class="ascend-logo auth-logo" aria-label="ASCEND, sistema de evolucao pessoal">
-      ASCEND
-      <span>SISTEMA DE EVOLUCAO PESSOAL</span>
-    </div>
+    <div class="auth-panel-topline"><span>IDENTITY GATEWAY</span><span class="auth-status"><i></i> SECURE</span></div>
+    <div class="ascend-logo auth-logo" aria-label="ASCEND, sistema de evolucao pessoal"><img class="brand-logo-image" src="assets/ascend-logo-horizontal.png" alt="ASCEND" fetchpriority="high" /></div>
 
     <div class="auth-tabs" role="tablist" aria-label="Acesso ao sistema">
       <button class="auth-tab active" id="tab-login" type="button" role="tab" aria-selected="true" aria-controls="login-form" tabindex="0">Login</button>
@@ -35,14 +51,18 @@
     </div>
 
     <form class="auth-form" id="login-form" role="tabpanel" aria-labelledby="tab-login" aria-hidden="false">
-      <h1 class="auth-title" id="auth-title">Acesse sua rotina</h1>
+      <h1 class="auth-title" id="auth-title">Bem-vindo de volta</h1>
+      <p class="auth-subtitle">Continue sua jornada no ASCEND</p>
       <label class="form-label" for="login-email">E-mail</label>
-      <input class="auth-input" id="login-email" name="email" type="email" autocomplete="email" required />
+      <div class="auth-field"><i class="bi bi-person" aria-hidden="true"></i><input class="auth-input" id="login-email" name="email" type="email" autocomplete="email" placeholder="Usuário ou E-mail" required /></div>
 
       <label class="form-label" for="login-password">Senha</label>
-      <input class="auth-input" id="login-password" name="password" type="password" autocomplete="current-password" required />
+      <div class="auth-field"><i class="bi bi-lock" aria-hidden="true"></i><input class="auth-input" id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Senha" required /><button class="password-toggle" type="button" aria-label="Mostrar senha"><i class="bi bi-eye-slash" aria-hidden="true"></i></button></div>
 
-      <button class="auth-submit" type="submit">Entrar</button>
+      <div class="auth-options"><label><input type="checkbox" /> <span>Lembrar de mim</span></label><a href="#" onclick="return false">Esqueceu sua senha?</a></div>
+
+      <button class="auth-submit" type="submit"><span>Entrar</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+      <div class="auth-divider"><span>OU</span></div><button class="auth-google" id="btn-google-login" type="button"><img src="assets/google-logo.svg" alt="" aria-hidden="true" /> Entrar com Google</button><div id="google-signin-container" class="google-signin-container" aria-hidden="true"></div>
     </form>
 
     <form class="auth-form d-none" id="register-form" role="tabpanel" aria-labelledby="tab-register" aria-hidden="true" hidden>
@@ -60,6 +80,7 @@
     </form>
 
     <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+    <p class="auth-register-prompt">Não tem uma conta? <button type="button" onclick="document.getElementById('tab-register')?.click()">Criar conta <i class="bi bi-arrow-up-right" aria-hidden="true"></i></button></p>
   </div>
 </section>
 
@@ -69,10 +90,7 @@
       <button class="sidebar-toggle" id="btn-sidebar-toggle" type="button" aria-label="Abrir menu" aria-controls="app-sidebar" aria-expanded="false">
         <i class="bi bi-list" aria-hidden="true"></i>
       </button>
-      <div class="ascend-logo" aria-label="ASCEND, sistema de evolucao pessoal">
-        ASCEND
-        <span>SISTEMA DE EVOLUCAO PESSOAL</span>
-      </div>
+      <div class="ascend-logo" aria-label="ASCEND, sistema de evolucao pessoal"><img class="brand-logo-image" src="assets/ascend-logo-horizontal.png" alt="ASCEND" /></div>
       <p class="topbar-copy">Pequenas vitórias. Evolução constante.</p>
     </div>
 
@@ -90,6 +108,9 @@
       <button class="btn-timer" id="btn-theme-toggle" type="button" aria-pressed="false" aria-label="Ativar modo claro">
         <i class="bi bi-sun" aria-hidden="true"></i> Tema
       </button>
+      <button class="btn-timer customize-trigger" id="btn-customize" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="customization-panel" title="Personalizar aparência">
+        <i class="bi bi-sliders2" aria-hidden="true"></i><span>Aparência</span>
+      </button>
       <button class="btn-timer active" id="btn-toggle-popup" type="button" aria-label="Abrir notificacoes do sistema" aria-controls="system-popup" aria-expanded="false">
         <i class="bi bi-bell" aria-hidden="true"></i>
       </button>
@@ -98,6 +119,40 @@
       </button>
     </div>
   </header>
+
+  <div class="customization-overlay" id="customization-panel" hidden>
+    <section class="customization-dialog" role="dialog" aria-modal="true" aria-labelledby="customization-title">
+      <div class="customization-heading">
+        <div><span class="ascend-eyebrow">GX CONTROL CENTER</span><h2 id="customization-title">Personalizar aparência</h2><p>Escolha um ambiente e ajuste a intensidade do seu sistema.</p></div>
+        <button class="customization-close" id="customization-close" type="button" aria-label="Fechar personalização"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+      </div>
+      <div class="customization-preview">
+        <div class="customization-preview-top"><span class="preview-live-dot"></span><span>PREVIEW AO VIVO</span><span class="preview-mode">ASCEND / UI</span></div>
+        <div class="preview-stage">
+          <div class="preview-orb preview-orb-one"></div><div class="preview-orb preview-orb-two"></div>
+          <div class="preview-mock-top"><strong>ASCEND</strong><span>● 12 DIAS</span><i class="bi bi-sliders2"></i></div>
+          <div class="preview-mock-content"><div class="preview-mock-copy"><small>SEU PRÓXIMO NÍVEL</small><h3>Sua rotina.<br><em>Sua evolução.</em></h3><div class="preview-mock-button">Continuar jornada <i class="bi bi-arrow-up-right"></i></div></div><div class="preview-mock-sigil">A</div></div>
+          <div class="preview-mock-cards"><span></span><span></span><span></span></div>
+        </div>
+        <div class="customization-preview-caption"><div><small>TEMA SELECIONADO</small><strong id="customization-preview-theme">Ember</strong></div><div class="preview-swatches"><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="customization-section">
+        <div class="customization-section-title"><span>Temas</span><small id="customization-theme-label">Tema atual</small></div>
+        <div class="theme-preset-grid" role="group" aria-label="Temas de aparência">
+          <button class="theme-preset is-selected" type="button" data-theme-preset="crimson"><span class="theme-preset-preview theme-preview-crimson"></span><strong>Crimson</strong><small>Vermelho intenso</small></button>
+          <button class="theme-preset" type="button" data-theme-preset="lime"><span class="theme-preset-preview theme-preview-lime"></span><strong>Lime</strong><small>Verde elétrico</small></button>
+          <button class="theme-preset" type="button" data-theme-preset="purple"><span class="theme-preset-preview theme-preview-purple"></span><strong>Purple</strong><small>Roxo ascendente</small></button>
+          <button class="theme-preset" type="button" data-theme-preset="blue"><span class="theme-preset-preview theme-preview-blue"></span><strong>Blue</strong><small>Azul profundo</small></button>
+        </div>
+      </div>
+      <div class="customization-section customization-controls">
+        <label class="customization-control" for="customization-glow"><span><strong>Brilho de destaque</strong><small>Intensidade das cores e dos reflexos</small></span><input id="customization-glow" type="range" min="0" max="100" step="1" value="72" /></label>
+        <label class="customization-control" for="customization-glass"><span><strong>Transparência do vidro</strong><small>Quanto o fundo aparece através dos painéis</small></span><input id="customization-glass" type="range" min="25" max="85" step="1" value="58" /></label>
+        <label class="customization-switch"><span><strong>Iluminação ambiente</strong><small>Orbes suaves de luz no fundo</small></span><input id="customization-ambient" type="checkbox" checked /><span class="switch-track" aria-hidden="true"></span></label>
+      </div>
+      <div class="customization-footer"><button class="btn-timer" id="customization-reset" type="button">Restaurar padrão</button><span><i class="bi bi-check2-circle" aria-hidden="true"></i> Preferências salvas automaticamente</span></div>
+    </section>
+  </div>
 
   <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 

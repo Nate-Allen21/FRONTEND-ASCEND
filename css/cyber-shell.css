@@ -1,0 +1,127 @@
+/* ASCEND blue energy design system for the authenticated application. */
+#app-shell {
+  --bg-void: #030713;
+  --bg-panel: #071329;
+  --bg-card: rgba(9, 24, 49, .78);
+  --bg-card-hover: rgba(15, 39, 75, .9);
+  --text-primary: #edf6ff;
+  --text-secondary: #b2c8e4;
+  --text-muted: #8299b8;
+  --border-dim: rgba(105, 177, 255, .18);
+  --border-glow: rgba(82, 196, 255, .48);
+  --surface-strong: linear-gradient(145deg, rgba(16, 43, 83, .92), rgba(5, 15, 34, .96));
+  --surface-soft: rgba(8, 24, 49, .78);
+  --surface-tint: rgba(var(--accent-rgb), .10);
+  --shell-glass: linear-gradient(145deg, rgba(28, 70, 126, .46), rgba(5, 16, 37, .72));
+  --shell-line: rgba(137, 203, 255, .22);
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 84% 4%, rgba(25, 95, 213, .24), transparent 34%),
+    radial-gradient(ellipse at 4% 55%, rgba(38, 101, 216, .14), transparent 34%),
+    linear-gradient(145deg, #030713, #07142b 58%, #050b1c);
+  color: var(--text-primary);
+}
+body:has(#app-shell:not(.d-none)) { background: #030713 !important; }
+#app-shell::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .16;
+  background-image: radial-gradient(circle, #9edaff 0 1px, transparent 1.5px), radial-gradient(circle, #568dff 0 1px, transparent 1.5px);
+  background-size: 137px 109px, 211px 173px; background-position: 9px 20px, 40px 70px;
+}
+#app-shell .ascend-topbar {
+  background: linear-gradient(110deg, rgba(13, 38, 78, .9), rgba(4, 14, 33, .84)) !important;
+  border: 1px solid var(--shell-line) !important;
+  box-shadow: 0 18px 58px rgba(0, 0, 0, .32), 0 0 38px rgba(29, 116, 255, .10), inset 0 1px rgba(224, 245, 255, .16) !important;
+  backdrop-filter: blur(24px) saturate(145%);
+}
+#app-shell .topbar-brand .ascend-logo { width: 185px; line-height: 0; text-shadow: none; }
+#app-shell .topbar-brand .brand-logo-image { display: block; width: 185px; max-width: 100%; height: auto; }
+#app-shell .auth-logo { width: 100%; margin-bottom: 18px; line-height: 0; }
+#app-shell .auth-logo .brand-logo-image { display: block; width: min(100%, 360px); height: auto; }
+#app-shell .sidebar {
+  background: linear-gradient(160deg, rgba(11, 31, 64, .92), rgba(4, 13, 30, .94)) !important;
+  border-color: var(--shell-line) !important;
+  box-shadow: 10px 0 42px rgba(0, 0, 0, .18), inset -1px 0 rgba(108, 187, 255, .10);
+}
+#app-shell .sidebar-link { border: 1px solid transparent; border-radius: 12px; transition: color .2s, background .2s, border-color .2s, transform .2s; }
+#app-shell .sidebar-link:hover { color: #e8f7ff; background: rgba(76, 156, 255, .10); border-color: rgba(102, 188, 255, .16); transform: translateX(2px); }
+#app-shell .sidebar-link.active {
+  color: var(--accent) !important; background: linear-gradient(100deg, rgba(var(--accent-rgb), .20), rgba(73, 120, 255, .06)) !important;
+  border-color: rgba(var(--accent-rgb), .34) !important; box-shadow: inset 3px 0 var(--accent), 0 8px 26px rgba(var(--accent-rgb), .10) !important;
+}
+#app-shell .sidebar-link.active i { color: var(--accent) !important; }
+#app-shell .main-content { color: var(--text-primary); }
+#app-shell :is(.evolution-hero, .system-summary-card, .feature-panel, .player-card, .stat-panel, .mini-card, .status-subcard, .pillar-card, .mission-card, .shop-item, .calendar-screen, .calendar-month-panel, .calendar-agenda-panel, .agenda-item, .ascend-ai-main, .ascend-ai-aside, .ranking-list, .inventory-card, .vault-card, .system-popup, .command-dialog, .ascend-help-dialog, .level-up-card, .customization-dialog, .planner-panel, .training-plan-panel, .timer-panel, .calendar-config-panel) {
+  color: var(--text-primary) !important;
+  background: var(--shell-glass) !important;
+  border: 1px solid var(--shell-line) !important;
+  border-radius: 20px;
+  box-shadow: 0 20px 62px rgba(0, 0, 0, .24), 0 0 34px rgba(31, 118, 255, .08), inset 0 1px rgba(221, 243, 255, .10) !important;
+  backdrop-filter: blur(22px) saturate(138%);
+}
+#app-shell .evolution-hero {
+  overflow: hidden; border-radius: 28px;
+  background: radial-gradient(ellipse at 84% 43%, rgba(59, 125, 255, .26), transparent 42%), linear-gradient(125deg, rgba(13, 39, 81, .90), rgba(5, 16, 37, .88)) !important;
+}
+#app-shell .evolution-hero::before { opacity: .28; background-image: linear-gradient(rgba(112, 184, 255, .10) 1px, transparent 1px), linear-gradient(90deg, rgba(112, 184, 255, .10) 1px, transparent 1px); }
+#app-shell :is(.system-summary-card, .feature-panel, .player-card, .stat-panel, .mini-card, .status-subcard, .pillar-card, .mission-card, .shop-item, .calendar-month-panel, .calendar-agenda-panel, .agenda-item, .ascend-ai-main, .ascend-ai-aside, .ranking-list, .inventory-card, .vault-card) { border-radius: 18px; }
+#app-shell :is(.system-summary-card, .mini-card, .feature-panel, .player-card, .stat-panel, .mission-card, .shop-item, .inventory-card, .vault-card, .agenda-item) { transition: border-color .22s, box-shadow .22s, transform .22s; }
+#app-shell :is(.system-summary-card, .mini-card, .feature-panel, .player-card, .stat-panel, .mission-card, .shop-item, .inventory-card, .vault-card, .agenda-item):hover { border-color: rgba(var(--accent-rgb), .40) !important; box-shadow: 0 22px 66px rgba(0,0,0,.28), 0 0 28px rgba(var(--accent-rgb),.10), inset 0 1px rgba(221,243,255,.12) !important; }
+#app-shell :is(.auth-submit, .hero-actions .auth-submit, .btn-complete, .customization-preview-button, .btn-start) {
+  color: #06152a !important; background: linear-gradient(110deg, #b8f5ff, #4aa8ff 58%, #7d8bff) !important;
+  border: 1px solid rgba(184,245,255,.72) !important; border-radius: 13px;
+  box-shadow: 0 12px 30px rgba(45,144,255,.25), inset 0 1px rgba(255,255,255,.55) !important;
+  transition: transform .2s, box-shadow .2s, filter .2s;
+}
+#app-shell :is(.auth-submit, .hero-actions .auth-submit, .btn-complete, .btn-start):hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 16px 38px rgba(53,169,255,.38) !important; }
+#app-shell :is(.btn-timer, .auth-tab, .focus-presets button, .planner-day-option, .command-result, .customization-close, .calendar-configure, .theme-preset) {
+  color: var(--text-secondary); border-color: rgba(129, 189, 255, .22) !important;
+  background: linear-gradient(145deg, rgba(29, 67, 120, .46), rgba(7, 20, 44, .70)) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.08), 0 6px 20px rgba(0,0,0,.10);
+}
+#app-shell :is(.btn-timer:hover, .auth-tab:hover, .focus-presets button:hover, .command-result:hover, .calendar-configure:hover, .theme-preset:hover) {
+  color: #eaf8ff !important; border-color: rgba(var(--accent-rgb), .48) !important; background: rgba(var(--accent-rgb), .13) !important;
+}
+#app-shell .auth-tab.active, #app-shell .focus-presets button[aria-pressed='true'], #app-shell .theme-preset.is-selected {
+  color: #f0f9ff !important; border-color: rgba(var(--accent-rgb), .62) !important; background: linear-gradient(135deg, rgba(var(--accent-rgb), .28), rgba(68, 117, 255, .12)) !important; box-shadow: 0 0 22px rgba(var(--accent-rgb), .12), inset 0 1px rgba(255,255,255,.12) !important;
+}
+#app-shell :is(.auth-input, input:not([type='checkbox']):not([type='range']):not([type='radio']), select, textarea) {
+  color: var(--text-primary); border-color: rgba(127, 186, 255, .23) !important; border-radius: 12px;
+  background: rgba(3, 14, 34, .62) !important; box-shadow: inset 0 1px 8px rgba(0,0,0,.16);
+}
+#app-shell :is(.auth-input, input:not([type='checkbox']):not([type='range']):not([type='radio']), select, textarea)::placeholder { color: #8299b8; }
+#app-shell :is(.auth-input, input:not([type='checkbox']):not([type='range']):not([type='radio']), select, textarea):focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .14), 0 0 26px rgba(var(--accent-rgb), .10) !important; }
+#app-shell :is(.system-summary-kicker, .feature-kicker, .ascend-eyebrow, .exp-label, .section-kicker, .stat-label) { color: #84dfff !important; }
+#app-shell :is(.hero-copy h1, .section-title, .feature-title, .system-summary-title, .planner-headline, .player-name, .training-day-name) { color: #f0f7ff; }
+#app-shell .hero-copy h1 span { color: #79dfff !important; text-shadow: 0 0 24px rgba(73,177,255,.22); }
+#app-shell :is(.hero-copy p, .feature-copy, .system-summary-copy, .stat-description, .mission-description, .calendar-screen p) { color: #b4c9e1; }
+#app-shell :is(.mini-card-icon, .mini-card-value, .coins-badge, .sigil-mark, .calendar-day-dot) { color: var(--accent) !important; }
+#app-shell :is(.exp-bar-fill, .stat-bar-fill, progress::-webkit-progress-value) { background: linear-gradient(90deg, #36aaff, #70e6ff) !important; box-shadow: 0 0 14px rgba(65,175,255,.42); }
+#app-shell progress::-moz-progress-bar { background: linear-gradient(90deg, #36aaff, #70e6ff) !important; }
+#app-shell .sidebar-footer, #app-shell .sidebar-header, #app-shell .system-popup, #app-shell .connection-notice { border-color: var(--shell-line); background: rgba(6, 20, 45, .82); }
+#app-shell :is(.system-chip, .streak-badge, .coins-badge, .planner-status-chip, .roadmap-pill, .roadmap-difficulty) { border-color: rgba(var(--accent-rgb), .26); background: rgba(var(--accent-rgb), .09); }
+#app-shell :is(.customization-overlay, .ascend-help-overlay, .level-up-overlay) { background: rgba(1, 5, 15, .72) !important; backdrop-filter: blur(14px) saturate(130%); }
+#app-shell .customization-dialog { background: linear-gradient(145deg, rgba(13, 38, 78, .98), rgba(4, 13, 30, .98)) !important; border-color: var(--shell-line) !important; }
+#app-shell .preview-stage { background: radial-gradient(circle at 82% 12%, rgba(var(--accent-rgb),.20), transparent 32%), linear-gradient(145deg, rgba(12, 37, 76, .96), rgba(4, 13, 30, .98)); }
+#app-shell .preview-mock-copy h3 { color: #f0f7ff; }
+#app-shell :is(.calendar-day-cell--selected, .calendar-day-cell--today) { background: rgba(var(--accent-rgb), .18) !important; border-color: rgba(var(--accent-rgb), .55) !important; }
+#app-shell .calendar-day-cell--today .calendar-day-number { color: #06152a !important; background: linear-gradient(135deg,#b8f5ff,#4aa8ff) !important; }
+#app-shell :is(.chat-message, .ai-message, .assistant-message, .user-message) { border-color: rgba(129,189,255,.18); background: rgba(8,24,49,.72); }
+#app-shell :is(table, .table) { --bs-table-bg: transparent; --bs-table-color: var(--text-primary); --bs-table-border-color: rgba(129,189,255,.16); }
+body[data-theme='light'] #app-shell {
+  --text-primary: #132844; --text-secondary: #405c7b; --text-muted: #617998; --shell-line: rgba(45, 115, 183, .20);
+  --shell-glass: linear-gradient(145deg, rgba(255,255,255,.82), rgba(224,240,255,.76));
+  background: radial-gradient(ellipse at 84% 4%, rgba(70,156,255,.16), transparent 36%), linear-gradient(145deg,#edf6ff,#dcecff 60%,#f3f8ff);
+}
+body[data-theme='light']:has(#app-shell:not(.d-none)) { background: #edf6ff !important; }
+body[data-theme='light'] #app-shell .ascend-topbar,
+body[data-theme='light'] #app-shell .sidebar { background: linear-gradient(145deg,rgba(255,255,255,.88),rgba(224,240,255,.84)) !important; }
+body[data-theme='light'] #app-shell :is(.auth-input, input:not([type='checkbox']):not([type='range']):not([type='radio']), select, textarea) { background: rgba(255,255,255,.72) !important; }
+@media (max-width: 768px) {
+  #app-shell .ascend-topbar { background: linear-gradient(110deg, rgba(13,38,78,.96), rgba(4,14,33,.94)) !important; }
+  #app-shell .topbar-brand .ascend-logo, #app-shell .topbar-brand .brand-logo-image { width: 145px; }
+  #app-shell .sidebar { box-shadow: 18px 0 65px rgba(0,0,0,.38); }
+  #app-shell .evolution-hero { border-radius: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { #app-shell *, #app-shell *::before, #app-shell *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }

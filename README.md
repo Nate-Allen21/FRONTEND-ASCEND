@@ -33,6 +33,20 @@ For a production build:
 npm run build
 ```
 
+## Browser tests
+
+The Playwright suite runs with:
+
+```powershell
+npm test
+```
+
+Cypress end-to-end checks run against a temporary local Vite server:
+
+```powershell
+npm run test:cypress
+```
+
 ## Vercel Deploy
 
 This repo includes `vercel.json` configured for Vite:

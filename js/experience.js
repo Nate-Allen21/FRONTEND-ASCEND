@@ -8,6 +8,7 @@ export function initExperience({ navigate, setFocusDuration }) {
   });
 
   document.querySelectorAll('input[type="password"]').forEach((input) => {
+    if (input.closest('.auth-field')) return;
     const wrap = document.createElement('div');
     wrap.className = 'password-wrap';
     input.before(wrap);
