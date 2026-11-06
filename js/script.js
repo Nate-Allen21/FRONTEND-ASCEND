@@ -20,6 +20,10 @@ const THEME_PRESETS = {
 };
 const ROUTINE_PROFILE_KEY = 'ascend.routine.profile.' + STORAGE_RESET_VERSION;
 const APP_TIME_ZONE = 'America/Sao_Paulo';
+const AVATAR_OPTIONS = {
+  male: { image: 'assets/avatar-male.png', label: 'ASCEND — MALE' },
+  female: { image: 'assets/avatar-female.png', label: 'ASCEND — FEMALE' }
+};
 const DEFAULT_WORKOUT_DAYS = ['segunda', 'quarta', 'sexta'];
 const WORKOUT_DAY_ORDER = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
 const WORKOUT_DAY_LABELS = {
@@ -47,6 +51,7 @@ let cycles = 0;
 let running = false;
 let timerDeadline = null;
 let currentPlayerStatus = null;
+let currentUser = null;
 let currentStorageScope = 'guest';
 let currentRoutineProfile = null;
 let currentAdaptivePlan = null;
@@ -55,6 +60,9 @@ let selectedCalendarDateKey = null;
 let aiConversation = [];
 let shopPurchasePending = false;
 let aiChatPending = false;
+let selectedAvatar = null;
+let avatarSelectionMode = 'onboarding';
+let avatarSavePending = false;
 const LEGENDARY_SHOP_ITEM_ID = 'reliquia-ascendente';
 
 const circumference = 2 * Math.PI * 60;
@@ -890,6 +898,12 @@ function getFormValue(form, fieldName) {
 
 function showAuthScreen() {
   closeSidebar();
+  const avatarScreen = getElement('avatar-onboarding');
+  if (avatarScreen) {
+    avatarScreen.hidden = true;
+    avatarScreen.setAttribute('aria-hidden', 'true');
+    avatarScreen.classList.remove('is-editing', 'is-committing');
+  }
   const authScreen = getElement('auth-screen');
   const appShell = getElement('app-shell');
   if (authScreen) authScreen.classList.remove('d-none');
@@ -899,6 +913,12 @@ function showAuthScreen() {
 }
 
 function showAppShell() {
+  const avatarScreen = getElement('avatar-onboarding');
+  if (avatarScreen) {
+    avatarScreen.hidden = true;
+    avatarScreen.setAttribute('aria-hidden', 'true');
+    avatarScreen.classList.remove('is-editing', 'is-committing');
+  }
   const authScreen = getElement('auth-screen');
   const appShell = getElement('app-shell');
   if (authScreen) authScreen.classList.add('d-none');
@@ -907,6 +927,138 @@ function showAppShell() {
   if (appShell) appShell.setAttribute('aria-hidden', 'false');
   const view = location.hash.replace('#view-', '') || 'status';
   showView(document.getElementById('view-' + view) ? view : 'status', null, false);
+}
+
+function renderUserIdentity(user) {
+  currentUser = user;
+  const avatar = AVATAR_OPTIONS[user?.avatar] ? user.avatar : null;
+  document.querySelectorAll('[data-user-avatar]').forEach((image) => {
+    if (avatar) {
+      image.src = AVATAR_OPTIONS[avatar].image;
+      image.alt = AVATAR_OPTIONS[avatar].label;
+      image.hidden = false;
+    } else {
+      image.removeAttribute('src');
+      image.alt = '';
+      image.hidden = true;
+    }
+  });
+  setText('sidebar-user-name', user?.name || 'Sua jornada');
+}
+
+function updateAvatarConfirmButton() {
+  const confirmButton = getElement('avatar-confirm');
+  if (!confirmButton) return;
+  const validSelection = Boolean(AVATAR_OPTIONS[selectedAvatar]);
+  const unchanged = avatarSelectionMode === 'profile' && selectedAvatar === currentUser?.avatar;
+  confirmButton.disabled = avatarSavePending || !validSelection || unchanged;
+  confirmButton.classList.toggle('is-loading', avatarSavePending);
+  const label = confirmButton.querySelector('.avatar-confirm__label');
+  if (label) {
+    label.textContent = avatarSavePending
+      ? 'SALVANDO...'
+      : avatarSelectionMode === 'profile' ? 'CONFIRMAR ALTERAÇÃO' : 'CONFIRMAR ESCOLHA';
+  }
+}
+
+function selectAvatar(avatar) {
+  if (!AVATAR_OPTIONS[avatar] || avatarSavePending) return;
+  selectedAvatar = avatar;
+  document.querySelectorAll('[data-avatar-choice]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.avatarChoice === avatar));
+  });
+  setText('avatar-message', '');
+  updateAvatarConfirmButton();
+}
+
+function openAvatarOnboarding(mode = 'onboarding') {
+  const avatarScreen = getElement('avatar-onboarding');
+  if (!avatarScreen) return;
+  avatarSelectionMode = mode;
+  selectedAvatar = mode === 'profile' && AVATAR_OPTIONS[currentUser?.avatar] ? currentUser.avatar : null;
+  avatarSavePending = false;
+  avatarScreen.hidden = false;
+  avatarScreen.setAttribute('aria-hidden', 'false');
+  avatarScreen.classList.toggle('is-editing', mode === 'profile');
+  avatarScreen.classList.remove('is-committing');
+  if (mode === 'onboarding') {
+    const authScreen = getElement('auth-screen');
+    const appShell = getElement('app-shell');
+    if (authScreen) {
+      authScreen.classList.add('d-none');
+      authScreen.setAttribute('aria-hidden', 'true');
+    }
+    if (appShell) {
+      appShell.classList.add('d-none');
+      appShell.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  setText('avatar-eyebrow', mode === 'profile' ? 'CONFIGURAÇÃO DE PERFIL' : 'SEU PRIMEIRO PASSO');
+  setText('avatar-title', mode === 'profile' ? 'MUDE SUA ESSÊNCIA' : 'ESCOLHA SUA ESSÊNCIA');
+  setText('avatar-subtitle', mode === 'profile'
+    ? 'Sua jornada pode mudar. Escolha o personagem que representa você agora.'
+    : 'Todo grande progresso começa com uma escolha. Selecione o personagem que representará sua jornada.');
+  const cancelButton = getElement('avatar-cancel');
+  if (cancelButton) cancelButton.hidden = mode !== 'profile';
+  document.querySelectorAll('[data-avatar-choice]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.avatarChoice === selectedAvatar));
+  });
+  setText('avatar-message', '');
+  updateAvatarConfirmButton();
+  document.querySelector(`[data-avatar-choice="${selectedAvatar || 'male'}"]`)?.focus({ preventScroll: true });
+}
+
+async function handleAvatarConfirm() {
+  if (avatarSavePending || !AVATAR_OPTIONS[selectedAvatar]) {
+    setText('avatar-message', 'Selecione um dos personagens para continuar.');
+    return;
+  }
+
+  const confirmButton = getElement('avatar-confirm');
+  avatarSavePending = true;
+  updateAvatarConfirmButton();
+  setText('avatar-message', 'Salvando sua identidade com segurança...');
+
+  try {
+    const savedUser = await apiRequest('/auth/avatar', {
+      method: 'PUT',
+      body: JSON.stringify({ avatar: selectedAvatar })
+    });
+    if (savedUser?.avatar !== selectedAvatar || savedUser?.onboardingCompleted !== true) {
+      throw new Error('Não foi possível confirmar o salvamento do avatar. Tente novamente.');
+    }
+
+    renderUserIdentity(savedUser);
+    if (avatarSelectionMode === 'profile') {
+      getElement('avatar-onboarding').hidden = true;
+      getElement('avatar-onboarding').setAttribute('aria-hidden', 'true');
+      getElement('avatar-onboarding').classList.remove('is-editing');
+      showPopup('Avatar atualizado', 0, 0);
+      setText('popup-body', 'Sua identidade ASCEND foi atualizada em toda a plataforma.');
+      getElement('btn-edit-avatar')?.focus({ preventScroll: true });
+      return;
+    }
+
+    setText('avatar-message', 'Sua escolha foi registrada. Preparando sua jornada...');
+    getElement('avatar-onboarding').classList.add('is-committing');
+    await new Promise((resolve) => window.setTimeout(resolve, 2700));
+    await loadRoutine();
+  } catch (error) {
+    if (error.status === 401 || error.status === 403) {
+      clearAuthToken();
+      currentUser = null;
+      currentPlayerStatus = null;
+      currentStorageScope = 'guest';
+      showAuthScreen();
+      setAuthMessage(error.message);
+      return;
+    }
+    setText('avatar-message', error.message || 'Não foi possível salvar seu avatar. Tente novamente.');
+  } finally {
+    avatarSavePending = false;
+    if (confirmButton && !getElement('avatar-onboarding')?.hidden) updateAvatarConfirmButton();
+  }
 }
 
 function showView(viewName, activeLink = null, updateHistory = true) {
@@ -1140,6 +1292,7 @@ async function handleLogout() {
 
   clearAuthToken();
   currentPlayerStatus = null;
+  currentUser = null;
   currentStorageScope = 'guest';
   currentRoutineProfile = null;
   currentAdaptivePlan = null;
@@ -1201,6 +1354,12 @@ async function loadRoutine() {
     setAuthMessage('Carregando seu status...');
     ensureDailyRefreshWatcher();
     cleanupDailyShopPurchases();
+    const user = await apiRequest('/auth/me');
+    renderUserIdentity(user);
+    if (user.onboardingCompleted === false) {
+      openAvatarOnboarding('onboarding');
+      return;
+    }
     const status = await apiRequest('/player/status');
     renderPlayerStatus(status);
     setAuthMessage('Sincronizando sua rotina...');
@@ -1240,6 +1399,7 @@ function renderPlayerStatus(status) {
   const previousStatus = currentPlayerStatus;
   currentPlayerStatus = status;
   currentStorageScope = status.handle || getAuthToken() || 'guest';
+  if (currentUser) renderUserIdentity(currentUser);
   setText('player-name', status.name);
 
   const playerHandle = getElement('player-handle');
@@ -3347,6 +3507,21 @@ function renderRanking(players) {
     position.className = 'ranking-position';
     position.textContent = '#' + player.position;
 
+    const avatar = document.createElement('span');
+    avatar.className = 'user-avatar ranking-avatar';
+    const avatarImage = document.createElement('img');
+    avatarImage.className = 'user-avatar-img';
+    avatarImage.alt = '';
+    if (AVATAR_OPTIONS[player.avatar]) {
+      avatarImage.src = AVATAR_OPTIONS[player.avatar].image;
+    } else {
+      avatarImage.hidden = true;
+    }
+    const avatarFallback = document.createElement('i');
+    avatarFallback.className = 'bi bi-person-badge';
+    avatarFallback.setAttribute('aria-hidden', 'true');
+    avatar.append(avatarImage, avatarFallback);
+
     const name = document.createElement('span');
     name.className = 'ranking-name';
     name.textContent = player.currentUser ? player.name + ' (voce)' : player.name;
@@ -3359,7 +3534,7 @@ function renderRanking(players) {
     exp.className = 'ranking-exp-value';
     exp.textContent = formatCurrencyValue(player.experience) + ' EXP';
 
-    row.append(position, name, level, exp);
+    row.append(position, avatar, name, level, exp);
     rankingList.appendChild(row);
   });
 }
@@ -3689,6 +3864,36 @@ function bindEvents() {
   const helpCloseButton = getElement('help-close');
   const helpSearch = getElement('help-search');
   const helpAiButton = getElement('help-ask-ai');
+  const avatarConfirmButton = getElement('avatar-confirm');
+  const avatarCancelButton = getElement('avatar-cancel');
+  const avatarParticles = getElement('avatar-particles');
+
+  if (avatarParticles && avatarParticles.childElementCount === 0) {
+    for (let index = 0; index < 26; index += 1) {
+      const particle = document.createElement('span');
+      particle.style.setProperty('--x', `${(index * 47 + 13) % 100}%`);
+      particle.style.setProperty('--size', `${2 + (index % 3)}px`);
+      particle.style.setProperty('--delay', `${-((index * 7) % 19)}s`);
+      particle.style.setProperty('--duration', `${13 + (index % 11)}s`);
+      avatarParticles.appendChild(particle);
+    }
+  }
+
+  document.querySelectorAll('[data-avatar-choice]').forEach((button) => {
+    button.addEventListener('click', () => selectAvatar(button.dataset.avatarChoice));
+  });
+  if (avatarConfirmButton) avatarConfirmButton.addEventListener('click', handleAvatarConfirm);
+  if (avatarCancelButton) avatarCancelButton.addEventListener('click', () => {
+    const avatarScreen = getElement('avatar-onboarding');
+    if (avatarSelectionMode !== 'profile' || !avatarScreen) return;
+    avatarScreen.hidden = true;
+    avatarScreen.setAttribute('aria-hidden', 'true');
+    avatarScreen.classList.remove('is-editing');
+    getElement('btn-edit-avatar')?.focus({ preventScroll: true });
+  });
+  ['btn-edit-avatar', 'btn-edit-avatar-sidebar', 'btn-edit-avatar-dashboard'].forEach((id) => {
+    getElement(id)?.addEventListener('click', () => openAvatarOnboarding('profile'));
+  });
 
   document.querySelectorAll('.password-toggle').forEach((toggle) => toggle.addEventListener('click', () => {
     const input = toggle.closest('.auth-field')?.querySelector('input');

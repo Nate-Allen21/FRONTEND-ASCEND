@@ -10,7 +10,7 @@ test('AI replies render readable Markdown and reject executable HTML', async ({ 
   await page.route('**/api/ai/chat', (route) => route.fulfill({ json: {
     reply: '**Calendário de hoje**\n\n| Atividade | Status |\n| --- | --- |\n| Estudar matemática | Pendente |\n\n- Reserve 25 minutos.\n- Faça uma pausa.\n\nPrimeira linha\nSegunda linha\n\n<img src=x onerror="window.chatInjected=true"><script>window.chatInjected=true</script>[link](javascript:alert(1))',
   } }));
-  await page.locator('.sidebar-link[data-view=ai]').click();
+  await page.locator('#app-sidebar .sidebar-link[data-view=ai]').click();
   await page.locator('#ai-external-consent').check();
   await page.locator('#ai-chat-input').fill('O que tenho no calendário hoje?');
   await page.locator('#ai-chat-form button[type=submit]').click();
@@ -27,17 +27,43 @@ test('AI replies render readable Markdown and reject executable HTML', async ({ 
   expect(errors).toEqual([]);
 });
 
-async function setup(page, authenticated = true) {
+async function navigateOnMobile(page, view) {
+  const mobileLink = page.locator(`.mobile-tabbar .mobile-nav-link[data-view=${view}]`);
+  if (await mobileLink.count()) {
+    await mobileLink.click();
+    return;
+  }
+
+  const commandLabels = {
+    vault: 'The Vault',
+    shop: 'Loja',
+    ai: 'Assistente IA',
+    inventory: 'Inventario',
+    achievements: 'Conquistas',
+    ranking: 'Ranking',
+  };
+  await page.locator('#btn-command').click();
+  await page.locator('#command-search').fill(commandLabels[view] || view);
+  await page.locator('.command-result').first().click();
+}
+
+async function setup(page, authenticated = true, onboardingCompleted = true) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   if (authenticated) await page.addInitScript(() => localStorage.setItem('ascend.auth.token.2026-04-27-reset-1', 'test-token'));
+  let user = { id: 1, name: 'Hunter Teste', email: 'hunter@example.com', avatar: null, onboardingCompleted };
   let completed = ['training'];
   const status = () => ({ name: 'Hunter Teste', handle: '@hunter', level: 3, rank: 'E', experience: 250, nextLevelExperience: 500, streakDays: 4, coins: 300, stats: [], dailyMissions: missions, completedMissionIds: completed });
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     let data;
     if (path.endsWith('/health')) data = { status: 'UP', application: 'ascend-api' };
-    else if (path.endsWith('/auth/login')) data = { token: 'test-token' };
+    else if (path.endsWith('/auth/me')) data = user;
+    else if (path.endsWith('/auth/avatar')) {
+      user = { ...user, avatar: route.request().postDataJSON().avatar, onboardingCompleted: true };
+      data = user;
+    }
+    else if (path.endsWith('/auth/login') || path.endsWith('/auth/register')) data = { token: 'test-token', user };
     else if (path.endsWith('/complete')) { completed = ['training', 'study']; data = status(); }
     else if (path.endsWith('/player/status')) data = status();
     else if (path.endsWith('/planner')) data = { headline: 'Seu plano de evolução', summary: 'Um passo por dia.', insights: [], dailyMissions: missions, weeklyMissions: [], monthlyMissions: [], completedMissionIds: completed };
@@ -62,6 +88,49 @@ test('authentication, password visibility and login', async ({ page }) => {
   await expect(page.locator('.evolution-hero')).toBeVisible();
   await expect(page.locator('#daily-progress-label')).toHaveText('1/2 missões concluídas');
   await page.screenshot({ path: 'test-results/dashboard-desktop.png', fullPage: true });
+  expect(errors).toEqual([]);
+});
+
+test('new accounts choose an avatar before dashboard and can change it later', async ({ page }) => {
+  const errors = await setup(page, false, false);
+  await page.locator('#login-email').fill('new-hunter@example.com');
+  await page.locator('#login-password').fill('test-password');
+  await page.locator('#login-form button[type=submit]').click();
+
+  await expect(page.locator('#avatar-onboarding')).toBeVisible();
+  await expect(page.locator('#app-shell')).toBeHidden();
+  await expect(page.locator('#avatar-confirm')).toBeDisabled();
+  await expect(page.locator('#avatar-title')).toHaveText('ESCOLHA SUA ESSÊNCIA');
+  await expect(page.locator('[data-avatar-choice="male"] img')).toHaveAttribute('src', 'assets/avatar-male.png');
+  await expect(page.locator('[data-avatar-choice="female"] img')).toHaveAttribute('src', 'assets/avatar-female.png');
+
+  await page.locator('[data-avatar-choice="male"]').click();
+  await expect(page.locator('#avatar-confirm')).toBeEnabled();
+  const firstSave = page.waitForRequest((request) => request.url().endsWith('/auth/avatar') && request.method() === 'PUT');
+  await page.locator('#avatar-confirm').click();
+  expect((await firstSave).postDataJSON()).toEqual({ avatar: 'male' });
+  await expect(page.locator('#app-shell')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', 'assets/avatar-male.png');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#btn-edit-avatar').click();
+  await expect(page.locator('#avatar-onboarding')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const femaleChoiceBounds = await page.locator('[data-avatar-choice="female"]').boundingBox();
+  expect(femaleChoiceBounds.x).toBeGreaterThanOrEqual(0);
+  expect(femaleChoiceBounds.x + femaleChoiceBounds.width).toBeLessThanOrEqual(390);
+  await expect(page.locator('[data-avatar-choice="male"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('[data-avatar-choice="female"]').click();
+  const secondSave = page.waitForRequest((request) => request.url().endsWith('/auth/avatar') && request.method() === 'PUT');
+  await page.locator('#avatar-confirm').click();
+  expect((await secondSave).postDataJSON()).toEqual({ avatar: 'female' });
+  await expect(page.locator('#avatar-onboarding')).toBeHidden();
+  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', 'assets/avatar-female.png');
+  await expect(page.locator('.user-avatar--topbar img')).toHaveAttribute('src', 'assets/avatar-female.png');
+  await page.reload();
+  await expect(page.locator('#app-shell')).toBeVisible();
+  await expect(page.locator('#avatar-onboarding')).toBeHidden();
+  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', 'assets/avatar-female.png');
   expect(errors).toEqual([]);
 });
 
@@ -94,13 +163,13 @@ test('command palette, history and all screens', async ({ page }) => {
   await page.goForward();
   await expect(page.locator('#view-calendar')).toBeVisible();
   for (const view of ['missions', 'training', 'studies', 'calendar', 'vault', 'shop', 'ai', 'inventory', 'achievements', 'ranking']) {
-    await page.locator(`.sidebar-link[data-view=${view}]`).click();
+    await page.locator(`#app-sidebar .sidebar-link[data-view=${view}]`).click();
     await expect(page.locator(`#view-${view}`)).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   await page.locator('#btn-theme-toggle').click();
   await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
-  await page.locator('.sidebar-link[data-view=calendar]').click();
+  await page.locator('#app-sidebar .sidebar-link[data-view=calendar]').click();
   await page.screenshot({ path: 'test-results/calendar-light.png', fullPage: true });
   expect(errors).toEqual([]);
 });
@@ -132,17 +201,14 @@ test('mobile drawer, search and reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const errors = await setup(page);
   await page.screenshot({ path: 'test-results/dashboard-mobile.png', fullPage: true });
-  await page.locator('#btn-sidebar-toggle').click();
-  await page.locator('.sidebar-link[data-view=missions]').click();
+  await page.locator('.mobile-tabbar .mobile-nav-link[data-view=missions]').click();
   await expect(page.locator('#view-missions')).toBeVisible();
-  await expect(page.locator('#btn-sidebar-toggle')).toHaveAttribute('aria-expanded', 'false');
   await page.locator('#btn-command').click();
   await page.locator('#command-search').fill('estudos');
-  await page.locator('.command-result').click();
+  await page.locator('.command-result').first().click();
   await expect(page.locator('#view-studies')).toBeVisible();
   for (const view of ['training', 'calendar', 'vault', 'shop', 'ai', 'inventory', 'achievements', 'ranking']) {
-    await page.locator('#btn-sidebar-toggle').click();
-    await page.locator(`.sidebar-link[data-view=${view}]`).click();
+    await navigateOnMobile(page, view);
     await expect(page.locator(`#view-${view}`)).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
@@ -182,8 +248,8 @@ test('compact layouts keep settings usable and cards free of internal overflow',
   for (const width of [1440, 390, 1920]) {
     await page.setViewportSize({ width, height: 900 });
     for (const view of ['training', 'studies', 'shop']) {
-      if (width <= 768) await page.locator('#btn-sidebar-toggle').click();
-      await page.locator(`.sidebar-link[data-view=${view}]`).click();
+      if (width <= 560) await navigateOnMobile(page, view);
+      else await page.locator(`#app-sidebar .sidebar-link[data-view=${view}]`).click();
       const dimensions = await page.locator('.main-content').evaluate((el) => ({
         scroll: el.scrollWidth, client: el.clientWidth, overflow: getComputedStyle(el).overflowY,
       }));
@@ -197,7 +263,7 @@ test('compact layouts keep settings usable and cards free of internal overflow',
       if (width === 1440 || width === 390) await page.screenshot({ path: `test-results/${view}-${width}.png`, fullPage: true, animations: 'disabled' });
     }
   }
-  await page.locator('.sidebar-link[data-view=training]').click();
+  await page.locator('#app-sidebar .sidebar-link[data-view=training]').click();
   await expect(page.locator('#planner-form')).toBeHidden();
   await page.locator('#planner-title').click();
   await expect(page.locator('#planner-goals')).toBeVisible();

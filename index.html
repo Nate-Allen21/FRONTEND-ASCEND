@@ -22,6 +22,7 @@
   <link href="css/experience.css" rel="stylesheet" />
   <link href="css/cyber-shell.css?v=20261104" rel="stylesheet" />
   <link href="css/ascend.css?v=2027-liquid-1" rel="stylesheet" />
+  <link href="css/avatar-onboarding.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -85,6 +86,59 @@
   </div>
 </section>
 
+<section class="avatar-onboarding" id="avatar-onboarding" aria-labelledby="avatar-title" aria-hidden="true" hidden>
+  <div class="avatar-onboarding__cosmos" aria-hidden="true">
+    <span class="avatar-orbit avatar-orbit--one"></span><span class="avatar-orbit avatar-orbit--two"></span>
+    <div class="avatar-particles" id="avatar-particles"></div>
+    <div class="avatar-energy-wave"></div>
+  </div>
+  <header class="avatar-onboarding__header">
+    <img src="assets/ascend-logo-horizontal.png" alt="ASCEND" />
+    <span class="avatar-onboarding__system"><i></i> IDENTITY PROTOCOL · ONLINE</span>
+    <button class="avatar-onboarding__cancel" id="avatar-cancel" type="button" hidden>Voltar ao perfil</button>
+  </header>
+  <main class="avatar-onboarding__content">
+    <div class="avatar-onboarding__heading">
+      <span class="avatar-onboarding__eyebrow" id="avatar-eyebrow">SEU PRIMEIRO PASSO</span>
+      <h1 id="avatar-title">ESCOLHA SUA ESSÊNCIA</h1>
+      <p id="avatar-subtitle">Todo grande progresso começa com uma escolha. Selecione o personagem que representará sua jornada.</p>
+    </div>
+    <div class="avatar-roster" role="group" aria-label="Escolha seu personagem">
+      <button class="avatar-choice" type="button" data-avatar-choice="male" aria-pressed="false" aria-label="Selecionar ASCEND — MALE">
+        <span class="avatar-choice__visual">
+          <span class="avatar-choice__halo" aria-hidden="true"></span>
+          <img src="assets/avatar-male.png" alt="Conjurador cibernético de energia" fetchpriority="high" />
+          <span class="avatar-choice__selected" aria-hidden="true"><i class="bi bi-check-lg"></i> ESCOLHIDO</span>
+          <span class="avatar-choice__scan" aria-hidden="true"></span>
+        </span>
+        <span class="avatar-choice__meta"><span class="avatar-choice__index">ASCEND // 01</span><strong>ASCEND — MALE</strong><span>Uma jornada de força, estratégia e evolução.</span></span>
+      </button>
+      <div class="avatar-roster__divider" aria-hidden="true"><span>OR</span></div>
+      <button class="avatar-choice" type="button" data-avatar-choice="female" aria-pressed="false" aria-label="Selecionar ASCEND — FEMALE">
+        <span class="avatar-choice__visual">
+          <span class="avatar-choice__halo" aria-hidden="true"></span>
+          <img src="assets/avatar-female.png" alt="Feiticeira tecnomágica da energia azul" fetchpriority="high" />
+          <span class="avatar-choice__selected" aria-hidden="true"><i class="bi bi-check-lg"></i> ESCOLHIDO</span>
+          <span class="avatar-choice__scan" aria-hidden="true"></span>
+        </span>
+        <span class="avatar-choice__meta"><span class="avatar-choice__index">ASCEND // 02</span><strong>ASCEND — FEMALE</strong><span>Uma jornada de poder, determinação e transformação.</span></span>
+      </button>
+    </div>
+    <div class="avatar-onboarding__footer">
+      <p class="avatar-onboarding__message" id="avatar-message" role="status" aria-live="polite"></p>
+      <button class="avatar-confirm" id="avatar-confirm" type="button" disabled>
+        <span class="avatar-confirm__label">CONFIRMAR ESCOLHA</span><i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+      </button>
+      <span class="avatar-onboarding__footnote"><i class="bi bi-shield-check" aria-hidden="true"></i> Sua identidade fica salva na sua conta</span>
+    </div>
+  </main>
+  <div class="avatar-destiny" id="avatar-destiny" aria-hidden="true">
+    <img src="assets/ascend-logo-horizontal.png" alt="" />
+    <span>SEU DESTINO FOI DEFINIDO.</span>
+    <p>Sua jornada começa agora.</p>
+  </div>
+</section>
+
 <div class="page-wrap app-shell d-none" id="app-shell" aria-hidden="true">
   <header class="ascend-topbar">
     <div class="topbar-brand">
@@ -117,6 +171,13 @@
       </button>
       <button class="btn-timer" id="btn-logout" type="button">
         <i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sair
+      </button>
+      <button class="user-profile-trigger" id="btn-edit-avatar" type="button" aria-label="Alterar meu avatar">
+        <span class="user-avatar user-avatar--topbar">
+          <img class="user-avatar-img" data-user-avatar alt="" hidden />
+          <i class="bi bi-person-badge" aria-hidden="true"></i>
+        </span>
+        <span class="user-profile-trigger__label">Meu perfil</span>
       </button>
     </div>
   </header>
@@ -159,6 +220,14 @@
 
   <div class="d-flex">
     <aside class="sidebar" id="app-sidebar" aria-label="Menu principal">
+      <div class="sidebar-identity">
+        <span class="user-avatar user-avatar--sidebar">
+          <img class="user-avatar-img" data-user-avatar alt="" hidden />
+          <i class="bi bi-person-badge" aria-hidden="true"></i>
+        </span>
+        <span class="sidebar-identity__copy"><strong id="sidebar-user-name">Sua jornada</strong><small>Identidade ASCEND</small></span>
+        <button class="sidebar-identity__edit" id="btn-edit-avatar-sidebar" type="button" aria-label="Alterar avatar" title="Alterar avatar"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>
+      </div>
       <nav>
         <div class="nav-section-label">NAVEGACAO</div>
 
@@ -280,11 +349,13 @@
             <div class="player-card">
               <div class="d-flex align-items-center gap-3 mb-4">
                 <div class="player-avatar" aria-hidden="true">
+                  <img class="user-avatar-img" data-user-avatar alt="" hidden />
                   <i class="bi bi-shield-shaded"></i>
                 </div>
                 <div>
                   <div class="player-name" id="player-name">Novo usuario</div>
                   <div class="player-handle" id="player-handle">@usuario | Nivel <span id="player-level">1</span></div>
+                  <button class="player-avatar-edit" id="btn-edit-avatar-dashboard" type="button"><i class="bi bi-person-gear" aria-hidden="true"></i> Alterar avatar</button>
                 </div>
                 <div class="ms-auto">
                   <div class="rank-badge rank-e" id="rank-badge" aria-label="Rank E">E</div>

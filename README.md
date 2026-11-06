@@ -9,6 +9,10 @@ Frontend for the ASCEND platform, built with Vite.
 - `js/`
 - `assets/`
 
+New accounts choose one of the supplied avatar PNGs during onboarding. The
+selection is saved through the authenticated backend and reused in the profile,
+dashboard, sidebar and ranking. Existing users can change it from **Meu perfil**.
+
 ## Local run
 
 Install dependencies and run Vite:
