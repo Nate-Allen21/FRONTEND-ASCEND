@@ -52,6 +52,13 @@ async function setup(page, authenticated = true, onboardingCompleted = true) {
   page.on('pageerror', (error) => errors.push(error.message));
   if (authenticated) await page.addInitScript(() => localStorage.setItem('ascend.auth.token.2026-04-27-reset-1', 'test-token'));
   let user = { id: 1, name: 'Hunter Teste', email: 'hunter@example.com', avatar: null, onboardingCompleted };
+  let profilePosts = [];
+  const profile = {
+    id: 1, name: 'Hunter Teste', username: 'hunter', avatar: 'male',
+    bio: 'Uma jornada por dia.', tags: ['consistência'], visibility: 'PUBLIC',
+    joinedAt: '2026-01-01T12:00:00Z', level: 3, rank: 'E', xp: 250,
+    nextLevelXp: 500, streakDays: 4
+  };
   let completed = ['training'];
   const status = () => ({ name: 'Hunter Teste', handle: '@hunter', level: 3, rank: 'E', experience: 250, nextLevelExperience: 500, streakDays: 4, coins: 300, stats: [], dailyMissions: missions, completedMissionIds: completed });
   await page.route('**/api/**', async (route) => {
@@ -64,6 +71,18 @@ async function setup(page, authenticated = true, onboardingCompleted = true) {
       data = user;
     }
     else if (path.endsWith('/auth/login') || path.endsWith('/auth/register')) data = { token: 'test-token', user };
+    else if (path.endsWith('/profile/posts') && route.request().method() === 'POST') {
+      profilePosts.unshift({
+        id: profilePosts.length + 1,
+        content: route.request().postDataJSON().content,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        comments: 0,
+        liked: false
+      });
+      data = profilePosts[0];
+    }
+    else if (path.endsWith('/profile') && route.request().method() === 'GET') data = { ...profile, posts: profilePosts };
     else if (path.endsWith('/complete')) { completed = ['training', 'study']; data = status(); }
     else if (path.endsWith('/player/status')) data = status();
     else if (path.endsWith('/planner')) data = { headline: 'Seu plano de evolução', summary: 'Um passo por dia.', insights: [], dailyMissions: missions, weeklyMissions: [], monthlyMissions: [], completedMissionIds: completed };
@@ -124,6 +143,19 @@ test('status and progress overview are visible without the extra dashboard banne
   await expect(page.locator('#status-title')).toBeInViewport();
   await expect(page.locator('#status-overview-title')).toBeInViewport();
   expect(await page.locator('.evolution-hero').evaluate((hero) => hero.offsetHeight)).toBeLessThan(260);
+});
+
+test('profile loads account details and publishes a post', async ({ page }) => {
+  const errors = await setup(page);
+  await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
+  await expect(page.locator('#profile-title')).toHaveText('Hunter Teste');
+  await expect(page.locator('#profile-bio')).toHaveText('Uma jornada por dia.');
+  await expect(page.locator('#profile-avatar')).toBeVisible();
+  await expect.poll(() => page.locator('#profile-avatar').evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
+  await page.locator('#profile-post-content').fill('Mais um passo na jornada.');
+  await page.locator('#profile-post-form button[type=submit]').click();
+  await expect(page.locator('#profile-posts')).toContainText('Mais um passo na jornada.');
+  expect(errors).toEqual([]);
 });
 
 test('new accounts choose an avatar before dashboard and can change it later', async ({ page }) => {

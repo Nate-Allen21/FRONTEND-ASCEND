@@ -54,6 +54,8 @@ let running = false;
 let timerDeadline = null;
 let currentPlayerStatus = null;
 let currentUser = null;
+let viewingProfileId = null;
+let playerSearchTimer = null;
 let currentStorageScope = 'guest';
 let currentRoutineProfile = null;
 let currentAdaptivePlan = null;
@@ -1066,6 +1068,10 @@ async function handleAvatarConfirm() {
 function showView(viewName, activeLink = null, updateHistory = true) {
   const target = document.getElementById('view-' + viewName);
   if (!target?.matches('[data-view-panel]')) return;
+  if (viewName === 'profile') {
+    viewingProfileId = null;
+    loadProfileView();
+  }
   if (updateHistory && location.hash !== '#view-' + viewName) history.pushState(null, '', '#view-' + viewName);
   const label = document.querySelector('.sidebar-link[data-view="' + viewName + '"]')?.textContent.trim();
   document.title = 'ASCEND · ' + (label || 'Sua evolução');
@@ -1091,6 +1097,338 @@ function showView(viewName, activeLink = null, updateHistory = true) {
   if (mainContent) {
     mainContent.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+}
+
+async function loadProfileView(profileId = viewingProfileId) {
+  const postsContainer = getElement('profile-posts');
+  if (!postsContainer) return;
+  postsContainer.textContent = 'Carregando perfil...';
+
+  try {
+    const endpoint = profileId
+      ? '/profile/players/' + encodeURIComponent(profileId)
+      : '/profile';
+    const profile = await apiRequest(endpoint);
+    viewingProfileId = profileId || null;
+    const ownProfile = !profileId || String(profile.id) === String(currentUser?.id);
+
+    getElement('profile-edit').hidden = !ownProfile;
+    getElement('profile-post-form').hidden = !ownProfile;
+    getElement('profile-progression').hidden = !ownProfile;
+    setText('profile-title', profile.name || 'Meu perfil');
+    setText('profile-handle', '@' + (profile.username || 'player') + ' · ID ' + profile.id);
+    setText('profile-bio', profile.bio || 'Adicione uma bio para contar sua jornada.');
+    const joinedDate = profile.joinedAt ? new Date(profile.joinedAt) : null;
+    setText('profile-joined', joinedDate && !Number.isNaN(joinedDate.getTime())
+      ? 'No ASCEND desde ' + joinedDate.toLocaleDateString('pt-BR')
+      : '');
+
+    const avatar = getElement('profile-avatar');
+    const avatarOption = AVATAR_OPTIONS[profile.avatar];
+    if (avatar && avatarOption) {
+      avatar.src = avatarOption.image;
+      avatar.alt = avatarOption.label;
+      avatar.hidden = false;
+      avatar.nextElementSibling.hidden = true;
+    } else if (avatar) {
+      avatar.removeAttribute('src');
+      avatar.alt = '';
+      avatar.hidden = true;
+      avatar.nextElementSibling.hidden = false;
+    }
+
+    const tags = getElement('profile-tags');
+    tags.replaceChildren();
+    (profile.tags || []).forEach((tag) => {
+      const chip = document.createElement('span');
+      chip.textContent = tag;
+      tags.appendChild(chip);
+    });
+
+    const xp = Math.max(0, Number(profile.xp) || 0);
+    const nextLevelXp = Math.max(xp + 1, Number(profile.nextLevelXp) || xp + 1);
+    const progression = getElement('profile-progression');
+    progression.replaceChildren();
+    [
+      ['NÍVEL', profile.level],
+      ['PATENTE', profile.rank],
+      ['XP TOTAL', xp.toLocaleString('pt-BR')],
+      ['SEQUÊNCIA', Number(profile.streakDays) || 0]
+    ].forEach(([label, value]) => {
+      const card = document.createElement('div');
+      card.className = 'ascend-profile-stat';
+      const caption = document.createElement('small');
+      caption.textContent = label;
+      const strong = document.createElement('strong');
+      strong.textContent = String(value ?? '');
+      card.append(caption, strong);
+      progression.appendChild(card);
+    });
+
+    const level = getElement('profile-level');
+    level.replaceChildren();
+    const badge = document.createElement('strong');
+    badge.textContent = 'NÍVEL ' + profile.level + ' · ' + profile.rank;
+    level.appendChild(badge);
+    if (ownProfile) {
+      const progress = document.createElement('progress');
+      progress.max = nextLevelXp;
+      progress.value = xp;
+      progress.setAttribute('aria-label', 'Progresso de XP');
+      const caption = document.createElement('small');
+      caption.textContent = xp.toLocaleString('pt-BR') + ' / ' + nextLevelXp.toLocaleString('pt-BR') + ' XP';
+      level.append(progress, caption);
+    }
+
+    postsContainer.replaceChildren();
+    const posts = profile.posts || [];
+    if (!posts.length) {
+      const empty = document.createElement('p');
+      empty.className = 'feature-copy';
+      empty.textContent = 'Suas publicações aparecerão aqui.';
+      postsContainer.appendChild(empty);
+    }
+    posts.forEach((post) => {
+      const article = document.createElement('article');
+      article.className = 'ascend-profile-post';
+      const header = document.createElement('div');
+      header.className = 'ascend-profile-post-meta';
+      const author = document.createElement('strong');
+      author.textContent = profile.name + ' · @' + profile.username;
+      const date = document.createElement('time');
+      date.dateTime = post.createdAt;
+      date.textContent = new Date(post.createdAt).toLocaleString('pt-BR');
+      header.append(author, date);
+      const content = document.createElement('p');
+      content.textContent = post.content;
+      const actions = document.createElement('div');
+      actions.className = 'ascend-social-actions';
+
+      const like = document.createElement('button');
+      like.type = 'button';
+      like.className = 'btn-timer';
+      like.textContent = (post.liked ? '♥ ' : '♡ ') + post.likes;
+      like.setAttribute('aria-label', 'Curtir publicação');
+      like.addEventListener('click', async () => {
+        try {
+          await apiRequest('/profile/posts/' + encodeURIComponent(post.id) + '/like', { method: 'POST' });
+          await loadProfileView(profileId);
+        } catch (error) {
+          setText('profile-feedback', error.message);
+        }
+      });
+
+      const comments = document.createElement('button');
+      comments.type = 'button';
+      comments.className = 'btn-timer';
+      comments.textContent = 'Comentários (' + post.comments + ')';
+      comments.addEventListener('click', async () => {
+        try {
+          const rows = await apiRequest('/profile/posts/' + encodeURIComponent(post.id) + '/comments');
+          const current = rows.map((comment) =>
+            '#' + comment.id + (comment.parentId ? ' ↳ #' + comment.parentId : '') +
+            ' ' + comment.name + ': ' + comment.content
+          ).join('\n');
+          const parentText = rows.length
+            ? window.prompt((current || '') + '\n\nID para responder (vazio cria comentário):', '')
+            : '';
+          if (parentText === null) return;
+          const content = window.prompt('Escreva seu comentário ou resposta:');
+          if (content === null || !content.trim()) return;
+          const parentId = parentText?.trim() ? Number(parentText.replace(/^#/, '')) : null;
+          if (parentId && !rows.some((comment) => comment.id === parentId)) {
+            setText('profile-feedback', 'Esse comentário não foi encontrado.');
+            return;
+          }
+          await apiRequest('/profile/posts/' + encodeURIComponent(post.id) + '/comments', {
+            method: 'POST',
+            body: JSON.stringify({ content, parentId })
+          });
+          await loadProfileView(profileId);
+        } catch (error) {
+          setText('profile-feedback', error.message);
+        }
+      });
+      actions.append(like, comments);
+      article.append(header, content, actions);
+
+      if (ownProfile) {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'btn-timer';
+        remove.textContent = 'Excluir';
+        remove.addEventListener('click', async () => {
+          try {
+            await apiRequest('/profile/posts/' + encodeURIComponent(post.id), { method: 'DELETE' });
+            await loadProfileView();
+          } catch (error) {
+            setText('profile-feedback', error.message);
+          }
+        });
+        actions.appendChild(remove);
+      }
+      postsContainer.appendChild(article);
+    });
+  } catch (error) {
+    postsContainer.textContent = 'Não foi possível carregar o perfil: ' + error.message;
+  }
+}
+
+async function saveProfilePost(event) {
+  event.preventDefault();
+  const input = getElement('profile-post-content');
+  const feedback = getElement('profile-feedback');
+  try {
+    await apiRequest('/profile/posts', {
+      method: 'POST',
+      body: JSON.stringify({ content: input.value })
+    });
+    input.value = '';
+    feedback.textContent = 'Publicação salva.';
+    await loadProfileView();
+  } catch (error) {
+    feedback.textContent = error.message;
+  }
+}
+
+async function editProfile() {
+  try {
+    const current = await apiRequest('/profile');
+    const bio = window.prompt('Sua bio (até 500 caracteres):', current.bio || '');
+    if (bio === null) return;
+    const tagsText = window.prompt('Até 5 tags separadas por vírgula:', (current.tags || []).join(', '));
+    if (tagsText === null) return;
+    const visibility = window.prompt('Visibilidade: PUBLIC, FRIENDS ou PRIVATE', current.visibility || 'PUBLIC');
+    if (visibility === null) return;
+    await apiRequest('/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        bio,
+        tags: tagsText.split(',').map((tag) => tag.trim()).filter(Boolean),
+        visibility
+      })
+    });
+    await loadProfileView();
+    setText('profile-feedback', 'Perfil atualizado.');
+  } catch (error) {
+    setText('profile-feedback', error.message);
+  }
+}
+
+async function searchPlayers() {
+  const input = getElement('player-search');
+  const results = getElement('player-search-results');
+  if (!input || !results) return;
+  const query = input.value.trim();
+  if (query.length < 2) {
+    results.textContent = 'Digite ao menos 2 caracteres.';
+    return;
+  }
+  results.textContent = 'Buscando...';
+
+  try {
+    const players = await apiRequest('/profile/discover?q=' + encodeURIComponent(query));
+    results.replaceChildren();
+    if (!players.length) {
+      results.textContent = 'Nenhum jogador encontrado.';
+      return;
+    }
+    players.forEach((player) => {
+      const row = document.createElement('div');
+      row.className = 'ascend-player-row';
+      const name = document.createElement('button');
+      name.type = 'button';
+      name.className = 'btn-timer';
+      name.textContent = player.name + ' · @' + player.username;
+      name.addEventListener('click', () => loadProfileView(player.id));
+
+      const action = (label, callback) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn-timer';
+        button.textContent = label;
+        button.addEventListener('click', callback);
+        row.appendChild(button);
+      };
+      action(player.following ? 'Deixar de seguir' : 'Seguir', async () => {
+        try {
+          await apiRequest('/profile/follow/' + encodeURIComponent(player.id), {
+            method: player.following ? 'DELETE' : 'POST'
+          });
+          await searchPlayers();
+        } catch (error) {
+          results.textContent = error.message;
+        }
+      });
+      const friendAction = player.friendStatus === 'ACCEPTED'
+        ? 'Remover amizade'
+        : player.friendStatus === 'OUTGOING'
+          ? 'Cancelar solicitação'
+          : player.friendStatus === 'INCOMING'
+            ? 'Aceitar amizade'
+            : 'Adicionar amigo';
+      action(friendAction, async () => {
+        try {
+          const method = player.friendStatus === 'INCOMING' ? 'PUT'
+            : player.friendStatus === 'ACCEPTED' || player.friendStatus === 'OUTGOING' ? 'DELETE'
+              : 'POST';
+          await apiRequest('/profile/friends/' + encodeURIComponent(player.id), { method });
+          await searchPlayers();
+        } catch (error) {
+          results.textContent = error.message;
+        }
+      });
+      action('Bloquear', async () => {
+        if (!window.confirm('Bloquear ' + player.name + '?')) return;
+        try {
+          await apiRequest('/profile/block/' + encodeURIComponent(player.id), { method: 'POST' });
+          await searchPlayers();
+        } catch (error) {
+          results.textContent = error.message;
+        }
+      });
+      row.prepend(name);
+      results.appendChild(row);
+    });
+  } catch (error) {
+    results.textContent = error.message;
+  }
+}
+
+async function loadFriendRequests() {
+  const container = getElement('friend-requests');
+  if (!container) return;
+  container.textContent = 'Carregando...';
+  try {
+    const requests = await apiRequest('/profile/friends/requests');
+    container.replaceChildren();
+    if (!requests.length) {
+      container.textContent = 'Nenhuma solicitação pendente.';
+      return;
+    }
+    requests.forEach((request) => {
+      const row = document.createElement('div');
+      row.className = 'ascend-player-row';
+      const name = document.createElement('strong');
+      name.textContent = request.name + ' · @' + request.username;
+      const accept = document.createElement('button');
+      accept.type = 'button';
+      accept.className = 'btn-timer';
+      accept.textContent = 'Aceitar';
+      accept.addEventListener('click', async () => {
+        try {
+          await apiRequest('/profile/friends/' + encodeURIComponent(request.id), { method: 'PUT' });
+          await loadFriendRequests();
+        } catch (error) {
+          container.textContent = error.message;
+        }
+      });
+      row.append(name, accept);
+      container.appendChild(row);
+    });
+  } catch (error) {
+    container.textContent = error.message;
   }
 }
 
@@ -3996,6 +4334,14 @@ function bindEvents() {
       closeSidebar();
     });
   });
+
+  getElement('profile-post-form')?.addEventListener('submit', saveProfilePost);
+  getElement('profile-edit')?.addEventListener('click', editProfile);
+  getElement('player-search')?.addEventListener('input', () => {
+    clearTimeout(playerSearchTimer);
+    playerSearchTimer = window.setTimeout(searchPlayers, 250);
+  });
+  getElement('friend-requests-open')?.addEventListener('click', loadFriendRequests);
 
   initSidebarDrawer();
   mountRoutinePlannerInTraining();

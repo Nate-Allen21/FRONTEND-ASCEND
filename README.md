@@ -14,6 +14,10 @@ use transparent PNG artwork and are displayed without background blending. The
 selection is saved through the authenticated backend and reused in the profile,
 dashboard, sidebar and ranking. Existing users can change it from **Meu perfil**.
 
+The profile screen also supports an editable bio, tags and visibility, progress
+sharing, likes and comments, player discovery, follows and friend requests. These
+features require the matching `/api/profile` endpoints in the backend.
+
 ## Local run
 
 Install dependencies and run Vite:
