@@ -1,5 +1,7 @@
 import { initExperience } from './experience.js';
 import { renderAssistantMessage } from './chat-format.js';
+import aetherImage from '../assets/aether.png';
+import astraImage from '../assets/astra.png';
 
 const STORAGE_RESET_VERSION = '2026-04-27-reset-1';
 const API_BASE_URL_STORAGE_KEY = 'ascend.api.baseUrl';
@@ -21,8 +23,8 @@ const THEME_PRESETS = {
 const ROUTINE_PROFILE_KEY = 'ascend.routine.profile.' + STORAGE_RESET_VERSION;
 const APP_TIME_ZONE = 'America/Sao_Paulo';
 const AVATAR_OPTIONS = {
-  male: { image: 'assets/aether.png', label: 'AETHER — Guardião da evolução' },
-  female: { image: 'assets/astra.png', label: 'ASTRA — Ambição, força e inteligência' }
+  male: { image: aetherImage, label: 'AETHER — Guardião da evolução' },
+  female: { image: astraImage, label: 'ASTRA — Ambição, força e inteligência' }
 };
 const DEFAULT_WORKOUT_DAYS = ['segunda', 'quarta', 'sexta'];
 const WORKOUT_DAY_ORDER = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];

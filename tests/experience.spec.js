@@ -103,6 +103,7 @@ test('new accounts choose an avatar before dashboard and can change it later', a
   await expect(page.locator('#avatar-title')).toHaveText('ESCOLHA SUA ESSÊNCIA');
   const aether = page.locator('[data-avatar-choice="male"] img');
   await expect(aether).toHaveAttribute('src', 'assets/aether.png');
+  await expect.poll(() => aether.evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
   const aetherBackgroundAlpha = await aether.evaluate(async (image) => {
     await image.decode();
     const canvas = document.createElement('canvas');
@@ -126,7 +127,8 @@ test('new accounts choose an avatar before dashboard and can change it later', a
   await page.locator('#avatar-confirm').click();
   expect((await firstSave).postDataJSON()).toEqual({ avatar: 'male' });
   await expect(page.locator('#app-shell')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', 'assets/aether.png');
+  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', /\/assets\/aether(?:-[\w-]+)?\.png(?:\?.*)?$/);
+  await expect.poll(() => page.locator('.user-avatar--topbar img').evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#btn-edit-avatar').click();
@@ -141,12 +143,12 @@ test('new accounts choose an avatar before dashboard and can change it later', a
   await page.locator('#avatar-confirm').click();
   expect((await secondSave).postDataJSON()).toEqual({ avatar: 'female' });
   await expect(page.locator('#avatar-onboarding')).toBeHidden();
-  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', 'assets/astra.png');
-  await expect(page.locator('.user-avatar--topbar img')).toHaveAttribute('src', 'assets/astra.png');
+  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', /\/assets\/astra(?:-[\w-]+)?\.png(?:\?.*)?$/);
+  await expect(page.locator('.user-avatar--topbar img')).toHaveAttribute('src', /\/assets\/astra(?:-[\w-]+)?\.png(?:\?.*)?$/);
   await page.reload();
   await expect(page.locator('#app-shell')).toBeVisible();
   await expect(page.locator('#avatar-onboarding')).toBeHidden();
-  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', 'assets/astra.png');
+  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', /\/assets\/astra(?:-[\w-]+)?\.png(?:\?.*)?$/);
   expect(errors).toEqual([]);
 });
 
