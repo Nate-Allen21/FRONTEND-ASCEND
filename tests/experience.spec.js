@@ -91,6 +91,15 @@ test('authentication, password visibility and login', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('status and progress overview are visible without the extra dashboard banner', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 768 });
+  await setup(page);
+  await expect(page.locator('.system-banner')).toHaveCount(0);
+  await expect(page.locator('#status-title')).toBeInViewport();
+  await expect(page.locator('#status-overview-title')).toBeInViewport();
+  expect(await page.locator('.evolution-hero').evaluate((hero) => hero.offsetHeight)).toBeLessThan(260);
+});
+
 test('new accounts choose an avatar before dashboard and can change it later', async ({ page }) => {
   const errors = await setup(page, false, false);
   await page.locator('#login-email').fill('new-hunter@example.com');

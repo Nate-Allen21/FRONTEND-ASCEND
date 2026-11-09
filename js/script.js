@@ -1421,9 +1421,6 @@ function renderPlayerStatus(status) {
   }
 
   setText('streak-val', status.streakDays);
-  setText('banner-rank', status.rank);
-  setText('banner-streak', status.streakDays);
-  setText('banner-coins', formatCurrencyValue(status.coins));
   setText('status-rank-overview', 'Hunter ' + status.rank);
   setText('status-streak-overview', status.streakDays);
   setText('status-coins-overview', formatCurrencyValue(status.coins));
