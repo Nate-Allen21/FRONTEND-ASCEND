@@ -55,6 +55,8 @@ let timerDeadline = null;
 let currentPlayerStatus = null;
 let currentUser = null;
 let viewingProfileId = null;
+let profileImageDraft = null;
+let profileImageChanged = false;
 let playerSearchTimer = null;
 let currentStorageScope = 'guest';
 let currentRoutineProfile = null;
@@ -1131,9 +1133,10 @@ async function loadProfileView(profileId = viewingProfileId) {
 
     const avatar = getElement('profile-avatar');
     const avatarOption = AVATAR_OPTIONS[profile.avatar];
-    if (avatar && avatarOption) {
-      avatar.src = avatarOption.image;
-      avatar.alt = avatarOption.label;
+    const profileImageSource = profile.profileImage || avatarOption?.image;
+    if (avatar && profileImageSource) {
+      avatar.src = profileImageSource;
+      avatar.alt = profile.profileImage ? 'Foto de perfil de ' + profile.name : avatarOption.label;
       avatar.hidden = false;
       avatar.nextElementSibling.hidden = true;
     } else if (avatar) {
@@ -1579,26 +1582,131 @@ async function saveProfilePost(event) {
 }
 
 async function editProfile() {
+  const dialog = getElement('profile-edit-dialog');
   try {
     const current = await apiRequest('/profile');
-    const bio = window.prompt('Sua bio (até 500 caracteres):', current.bio || '');
-    if (bio === null) return;
-    const tagsText = window.prompt('Até 5 tags separadas por vírgula:', (current.tags || []).join(', '));
-    if (tagsText === null) return;
-    const visibility = window.prompt('Visibilidade: PUBLIC, FRIENDS ou PRIVATE', current.visibility || 'PUBLIC');
-    if (visibility === null) return;
+    getElement('profile-edit-bio').value = current.bio || '';
+    getElement('profile-edit-tags').value = (current.tags || []).join(', ');
+    getElement('profile-edit-visibility').value = current.visibility || 'PUBLIC';
+    profileImageDraft = current.profileImage || null;
+    profileImageChanged = false;
+    setProfileEditPreview(profileImageDraft || AVATAR_OPTIONS[current.avatar]?.image || null);
+    setText('profile-edit-feedback', '');
+    if (!dialog.open) dialog.showModal();
+    getElement('profile-edit-bio').focus();
+  } catch (error) {
+    setText('profile-feedback', 'Não foi possível abrir a edição: ' + error.message);
+  }
+}
+
+function setProfileEditPreview(source) {
+  const preview = getElement('profile-edit-preview');
+  const fallback = preview.nextElementSibling;
+  if (source) {
+    preview.src = source;
+    preview.hidden = false;
+    fallback.hidden = true;
+  } else {
+    preview.removeAttribute('src');
+    preview.hidden = true;
+    fallback.hidden = false;
+  }
+}
+
+async function optimizeProfileImage(file) {
+  const acceptedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!acceptedTypes.includes(file.type)) {
+    throw new Error('Escolha uma imagem JPG, PNG ou WebP.');
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error('A imagem deve ter no máximo 8 MB.');
+  }
+
+  const bitmap = await createImageBitmap(file);
+  try {
+    for (const maxDimension of [512, 384, 256]) {
+      const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Não foi possível preparar a imagem neste navegador.');
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+      for (const quality of [0.82, 0.68, 0.54, 0.4]) {
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+        if (blob && blob.size <= 96 * 1024) {
+          return await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.addEventListener('load', () => resolve(reader.result), { once: true });
+            reader.addEventListener('error', () => reject(new Error('Não foi possível ler a imagem preparada.')), { once: true });
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    }
+    throw new Error('Não foi possível reduzir a imagem abaixo de 96 KB. Escolha uma imagem menor.');
+  } finally {
+    bitmap.close();
+  }
+}
+
+async function handleProfileImageSelection(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  setText('profile-edit-feedback', 'Preparando sua foto...');
+  try {
+    profileImageDraft = await optimizeProfileImage(file);
+    profileImageChanged = true;
+    setProfileEditPreview(profileImageDraft);
+    setText('profile-edit-feedback', '');
+  } catch (error) {
+    setText('profile-edit-feedback', error.message);
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function handleProfileImageRemove() {
+  profileImageDraft = null;
+  profileImageChanged = true;
+  setProfileEditPreview(null);
+  setText('profile-edit-feedback', '');
+}
+
+async function saveProfileEdits(event) {
+  event.preventDefault();
+  const saveButton = getElement('profile-edit-save');
+  const tags = getElement('profile-edit-tags').value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  if (tags.length > 5) {
+    setText('profile-edit-feedback', 'Você pode escolher no máximo 5 tags.');
+    return;
+  }
+
+  saveButton.disabled = true;
+  setText('profile-edit-feedback', 'Salvando alterações...');
+  try {
     await apiRequest('/profile', {
       method: 'PUT',
       body: JSON.stringify({
-        bio,
-        tags: tagsText.split(',').map((tag) => tag.trim()).filter(Boolean),
-        visibility
+        bio: getElement('profile-edit-bio').value,
+        tags,
+        visibility: getElement('profile-edit-visibility').value,
+        ...(profileImageChanged ? { profileImage: profileImageDraft || '' } : {})
       })
     });
+    getElement('profile-edit-dialog').close();
     await loadProfileView();
     setText('profile-feedback', 'Perfil atualizado.');
   } catch (error) {
-    setText('profile-feedback', error.message);
+    setText('profile-edit-feedback', error.message);
+  } finally {
+    saveButton.disabled = false;
   }
 }
 
@@ -4623,6 +4731,14 @@ function bindEvents() {
 
   getElement('profile-post-form')?.addEventListener('submit', saveProfilePost);
   getElement('profile-edit')?.addEventListener('click', editProfile);
+  getElement('profile-edit-form')?.addEventListener('submit', saveProfileEdits);
+  getElement('profile-edit-close')?.addEventListener('click', () => getElement('profile-edit-dialog').close());
+  getElement('profile-edit-cancel')?.addEventListener('click', () => getElement('profile-edit-dialog').close());
+  getElement('profile-image-input')?.addEventListener('change', handleProfileImageSelection);
+  getElement('profile-image-remove')?.addEventListener('click', handleProfileImageRemove);
+  getElement('profile-edit-dialog')?.addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) event.currentTarget.close();
+  });
   getElement('view-profile')?.addEventListener('click', handleProfileTabClick);
   getElement('view-profile')?.addEventListener('keydown', handleProfileTabKeydown);
   getElement('profile-follow-button')?.addEventListener('click', handleProfileFollow);

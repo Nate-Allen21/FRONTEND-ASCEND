@@ -107,6 +107,14 @@ async function setup(page, authenticated = true, onboardingCompleted = true) {
       });
       data = profilePosts[0];
     }
+    else if (path.endsWith('/profile') && route.request().method() === 'PUT') {
+      const updates = route.request().postDataJSON();
+      profile.bio = updates.bio;
+      profile.tags = updates.tags;
+      profile.visibility = updates.visibility;
+      if (Object.hasOwn(updates, 'profileImage')) profile.profileImage = updates.profileImage || null;
+      data = { ...profile, posts: profilePosts };
+    }
     else if (path.endsWith('/profile') && route.request().method() === 'GET') data = { ...profile, posts: profilePosts };
     else if (path.endsWith('/profile/friends')) data = [{ id: 2, name: 'Aliada ASCEND', username: 'aliada', avatar: 'female' }];
     else if (path.endsWith('/complete')) { completed = ['training', 'study']; data = status(); }
@@ -206,6 +214,45 @@ test('profile loads account details and publishes a post', async ({ page }) => {
   await expect(page.locator('#profile-posts')).toContainText('Mais um passo na jornada.');
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.locator('#view-profile').evaluate((view) => view.scrollWidth <= view.clientWidth + 1)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('profile editor updates the bio and a custom profile photo', async ({ page }) => {
+  const errors = await setup(page);
+  await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
+  await page.locator('#profile-edit').click();
+  await expect(page.locator('#profile-edit-dialog')).toBeVisible();
+  await expect(page.locator('#profile-edit-bio')).toHaveValue('Uma jornada por dia.');
+  await page.locator('#profile-edit-bio').fill('Evoluindo um passo por vez.');
+
+  const pngDataUrl = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 8;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#36aaff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+  });
+  await page.locator('#profile-image-input').setInputFiles({
+    name: 'profile.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(pngDataUrl.split(',')[1], 'base64')
+  });
+  await expect(page.locator('#profile-edit-preview')).toBeVisible();
+  await expect(page.locator('#profile-edit-feedback')).toBeEmpty();
+  await page.locator('#profile-edit-save').click();
+
+  await expect(page.locator('#profile-edit-dialog')).toBeHidden();
+  await expect(page.locator('#profile-bio')).toHaveText('Evoluindo um passo por vez.');
+  await expect(page.locator('#profile-avatar')).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
+
+  await page.locator('#profile-edit').click();
+  await expect(page.locator('#profile-edit-preview')).toBeVisible();
+  await page.locator('#profile-image-remove').click();
+  await expect(page.locator('#profile-edit-preview')).toBeHidden();
+  await page.locator('#profile-edit-save').click();
+  await expect(page.locator('#profile-avatar')).toHaveAttribute('src', /aether\.png/);
   expect(errors).toEqual([]);
 });
 

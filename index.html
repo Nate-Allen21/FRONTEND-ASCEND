@@ -351,6 +351,42 @@
             </aside>
           </div>
         </div>
+        <dialog id="profile-edit-dialog" class="profile-edit-dialog" aria-labelledby="profile-edit-title">
+          <form id="profile-edit-form" class="profile-edit-form">
+            <header class="profile-edit-header">
+              <div><span class="ascend-eyebrow">IDENTIDADE DO JOGADOR</span><h2 id="profile-edit-title">Editar perfil</h2></div>
+              <button id="profile-edit-close" class="glass-btn glass-btn--icon" type="button" aria-label="Fechar edição do perfil"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            </header>
+            <div class="profile-edit-photo-section">
+              <span class="profile-edit-photo-preview"><img id="profile-edit-preview" alt="Prévia da foto de perfil" hidden><i class="bi bi-person-badge" aria-hidden="true"></i></span>
+              <div class="profile-edit-photo-controls">
+                <strong>Foto de perfil</strong>
+                <span>Escolha uma imagem do seu dispositivo. Ela será ajustada para caber no perfil.</span>
+                <div class="profile-edit-photo-actions">
+                  <label class="btn-timer" for="profile-image-input"><i class="bi bi-upload" aria-hidden="true"></i> Escolher foto</label>
+                  <button id="profile-image-remove" class="btn-timer" type="button">Remover foto</button>
+                </div>
+                <input id="profile-image-input" class="profile-edit-file-input" type="file" accept="image/jpeg,image/png,image/webp">
+                <small>JPG, PNG ou WebP · até 8 MB</small>
+              </div>
+            </div>
+            <label class="profile-edit-field" for="profile-edit-bio">Bio <span>Até 500 caracteres</span></label>
+            <textarea id="profile-edit-bio" maxlength="500" rows="4" placeholder="Conte um pouco sobre a sua jornada..."></textarea>
+            <label class="profile-edit-field" for="profile-edit-tags">Tags <span>Separe por vírgulas (até 5)</span></label>
+            <input id="profile-edit-tags" class="auth-input" type="text" maxlength="200" placeholder="Ex.: Tecnologia, Leitura, Foco">
+            <label class="profile-edit-field" for="profile-edit-visibility">Visibilidade do perfil</label>
+            <select id="profile-edit-visibility" class="auth-input">
+              <option value="PUBLIC">Público</option>
+              <option value="FRIENDS">Somente amigos</option>
+              <option value="PRIVATE">Privado</option>
+            </select>
+            <p id="profile-edit-feedback" class="profile-edit-feedback" role="status"></p>
+            <footer class="profile-edit-footer">
+              <button id="profile-edit-cancel" class="btn-timer" type="button">Cancelar</button>
+              <button id="profile-edit-save" class="auth-submit" type="submit"><i class="bi bi-check2" aria-hidden="true"></i> Salvar alterações</button>
+            </footer>
+          </form>
+        </dialog>
       </section>
       <section class="app-view active" id="view-status" data-view-panel="status" aria-label="Painel de status">
         <div class="evolution-hero">
