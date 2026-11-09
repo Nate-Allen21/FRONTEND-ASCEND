@@ -91,6 +91,32 @@ test('authentication, password visibility and login', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('Google login button forwards clicks to the rendered sign-in control', async ({ page }) => {
+  await page.route('https://accounts.google.com/gsi/client', (route) => route.abort());
+  await page.addInitScript(() => {
+    window.googleButtonClicked = false;
+    window.google = {
+      accounts: {
+        id: {
+          initialize: () => {},
+          renderButton: (container) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = 'Google iframe button mock';
+            button.addEventListener('click', () => { window.googleButtonClicked = true; });
+            container.appendChild(button);
+          }
+        }
+      }
+    };
+  });
+  await setup(page, false);
+  const login = page.locator('.google-login-wrap');
+  await expect(login).toHaveClass(/is-configured/);
+  await login.click();
+  await expect.poll(() => page.evaluate(() => window.googleButtonClicked)).toBe(true);
+});
+
 test('status and progress overview are visible without the extra dashboard banner', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 768 });
   await setup(page);

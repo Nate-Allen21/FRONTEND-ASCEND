@@ -1265,22 +1265,29 @@ async function handleGoogleCredential(response) {
 function initGoogleSignIn() {
   const button = getElement('btn-google-login');
   const container = getElement('google-signin-container');
+  const wrapper = button?.closest('.google-login-wrap');
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   if (!button) return;
   if (!clientId) {
     button.addEventListener('click', () => setAuthMessage('Configure VITE_GOOGLE_CLIENT_ID para ativar o login Google.'));
     return;
   }
+  button.addEventListener('click', () => {
+    if (!wrapper?.classList.contains('is-configured')) {
+      setAuthMessage('O Google ainda está carregando. Tente novamente em instantes.');
+    }
+  });
   const waitForGoogle = () => {
     if (!window.google?.accounts?.id) {
       window.setTimeout(waitForGoogle, 100);
       return;
     }
     window.google.accounts.id.initialize({ client_id: clientId, callback: handleGoogleCredential });
-    if (container) {
-      window.google.accounts.id.renderButton(container, { type: 'standard', theme: 'outline', size: 'large', width: 280 });
+    if (container && wrapper) {
+      const width = Math.min(400, Math.max(120, Math.floor(button.getBoundingClientRect().width)));
+      window.google.accounts.id.renderButton(container, { type: 'standard', theme: 'outline', size: 'large', width });
+      wrapper.classList.add('is-configured');
     }
-    button.addEventListener('click', () => container?.querySelector('[role="button"]')?.click());
   };
   waitForGoogle();
 }
