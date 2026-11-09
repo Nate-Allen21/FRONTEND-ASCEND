@@ -1112,10 +1112,15 @@ async function loadProfileView(profileId = viewingProfileId) {
     const profile = await apiRequest(endpoint);
     viewingProfileId = profileId || null;
     const ownProfile = !profileId || String(profile.id) === String(currentUser?.id);
+    const status = ownProfile ? currentPlayerStatus : null;
+    const unlockedAchievements = status
+      ? ACHIEVEMENTS.filter((achievement) => achievement.unlocked(status))
+      : [];
 
     getElement('profile-edit').hidden = !ownProfile;
     getElement('profile-post-form').hidden = !ownProfile;
-    getElement('profile-progression').hidden = !ownProfile;
+    getElement('profile-follow-button').hidden = ownProfile;
+    getElement('profile-friend-button').hidden = ownProfile;
     setText('profile-title', profile.name || 'Meu perfil');
     setText('profile-handle', '@' + (profile.username || 'player') + ' · ID ' + profile.id);
     setText('profile-bio', profile.bio || 'Adicione uma bio para contar sua jornada.');
@@ -1146,40 +1151,13 @@ async function loadProfileView(profileId = viewingProfileId) {
       tags.appendChild(chip);
     });
 
-    const xp = Math.max(0, Number(profile.xp) || 0);
-    const nextLevelXp = Math.max(xp + 1, Number(profile.nextLevelXp) || xp + 1);
-    const progression = getElement('profile-progression');
-    progression.replaceChildren();
-    [
-      ['NÍVEL', profile.level],
-      ['PATENTE', profile.rank],
-      ['XP TOTAL', xp.toLocaleString('pt-BR')],
-      ['SEQUÊNCIA', Number(profile.streakDays) || 0]
-    ].forEach(([label, value]) => {
-      const card = document.createElement('div');
-      card.className = 'ascend-profile-stat';
-      const caption = document.createElement('small');
-      caption.textContent = label;
-      const strong = document.createElement('strong');
-      strong.textContent = String(value ?? '');
-      card.append(caption, strong);
-      progression.appendChild(card);
-    });
-
-    const level = getElement('profile-level');
-    level.replaceChildren();
-    const badge = document.createElement('strong');
-    badge.textContent = 'NÍVEL ' + profile.level + ' · ' + profile.rank;
-    level.appendChild(badge);
-    if (ownProfile) {
-      const progress = document.createElement('progress');
-      progress.max = nextLevelXp;
-      progress.value = xp;
-      progress.setAttribute('aria-label', 'Progresso de XP');
-      const caption = document.createElement('small');
-      caption.textContent = xp.toLocaleString('pt-BR') + ' / ' + nextLevelXp.toLocaleString('pt-BR') + ' XP';
-      level.append(progress, caption);
-    }
+    renderProfileMetrics(profile, ownProfile);
+    renderProfileLevel(profile, ownProfile);
+    renderProfileOverview(profile, ownProfile, status);
+    renderProfileAchievements(ownProfile, unlockedAchievements);
+    renderProfileDetails(profile, ownProfile, status);
+    configureProfileActions(profile, ownProfile);
+    setText('profile-social-feedback', '');
 
     postsContainer.replaceChildren();
     const posts = profile.posts || [];
@@ -1270,8 +1248,316 @@ async function loadProfileView(profileId = viewingProfileId) {
       }
       postsContainer.appendChild(article);
     });
+    openProfileTab('posts');
+    if (ownProfile) {
+      loadProfileFriends();
+    } else {
+      getElement('profile-friends').textContent = 'A lista de amigos não é exibida neste perfil.';
+      setText('profile-friend-count', profile.friendStatus === 'ACCEPTED' ? 'Amigo' : '');
+    }
   } catch (error) {
     postsContainer.textContent = 'Não foi possível carregar o perfil: ' + error.message;
+  }
+}
+
+function renderProfileMetrics(profile, ownProfile) {
+  const metrics = getElement('profile-progression');
+  metrics.replaceChildren();
+  const posts = Array.isArray(profile.posts) ? profile.posts.length : 0;
+  const following = ownProfile ? profile.following : profile.followingCount;
+  [
+    ['NÍVEL', profile.level, 'bi-bar-chart-line'],
+    ['PUBLICAÇÕES', posts, 'bi-chat-square-text'],
+    ['SEGUIDORES', profile.followers ?? 0, 'bi-people'],
+    ['SEGUINDO', following ?? 0, 'bi-person-plus']
+  ].forEach(([label, value, icon]) => {
+    const card = document.createElement('div');
+    card.className = 'ascend-profile-metric';
+    const mark = document.createElement('i');
+    mark.className = 'bi ' + icon;
+    mark.setAttribute('aria-hidden', 'true');
+    const copy = document.createElement('span');
+    copy.className = 'ascend-profile-metric-copy';
+    const caption = document.createElement('small');
+    caption.textContent = label;
+    const strong = document.createElement('strong');
+    strong.textContent = String(value ?? 0);
+    copy.append(caption, strong);
+    card.append(mark, copy);
+    metrics.appendChild(card);
+  });
+}
+
+function renderProfileLevel(profile, ownProfile) {
+  const level = getElement('profile-level');
+  level.replaceChildren();
+  const badge = document.createElement('strong');
+  badge.textContent = 'NÍVEL ' + (profile.level ?? 1) + ' · ' + (profile.rank || 'E');
+  level.appendChild(badge);
+  if (!ownProfile) {
+    const note = document.createElement('small');
+    note.textContent = 'Progresso detalhado disponível apenas no seu perfil.';
+    level.appendChild(note);
+    return;
+  }
+
+  const xp = Math.max(0, Number(profile.xp) || 0);
+  const nextLevelXp = Math.max(xp + 1, Number(profile.nextLevelXp) || xp + 1);
+  const progress = document.createElement('progress');
+  progress.max = nextLevelXp;
+  progress.value = Math.min(xp, nextLevelXp);
+  progress.setAttribute('aria-label', 'Progresso de XP');
+  const caption = document.createElement('small');
+  caption.textContent = xp.toLocaleString('pt-BR') + ' / ' + nextLevelXp.toLocaleString('pt-BR') + ' XP';
+  level.append(progress, caption);
+}
+
+function renderProfileOverview(profile, ownProfile, status) {
+  const node = getElement('profile-overview-stats');
+  node.replaceChildren();
+  const entries = ownProfile
+    ? [
+        ['MISSÕES CONCLUÍDAS', getStatValue(status, 'missions'), 'bi-check2-circle'],
+        ['XP ACUMULADO', Number(profile.xp || 0).toLocaleString('pt-BR'), 'bi-stars'],
+        ['DIAS DE ATIVIDADE', Number(profile.streakDays || 0), 'bi-fire'],
+        ['ATRIBUTO MAIS FORTE', getStrongestAttribute(status), 'bi-lightning-charge']
+      ]
+    : [
+        ['NÍVEL', profile.level, 'bi-bar-chart-line'],
+        ['PATENTE', profile.rank, 'bi-shield-check'],
+        ['PUBLICAÇÕES', Array.isArray(profile.posts) ? profile.posts.length : 0, 'bi-chat-square-text'],
+        ['SEGUIDORES', profile.followers ?? 0, 'bi-people']
+      ];
+
+  entries.forEach(([label, value, icon]) => {
+    const card = document.createElement('article');
+    card.className = 'ascend-profile-overview-card';
+    const mark = document.createElement('i');
+    mark.className = 'bi ' + icon;
+    mark.setAttribute('aria-hidden', 'true');
+    const caption = document.createElement('small');
+    caption.textContent = label;
+    const amount = document.createElement('strong');
+    amount.textContent = String(value ?? '—');
+    card.append(mark, caption, amount);
+    node.appendChild(card);
+  });
+}
+
+function renderProfileAchievements(ownProfile, unlocked) {
+  ['profile-achievements', 'profile-side-achievements'].forEach((id) => {
+    const node = getElement(id);
+    node.replaceChildren();
+    if (!ownProfile) {
+      node.textContent = 'As conquistas não são exibidas neste perfil.';
+      return;
+    }
+    if (!unlocked.length) {
+      node.textContent = 'Complete missões para desbloquear conquistas.';
+      return;
+    }
+    const achievements = id === 'profile-side-achievements'
+      ? unlocked.slice(-3).reverse()
+      : unlocked.slice().reverse();
+    achievements.forEach((achievement) => {
+      node.appendChild(createProfileAchievementCard(achievement));
+    });
+  });
+}
+
+function createProfileAchievementCard(achievement) {
+  const card = document.createElement('article');
+  card.className = 'ascend-profile-achievement';
+  const icon = document.createElement('span');
+  icon.className = 'ascend-profile-achievement-icon';
+  const mark = document.createElement('i');
+  mark.className = 'bi ' + achievement.icone;
+  mark.setAttribute('aria-hidden', 'true');
+  icon.appendChild(mark);
+  const copy = document.createElement('span');
+  copy.className = 'ascend-profile-achievement-copy';
+  const title = document.createElement('strong');
+  title.textContent = achievement.titulo;
+  const description = document.createElement('small');
+  description.textContent = achievement.descricao;
+  copy.append(title, description);
+  card.append(icon, copy);
+  return card;
+}
+
+function getStrongestAttribute(status) {
+  const attributes = (status?.stats || [])
+    .filter((entry) => entry.key !== 'missions' && Number.isFinite(Number(entry.value)))
+    .sort((left, right) => Number(right.value) - Number(left.value));
+  return attributes.length
+    ? attributes[0].name + ' · ' + attributes[0].value
+    : 'Sem dados';
+}
+
+function renderProfileDetails(profile, ownProfile, status) {
+  const node = getElement('profile-detail-stats');
+  node.replaceChildren();
+  const stats = Array.isArray(status?.stats)
+    ? status.stats.filter((entry) => entry.key !== 'missions')
+    : [];
+  const entries = ownProfile
+    ? [
+        ['Missões concluídas', getStatValue(status, 'missions')],
+        ['XP acumulado', Number(profile.xp || 0).toLocaleString('pt-BR')],
+        ['Nível atual', profile.level],
+        ['Patente', profile.rank],
+        ['Dias consecutivos', Number(profile.streakDays || 0)],
+        ...stats.map((entry) => [entry.name, entry.value])
+      ]
+    : [
+        ['Nível atual', profile.level],
+        ['Patente', profile.rank],
+        ['Publicações', Array.isArray(profile.posts) ? profile.posts.length : 0],
+        ['Seguidores', profile.followers ?? 0]
+      ];
+  entries.forEach(([name, value]) => {
+    const row = document.createElement('div');
+    row.className = 'ascend-profile-detail-row';
+    const label = document.createElement('span');
+    label.textContent = name;
+    const amount = document.createElement('strong');
+    amount.textContent = String(value ?? '—');
+    row.append(label, amount);
+    node.appendChild(row);
+  });
+}
+
+function configureProfileActions(profile, ownProfile) {
+  const followButton = getElement('profile-follow-button');
+  followButton.textContent = profile.following ? 'Deixar de seguir' : 'Seguir jogador';
+  followButton.dataset.following = String(Boolean(profile.following));
+  followButton.setAttribute('aria-pressed', String(Boolean(profile.following)));
+
+  const friendButton = getElement('profile-friend-button');
+  const friendStatus = profile.friendStatus || 'NONE';
+  const labels = {
+    ACCEPTED: 'Remover amizade',
+    OUTGOING: 'Cancelar solicitação',
+    INCOMING: 'Aceitar amizade',
+    NONE: 'Adicionar amigo'
+  };
+  friendButton.textContent = labels[friendStatus] || labels.NONE;
+  friendButton.dataset.friendStatus = friendStatus;
+  setText('profile-friend-count', ownProfile ? '' : friendStatus === 'ACCEPTED' ? 'Amigo' : '');
+}
+
+function openProfileTab(name) {
+  const profileView = getElement('view-profile');
+  profileView.querySelectorAll('[data-profile-tab]').forEach((button) => {
+    const active = button.dataset.profileTab === name;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  profileView.querySelectorAll('[data-profile-panel]').forEach((panel) => {
+    panel.hidden = panel.dataset.profilePanel !== name;
+  });
+}
+
+function handleProfileTabClick(event) {
+  const control = event.target.closest('[data-profile-tab], [data-profile-tab-link]');
+  if (!control) return;
+  const name = control.dataset.profileTab || control.dataset.profileTabLink;
+  if (name) openProfileTab(name);
+}
+
+function handleProfileTabKeydown(event) {
+  const activeTab = event.target.closest('[data-profile-tab]');
+  if (!activeTab) return;
+  const tabs = [...getElement('view-profile').querySelectorAll('[data-profile-tab]')];
+  const currentIndex = tabs.indexOf(activeTab);
+  const nextIndex = event.key === 'ArrowRight'
+    ? (currentIndex + 1) % tabs.length
+    : event.key === 'ArrowLeft'
+      ? (currentIndex - 1 + tabs.length) % tabs.length
+      : event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? tabs.length - 1
+          : -1;
+  if (nextIndex < 0) return;
+  event.preventDefault();
+  const nextTab = tabs[nextIndex];
+  openProfileTab(nextTab.dataset.profileTab);
+  nextTab.focus();
+}
+
+async function loadProfileFriends() {
+  const profileId = viewingProfileId;
+  const node = getElement('profile-friends');
+  node.textContent = 'Carregando amigos...';
+  try {
+    const friends = await apiRequest('/profile/friends');
+    if (profileId !== viewingProfileId) return;
+    node.replaceChildren();
+    setText('profile-friend-count', friends.length + (friends.length === 1 ? ' amigo' : ' amigos'));
+    if (!friends.length) {
+      node.textContent = 'Sua lista de amigos aparecerá aqui.';
+      return;
+    }
+    friends.slice(0, 8).forEach((friend) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ascend-profile-friend';
+      button.title = 'Ver perfil de ' + friend.name;
+      const avatar = document.createElement('span');
+      avatar.className = 'ascend-profile-friend-avatar';
+      const avatarOption = AVATAR_OPTIONS[friend.avatar];
+      if (avatarOption) {
+        const image = document.createElement('img');
+        image.src = avatarOption.image;
+        image.alt = '';
+        avatar.appendChild(image);
+      } else {
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-person';
+        icon.setAttribute('aria-hidden', 'true');
+        avatar.appendChild(icon);
+      }
+      const name = document.createElement('small');
+      name.textContent = friend.name;
+      button.append(avatar, name);
+      button.addEventListener('click', () => loadProfileView(friend.id));
+      node.appendChild(button);
+    });
+  } catch (error) {
+    if (profileId !== viewingProfileId) return;
+    node.textContent = 'Não foi possível carregar os amigos: ' + error.message;
+  }
+}
+
+async function handleProfileFollow() {
+  if (!viewingProfileId) return;
+  const button = getElement('profile-follow-button');
+  const following = button.dataset.following === 'true';
+  try {
+    await apiRequest('/profile/follow/' + encodeURIComponent(viewingProfileId), {
+      method: following ? 'DELETE' : 'POST'
+    });
+    await loadProfileView(viewingProfileId);
+  } catch (error) {
+    setText('profile-social-feedback', error.message);
+  }
+}
+
+async function handleProfileFriend() {
+  if (!viewingProfileId) return;
+  const status = getElement('profile-friend-button').dataset.friendStatus || 'NONE';
+  const method = status === 'INCOMING'
+    ? 'PUT'
+    : status === 'ACCEPTED' || status === 'OUTGOING'
+      ? 'DELETE'
+      : 'POST';
+  try {
+    await apiRequest('/profile/friends/' + encodeURIComponent(viewingProfileId), { method });
+    await loadProfileView(viewingProfileId);
+  } catch (error) {
+    setText('profile-social-feedback', error.message);
   }
 }
 
@@ -4337,6 +4623,10 @@ function bindEvents() {
 
   getElement('profile-post-form')?.addEventListener('submit', saveProfilePost);
   getElement('profile-edit')?.addEventListener('click', editProfile);
+  getElement('view-profile')?.addEventListener('click', handleProfileTabClick);
+  getElement('view-profile')?.addEventListener('keydown', handleProfileTabKeydown);
+  getElement('profile-follow-button')?.addEventListener('click', handleProfileFollow);
+  getElement('profile-friend-button')?.addEventListener('click', handleProfileFriend);
   getElement('player-search')?.addEventListener('input', () => {
     clearTimeout(playerSearchTimer);
     playerSearchTimer = window.setTimeout(searchPlayers, 250);
