@@ -101,7 +101,23 @@ test('new accounts choose an avatar before dashboard and can change it later', a
   await expect(page.locator('#app-shell')).toBeHidden();
   await expect(page.locator('#avatar-confirm')).toBeDisabled();
   await expect(page.locator('#avatar-title')).toHaveText('ESCOLHA SUA ESSÊNCIA');
-  await expect(page.locator('[data-avatar-choice="male"] img')).toHaveAttribute('src', 'assets/aether.jpg');
+  const aether = page.locator('[data-avatar-choice="male"] img');
+  await expect(aether).toHaveAttribute('src', 'assets/aether.png');
+  const aetherBackgroundAlpha = await aether.evaluate(async (image) => {
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let transparentPixels = 0;
+    for (let i = 3; i < pixels.length; i += 4) {
+      if (pixels[i] === 0) transparentPixels += 1;
+    }
+    return transparentPixels;
+  });
+  expect(aetherBackgroundAlpha).toBeGreaterThan(500000);
   await expect(page.locator('[data-avatar-choice="female"] img')).toHaveAttribute('src', 'assets/astra.png');
 
   await page.locator('[data-avatar-choice="male"]').click();
@@ -110,7 +126,7 @@ test('new accounts choose an avatar before dashboard and can change it later', a
   await page.locator('#avatar-confirm').click();
   expect((await firstSave).postDataJSON()).toEqual({ avatar: 'male' });
   await expect(page.locator('#app-shell')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', 'assets/aether.jpg');
+  await expect(page.locator('.player-avatar img')).toHaveAttribute('src', 'assets/aether.png');
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#btn-edit-avatar').click();

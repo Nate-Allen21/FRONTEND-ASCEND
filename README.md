@@ -9,9 +9,10 @@ Frontend for the ASCEND platform, built with Vite.
 - `js/`
 - `assets/`
 
-New accounts choose AETHER or ASTRA during onboarding. The selection is saved
-through the authenticated backend and reused in the profile, dashboard, sidebar
-and ranking. Existing users can change it from **Meu perfil**.
+New accounts choose AETHER or ASTRA during onboarding. Both character portraits
+use transparent PNG artwork and are displayed without background blending. The
+selection is saved through the authenticated backend and reused in the profile,
+dashboard, sidebar and ranking. Existing users can change it from **Meu perfil**.
 
 ## Local run
 
