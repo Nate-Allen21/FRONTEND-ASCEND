@@ -18,11 +18,11 @@
       document.documentElement.dataset.theme = saved?.theme || 'dark-space';
     } catch (_) {}
   </script>
-  <link href="css/style.css?v=20261104-cyber-shell-fix" rel="stylesheet" />
+  <link href="css/style.css?v=20261109-codex-identity" rel="stylesheet" />
   <link href="css/experience.css" rel="stylesheet" />
-  <link href="css/cyber-shell.css?v=20261104" rel="stylesheet" />
+  <link href="css/cyber-shell.css?v=20261109-codex-identity" rel="stylesheet" />
   <link href="css/ascend.css?v=2027-liquid-1" rel="stylesheet" />
-  <link href="css/avatar-onboarding.css" rel="stylesheet" />
+  <link href="css/avatar-onboarding.css?v=20261109-codex-identity" rel="stylesheet" />
 </head>
 
 <body>
@@ -35,9 +35,9 @@
   <div class="auth-showcase">
     <div class="showcase-sigil" aria-hidden="true"><span>A</span></div>
     <div class="auth-character-energy" aria-hidden="true"></div>
-    <img class="auth-character auth-character-summoner" src="assets/conjurador-energia.png" alt="Conjurador Cibernético de Energia" fetchpriority="high" />
-    <img class="auth-character auth-character-witch" src="assets/feiticeira-energia-azul.png" alt="Feiticeira Tecnomágica da Energia Azul" fetchpriority="high" />
-    <div class="auth-showcase-caption"><span>DOIS PODERES. UMA ASCENSÃO.</span><strong>Sua próxima evolução começa.</strong></div>
+    <img class="auth-character auth-character-summoner" src="assets/aether.jpg" alt="AETHER, o guardião da evolução" fetchpriority="high" />
+    <img class="auth-character auth-character-witch" src="assets/astra.png" alt="ASTRA, símbolo de ambição, força, inteligência e evolução constante" fetchpriority="high" />
+    <div class="auth-showcase-caption"><span>AETHER + ASTRA // ASCEND</span><strong>Duas forças. Uma evolução constante.</strong></div>
     <span class="auth-showcase-kicker">SEU PRÓXIMO NÍVEL</span>
     <h2>Sua rotina.<br /><em>Sua evolução.</em></h2>
     <p>Organize seus treinos, estudos e missões.<br />Um passo de cada vez.</p>
@@ -104,24 +104,24 @@
       <p id="avatar-subtitle">Todo grande progresso começa com uma escolha. Selecione o personagem que representará sua jornada.</p>
     </div>
     <div class="avatar-roster" role="group" aria-label="Escolha seu personagem">
-      <button class="avatar-choice" type="button" data-avatar-choice="male" aria-pressed="false" aria-label="Selecionar ASCEND — MALE">
+      <button class="avatar-choice" type="button" data-avatar-choice="male" aria-pressed="false" aria-label="Selecionar AETHER">
         <span class="avatar-choice__visual">
           <span class="avatar-choice__halo" aria-hidden="true"></span>
-          <img src="assets/avatar-male.png" alt="Conjurador cibernético de energia" fetchpriority="high" />
+          <img src="assets/aether.jpg" alt="AETHER, o guardião da evolução" fetchpriority="high" />
           <span class="avatar-choice__selected" aria-hidden="true"><i class="bi bi-check-lg"></i> ESCOLHIDO</span>
           <span class="avatar-choice__scan" aria-hidden="true"></span>
         </span>
-        <span class="avatar-choice__meta"><span class="avatar-choice__index">ASCEND // 01</span><strong>ASCEND — MALE</strong><span>Uma jornada de força, estratégia e evolução.</span></span>
+        <span class="avatar-choice__meta"><span class="avatar-choice__index">ASCEND // 01</span><strong>AETHER</strong><span>O guardião da evolução: força, estratégia e progresso.</span></span>
       </button>
       <div class="avatar-roster__divider" aria-hidden="true"><span>OR</span></div>
-      <button class="avatar-choice" type="button" data-avatar-choice="female" aria-pressed="false" aria-label="Selecionar ASCEND — FEMALE">
+      <button class="avatar-choice" type="button" data-avatar-choice="female" aria-pressed="false" aria-label="Selecionar ASTRA">
         <span class="avatar-choice__visual">
           <span class="avatar-choice__halo" aria-hidden="true"></span>
-          <img src="assets/avatar-female.png" alt="Feiticeira tecnomágica da energia azul" fetchpriority="high" />
+          <img src="assets/astra.png" alt="ASTRA, símbolo de ambição, força, inteligência e evolução constante" fetchpriority="high" />
           <span class="avatar-choice__selected" aria-hidden="true"><i class="bi bi-check-lg"></i> ESCOLHIDO</span>
           <span class="avatar-choice__scan" aria-hidden="true"></span>
         </span>
-        <span class="avatar-choice__meta"><span class="avatar-choice__index">ASCEND // 02</span><strong>ASCEND — FEMALE</strong><span>Uma jornada de poder, determinação e transformação.</span></span>
+        <span class="avatar-choice__meta"><span class="avatar-choice__index">ASCEND // 02</span><strong>ASTRA</strong><span>Ambição, força e inteligência em evolução constante.</span></span>
       </button>
     </div>
     <div class="avatar-onboarding__footer">
@@ -234,6 +234,7 @@
         <a href="#view-status" class="sidebar-link active" aria-current="page" data-view="status">
           <i class="bi bi-person-badge" aria-hidden="true"></i> Status
         </a>
+        <a href="#view-profile" class="sidebar-link" data-view="profile"><i class="bi bi-person-vcard" aria-hidden="true"></i> Meu perfil</a>
         <a href="#view-missions" class="sidebar-link" data-view="missions">
           <i class="bi bi-list-check" aria-hidden="true"></i> Missoes
         </a>
@@ -277,6 +278,19 @@
     </aside>
 
     <main class="main-content" id="conteudo-principal" tabindex="-1">
+      <section class="app-view" id="view-profile" data-view-panel="profile" aria-labelledby="profile-title" hidden>
+        <div class="ascend-profile-banner"><span class="ascend-eyebrow">ASCEND // PLAYER IDENTITY</span></div>
+        <div class="ascend-profile-layout">
+          <section class="feature-panel ascend-profile-main">
+            <header class="ascend-profile-heading"><span class="ascend-profile-avatar"><img data-profile-avatar alt="" hidden><i class="bi bi-person-badge" aria-hidden="true"></i></span><div><span class="ascend-eyebrow">SEU LEGADO</span><h1 id="profile-title">Meu perfil</h1><p id="profile-handle"></p></div><button id="profile-edit" class="btn-timer" type="button"><i class="bi bi-pencil"></i> Editar</button></header>
+            <p id="profile-bio" class="feature-copy">Adicione uma bio para contar sua jornada.</p><div id="profile-tags" class="ascend-profile-tags"></div>
+            <div class="ascend-profile-stats" id="profile-progression"></div>
+            <form id="profile-post-form" class="ascend-profile-post-form"><label for="profile-post-content">Compartilhe sua jornada</label><textarea id="profile-post-content" maxlength="1200" rows="3" placeholder="Qual foi sua evolução de hoje?" required></textarea><button class="auth-submit" type="submit">Publicar <i class="bi bi-arrow-up-right"></i></button><p id="profile-feedback" role="status"></p></form>
+            <h2 class="feature-title">Publicações</h2><div id="profile-posts" class="ascend-profile-posts" aria-live="polite"><p class="feature-copy">Carregando perfil...</p></div>
+          </section>
+          <aside class="feature-panel ascend-profile-side"><span class="ascend-eyebrow">PROGRESSÃO REAL</span><div id="profile-level" class="ascend-profile-level"></div><p class="feature-copy">XP, nível e patente são sincronizados com suas missões.</p><div id="profile-joined" class="feature-copy"></div></aside>
+        </div>
+      </section>
       <section class="app-view active" id="view-status" data-view-panel="status" aria-label="Painel de status">
         <div class="evolution-hero">
           <div class="hero-copy"><span class="ascend-eyebrow" id="dashboard-date"></span>
@@ -851,7 +865,7 @@
   </div>
 </div>
 
-<script type="module" src="js/script.js?v=20261009-ui-refresh"></script>
+<script type="module" src="js/script.js?v=20261109-codex-identity"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
 <div class="connection-notice" id="connection-notice" role="status" hidden><i class="bi bi-wifi-off" aria-hidden="true"></i> Você está offline. Reconecte para salvar seu progresso.</div>
 <dialog id="command-dialog" class="command-dialog" aria-labelledby="command-title">

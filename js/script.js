@@ -21,8 +21,8 @@ const THEME_PRESETS = {
 const ROUTINE_PROFILE_KEY = 'ascend.routine.profile.' + STORAGE_RESET_VERSION;
 const APP_TIME_ZONE = 'America/Sao_Paulo';
 const AVATAR_OPTIONS = {
-  male: { image: 'assets/avatar-male.png', label: 'ASCEND — MALE' },
-  female: { image: 'assets/avatar-female.png', label: 'ASCEND — FEMALE' }
+  male: { image: 'assets/aether.jpg', label: 'AETHER — Guardião da evolução' },
+  female: { image: 'assets/astra.png', label: 'ASTRA — Ambição, força e inteligência' }
 };
 const DEFAULT_WORKOUT_DAYS = ['segunda', 'quarta', 'sexta'];
 const WORKOUT_DAY_ORDER = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];

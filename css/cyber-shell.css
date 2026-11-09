@@ -125,3 +125,30 @@ body[data-theme='light'] #app-shell :is(.auth-input, input:not([type='checkbox']
   #app-shell .evolution-hero { border-radius: 22px; }
 }
 @media (prefers-reduced-motion: reduce) { #app-shell *, #app-shell *::before, #app-shell *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+/* ASCEND neon identity: orbit blue, intelligence violet, evolution cyan. */
+#app-shell {
+  --ascend-blue: #168dff;
+  --ascend-cyan: #5ce8ff;
+  --ascend-violet: #8b3dff;
+  --ascend-magenta: #ec35ff;
+  background:
+    radial-gradient(ellipse at 86% 4%, rgba(22,141,255,.28), transparent 34%),
+    radial-gradient(ellipse at 18% 72%, rgba(139,61,255,.18), transparent 38%),
+    linear-gradient(145deg, #030713, #071b45 56%, #09051e) !important;
+}
+#app-shell::after {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .16;
+  background-image: linear-gradient(rgba(92,232,255,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(92,232,255,.14) 1px, transparent 1px);
+  background-size: 56px 56px; mask-image: linear-gradient(135deg, transparent, #000 36%, transparent 92%);
+}
+#app-shell .evolution-hero {
+  background: radial-gradient(ellipse at 84% 43%, rgba(22,141,255,.34), transparent 42%), radial-gradient(ellipse at 18% 100%, rgba(139,61,255,.18), transparent 44%), linear-gradient(125deg, rgba(8,36,91,.94), rgba(7,12,38,.92)) !important;
+  border-color: rgba(92,232,255,.30) !important;
+}
+#app-shell .hero-copy h1 span { background: linear-gradient(100deg, #b9f7ff, #5ce8ff 45%, #bd75ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+#app-shell .sigil-ring { border-color: rgba(92,232,255,.45); box-shadow: 0 0 42px rgba(22,141,255,.18); }
+#app-shell .sigil-ring::before { background: var(--ascend-cyan); box-shadow: 0 0 14px var(--ascend-cyan); }
+#app-shell .sigil-ring::after { background: var(--ascend-magenta); box-shadow: 0 0 14px var(--ascend-magenta); }
+#app-shell .sigil-mark { color: #b9f7ff; text-shadow: 0 0 30px rgba(92,232,255,.70); }
+#app-shell .sidebar-link.active { background: linear-gradient(100deg, rgba(22,141,255,.24), rgba(139,61,255,.15)) !important; box-shadow: inset 3px 0 var(--ascend-cyan), 0 8px 30px rgba(22,141,255,.15) !important; }
