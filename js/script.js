@@ -65,6 +65,11 @@ let currentCalendarMonth = new Date();
 let selectedCalendarDateKey = null;
 let aiConversation = [];
 let shopPurchasePending = false;
+let activeStoreCategory = 'TODAS';
+let inspectedStoreItem = null;
+let cosmeticStoreState = null;
+let activeCosmeticCategory = 'TODAS';
+let cosmeticActionPending = false;
 let aiChatPending = false;
 let selectedAvatar = null;
 let avatarSelectionMode = 'onboarding';
@@ -1145,6 +1150,8 @@ async function loadProfileView(profileId = viewingProfileId) {
       avatar.hidden = true;
       avatar.nextElementSibling.hidden = false;
     }
+    renderEquippedProfileCosmetics(profile.equippedCosmetics || []);
+    if (ownProfile) applyEquippedCosmeticTheme({ items: profile.equippedCosmetics || [] });
 
     const tags = getElement('profile-tags');
     tags.replaceChildren();
@@ -2139,6 +2146,8 @@ function renderPlayerStatus(status) {
   lastDailyDateKey = getDateKeyInTimeZone();
   const previousStatus = currentPlayerStatus;
   currentPlayerStatus = status;
+  setText('store-balance', formatCurrencyValue(status.coins));
+  if (cosmeticStoreState) cosmeticStoreState.coins = status.coins;
   currentStorageScope = status.handle || getAuthToken() || 'guest';
   if (currentUser) renderUserIdentity(currentUser);
   setText('player-name', status.name);
@@ -4119,17 +4128,46 @@ async function handleShopPurchase(itemId) {
 }
 
 function renderShop() {
-  const grid = document.querySelector('#view-shop .dashboard-grid');
+  const grid = document.querySelector('#daily-shop-panel .dashboard-grid');
   if (!grid) return;
 
   const items = getDailyShopItems();
+  const categories = ['TODAS', ...new Set(items.map((item) => item.categoria || 'OUTRAS'))];
+  const categoryNav = getElement('store-categories');
+  if (categoryNav) {
+    categoryNav.replaceChildren();
+    categories.forEach((category) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'store-category' + (activeStoreCategory === category ? ' is-active' : '');
+      button.setAttribute('aria-pressed', String(activeStoreCategory === category));
+      button.textContent = category === 'TODAS' ? 'Todas as recompensas' : category;
+      button.addEventListener('click', () => { activeStoreCategory = category; renderShop(); });
+      categoryNav.appendChild(button);
+    });
+  }
+  const visibleItems = activeStoreCategory === 'TODAS' ? items : items.filter((item) => item.categoria === activeStoreCategory);
   grid.textContent = '';
 
-  items.forEach((item) => {
+  visibleItems.forEach((item, index) => {
     const article = document.createElement('article');
-    article.className = 'feature-panel shop-item' + (item.raridade === 'LENDARIO' ? ' shop-item--legendary' : '');
+    article.className = 'feature-panel shop-item store-card' + (item.raridade === 'LENDARIO' ? ' shop-item--legendary' : '');
+    article.style.setProperty('--store-order', index);
+    article.dataset.storeCategory = item.categoria;
 
     const content = document.createElement('div');
+    content.className = 'store-card-copy';
+    const artwork = document.createElement('button');
+    artwork.className = 'store-artwork store-artwork--' + (item.categoria || 'reward').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    artwork.type = 'button';
+    artwork.setAttribute('aria-label', 'Inspecionar ' + item.nome);
+    const icon = document.createElement('i');
+    icon.className = 'bi ' + storeIconForCategory(item.categoria);
+    icon.setAttribute('aria-hidden', 'true');
+    const artLabel = document.createElement('span');
+    artLabel.textContent = item.raridade === 'LENDARIO' ? 'EDIÇÃO ESPECIAL' : 'ASCEND / DAILY';
+    artwork.append(icon, artLabel);
+    artwork.addEventListener('click', () => openStoreInspection(item));
     const kicker = document.createElement('div');
     kicker.className = 'feature-kicker' + (item.raridade === 'LENDARIO' ? ' feature-kicker--legendary' : '');
     kicker.textContent = item.raridade || item.categoria;
@@ -4155,12 +4193,267 @@ function renderShop() {
     button.type = 'button';
     button.dataset.shopItem = item.dailyId;
     button.addEventListener('click', () => handleShopPurchase(item.dailyId));
+    const inspect = document.createElement('button');
+    inspect.type = 'button';
+    inspect.className = 'store-inspect-link';
+    inspect.textContent = 'Ver recompensa';
+    inspect.addEventListener('click', () => openStoreInspection(item));
 
-    article.append(content, button);
+    article.append(artwork, content, inspect, button);
     grid.appendChild(article);
   });
 
   renderShopState(items);
+}
+
+async function loadCosmeticStore() {
+  const status = getElement('cosmetic-store-status');
+  if (status) status.textContent = '· carregando';
+  try {
+    cosmeticStoreState = await apiRequest('/cosmetics');
+    applyEquippedCosmeticTheme(cosmeticStoreState);
+    setText('store-balance', formatCurrencyValue(cosmeticStoreState.coins));
+    renderCosmeticStore();
+  } catch (error) {
+    if (status) status.textContent = '· catálogo indisponível';
+    const grid = getElement('cosmetic-grid');
+    if (grid) {
+      const message = document.createElement('p');
+      message.className = 'feature-copy';
+      message.textContent = 'Não foi possível carregar os cosméticos. Tente novamente em instantes.';
+      grid.replaceChildren(message);
+    }
+    setShopMessage('Não foi possível carregar a loja de cosméticos: ' + error.message);
+  }
+}
+
+function renderCosmeticStore() {
+  const grid = getElement('cosmetic-grid');
+  if (!grid || !cosmeticStoreState) return;
+  setText('cosmetic-store-status', '· ' + formatCurrencyValue(cosmeticStoreState.coins) + ' AC disponíveis');
+  const allItems = cosmeticStoreState.items || [];
+  const categories = ['TODAS', 'MINHA COLEÇÃO', ...new Set(allItems.map((item) => item.category))];
+  const nav = getElement('cosmetic-categories');
+  if (nav) {
+    nav.replaceChildren();
+    categories.forEach((category) => {
+      const control = document.createElement('button');
+      control.type = 'button';
+      control.className = 'store-category' + (activeCosmeticCategory === category ? ' is-active' : '');
+      control.setAttribute('aria-pressed', String(activeCosmeticCategory === category));
+      control.textContent = category.replaceAll('_', ' ');
+      control.addEventListener('click', () => { activeCosmeticCategory = category; renderCosmeticStore(); });
+      nav.appendChild(control);
+    });
+  }
+  const visible = allItems.filter((item) => activeCosmeticCategory === 'TODAS' || (activeCosmeticCategory === 'MINHA COLEÇÃO' ? item.owned : item.category === activeCosmeticCategory));
+  grid.replaceChildren();
+  if (!visible.length) {
+    const empty = document.createElement('p');
+    empty.className = 'feature-copy';
+    empty.textContent = activeCosmeticCategory === 'MINHA COLEÇÃO' ? 'Sua coleção ainda está vazia. Resgate um item para começar.' : 'Não há itens nesta categoria.';
+    grid.appendChild(empty);
+    return;
+  }
+  visible.forEach((item, index) => {
+    const card = document.createElement('article');
+    card.className = 'feature-panel shop-item store-card store-cosmetic-card rarity-' + item.rarity.toLowerCase();
+    card.style.setProperty('--store-order', index);
+    const artwork = document.createElement('button');
+    artwork.type = 'button';
+    artwork.className = 'store-artwork';
+    artwork.setAttribute('aria-label', 'Inspecionar ' + item.name);
+    const icon = document.createElement('i');
+    icon.className = 'bi ' + cosmeticIcon(item.category);
+    icon.setAttribute('aria-hidden', 'true');
+    const rarity = document.createElement('span');
+    rarity.textContent = item.rarity;
+    artwork.append(icon, rarity);
+    const inspectionItem = { ...item, cosmetic: true, nome: item.name, categoria: item.category, raridade: item.rarity, custo: item.cost, descricao: item.description, dailyId: item.id };
+    artwork.addEventListener('click', () => openStoreInspection(inspectionItem));
+    const content = document.createElement('div');
+    content.className = 'store-card-copy';
+    const kicker = document.createElement('div');
+    kicker.className = 'feature-kicker';
+    kicker.textContent = item.category.replaceAll('_', ' ') + ' · ' + item.rarity;
+    const title = document.createElement('h3');
+    title.className = 'feature-title';
+    title.textContent = item.name;
+    const description = document.createElement('p');
+    description.className = 'feature-copy';
+    description.textContent = item.description;
+    content.append(kicker, title, description);
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'btn-complete';
+    action.disabled = cosmeticActionPending;
+    if (item.equipped) {
+      action.textContent = 'Equipado · remover';
+      action.addEventListener('click', () => removeCosmetic(item.slot));
+    } else if (item.owned) {
+      action.textContent = 'Equipar';
+      action.addEventListener('click', () => equipCosmetic(item.id));
+    } else {
+      action.textContent = formatCurrencyValue(item.cost) + ' AC';
+      action.disabled = action.disabled || cosmeticStoreState.coins < item.cost;
+      action.addEventListener('click', () => buyCosmetic(item.id));
+    }
+    card.append(artwork, content, action);
+    grid.appendChild(card);
+  });
+}
+
+function cosmeticIcon(category) {
+  return ({ AVATAR_FRAME: 'bi-person-bounding-box', PROFILE_BANNER: 'bi-image', PROFILE_EFFECT: 'bi-stars', NAMEPLATE: 'bi-card-heading', TITLE: 'bi-award', BADGE: 'bi-patch-check', COMPANION: 'bi-robot', THEME: 'bi-palette' })[category] || 'bi-stars';
+}
+
+async function buyCosmetic(itemId) {
+  if (cosmeticActionPending) return;
+  cosmeticActionPending = true;
+  renderCosmeticStore();
+  try {
+    cosmeticStoreState = await apiRequest('/cosmetics/purchase', { method: 'POST', body: JSON.stringify({ itemId }) });
+    setText('store-balance', formatCurrencyValue(cosmeticStoreState.coins));
+    if (currentPlayerStatus) {
+      currentPlayerStatus = { ...currentPlayerStatus, coins: cosmeticStoreState.coins };
+      renderPlayerStatus(currentPlayerStatus);
+    }
+    setShopMessage('Cosmético resgatado e adicionado permanentemente à sua coleção.');
+    closeStoreInspection();
+  } catch (error) {
+    setShopMessage('Compra não concluída: ' + error.message);
+  } finally {
+    cosmeticActionPending = false;
+    renderCosmeticStore();
+  }
+}
+
+async function equipCosmetic(itemId) {
+  if (cosmeticActionPending) return;
+  cosmeticActionPending = true;
+  renderCosmeticStore();
+  try {
+    cosmeticStoreState = await apiRequest('/cosmetics/equipped', { method: 'PUT', body: JSON.stringify({ itemId }) });
+    applyEquippedCosmeticTheme(cosmeticStoreState);
+    setShopMessage('Cosmético equipado.');
+    closeStoreInspection();
+  } catch (error) {
+    setShopMessage('Não foi possível equipar: ' + error.message);
+  } finally {
+    cosmeticActionPending = false;
+    renderCosmeticStore();
+  }
+}
+
+async function removeCosmetic(slot) {
+  if (cosmeticActionPending) return;
+  cosmeticActionPending = true;
+  renderCosmeticStore();
+  try {
+    cosmeticStoreState = await apiRequest('/cosmetics/equipped/' + encodeURIComponent(slot), { method: 'DELETE' });
+    applyEquippedCosmeticTheme(cosmeticStoreState);
+    setShopMessage('Cosmético removido do slot.');
+    closeStoreInspection();
+  } catch (error) {
+    setShopMessage('Não foi possível remover: ' + error.message);
+  } finally {
+    cosmeticActionPending = false;
+    renderCosmeticStore();
+  }
+}
+
+function setStoreMode(mode) {
+  const cosmetics = mode === 'cosmetics';
+  const dailyPanel = getElement('daily-shop-panel');
+  const cosmeticPanel = getElement('cosmetic-shop-panel');
+  if (!dailyPanel || !cosmeticPanel) return;
+  dailyPanel.hidden = cosmetics;
+  cosmeticPanel.hidden = !cosmetics;
+  document.querySelectorAll('[data-store-mode]').forEach((button) => {
+    const active = button.dataset.storeMode === mode;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  if (cosmetics) loadCosmeticStore();
+}
+
+function applyEquippedCosmeticTheme(state) {
+  const theme = (state?.items || []).find((item) => item.category === 'THEME' && item.equipped);
+  document.body.classList.toggle('cosmetic-theme-aurora', theme?.id === 'theme-aurora');
+}
+
+function storeIconForCategory(category = '') {
+  const icons = { RECOMPENSA: 'bi-stars', UPGRADE: 'bi-arrow-up-circle', FOCO: 'bi-bullseye', SUPORTE: 'bi-heart-pulse', SOCIAL: 'bi-people', LENDARIO: 'bi-gem' };
+  return icons[category] || 'bi-sparkles';
+}
+
+function openStoreInspection(item) {
+  inspectedStoreItem = item;
+  const modal = getElement('store-inspection');
+  if (!modal) return;
+  setText('inspection-category', item.raridade === 'LENDARIO' ? 'EDIÇÃO LENDÁRIA' : item.categoria.replaceAll('_', ' '));
+  setText('inspection-title', item.nome);
+  setText('inspection-description', item.descricao);
+  const cost = item.cosmetic ? item.cost : item.custo;
+  setText('inspection-value', item.owned ? (item.equipped ? 'Equipado no slot ' + item.slot : 'Na sua coleção') : formatCurrencyValue(cost) + ' AC');
+  const art = getElement('inspection-art');
+  if (art) {
+    art.className = 'inspection-art' + (item.raridade === 'LENDARIO' ? ' inspection-art--legendary' : '');
+    const symbol = art.querySelector('.inspection-symbol');
+    if (symbol) symbol.className = 'inspection-symbol bi ' + (item.cosmetic ? cosmeticIcon(item.categoria) : storeIconForCategory(item.categoria));
+  }
+  const buy = getElement('inspection-buy');
+  if (buy) {
+    buy.hidden = false;
+    if (item.cosmetic && item.owned) {
+      buy.textContent = item.equipped ? 'Remover do perfil' : 'Equipar';
+      buy.onclick = () => item.equipped ? removeCosmetic(item.slot) : equipCosmetic(item.id);
+    } else if (item.cosmetic) {
+      buy.textContent = 'Resgatar por ' + formatCurrencyValue(cost) + ' AC';
+      buy.onclick = () => buyCosmetic(item.id);
+    } else {
+      buy.textContent = 'Resgatar por ' + formatCurrencyValue(cost) + ' AC';
+      buy.onclick = () => handleShopPurchase(item.dailyId);
+    }
+  }
+  modal.hidden = false;
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('store-modal-open');
+  buy?.focus();
+}
+
+function closeStoreInspection() {
+  const modal = getElement('store-inspection');
+  if (!modal) return;
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('store-modal-open');
+  window.setTimeout(() => { if (modal.getAttribute('aria-hidden') === 'true') modal.hidden = true; }, 180);
+  inspectedStoreItem = null;
+}
+
+function renderEquippedProfileCosmetics(items) {
+  const container = getElement('profile-cosmetics');
+  const avatar = getElement('profile-avatar');
+  if (!container) return;
+  container.replaceChildren();
+  const equipped = items || [];
+  const avatarFrame = equipped.find((item) => item.category === 'AVATAR_FRAME');
+  avatar?.parentElement?.classList.toggle('has-cosmetic-frame', Boolean(avatarFrame));
+  if (avatar?.parentElement) {
+    if (avatarFrame?.rarity) avatar.parentElement.dataset.frameRarity = avatarFrame.rarity;
+    else delete avatar.parentElement.dataset.frameRarity;
+  }
+  equipped.forEach((item) => {
+    const chip = document.createElement('span');
+    chip.className = 'profile-cosmetic-chip' + (item.rarity ? ' rarity-' + item.rarity.toLowerCase() : '');
+    const icon = document.createElement('i');
+    icon.className = 'bi ' + cosmeticIcon(item.category);
+    icon.setAttribute('aria-hidden', 'true');
+    const name = document.createElement('span');
+    name.textContent = item.name;
+    chip.append(icon, name);
+    container.appendChild(chip);
+  });
 }
 
 function renderShopState(items = getDailyShopItems()) {
@@ -4766,6 +5059,9 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme(getStoredTheme());
   applyCustomization(getStoredCustomization());
   bindEvents();
+  document.querySelectorAll('[data-close-inspection]').forEach((button) => button.addEventListener('click', closeStoreInspection));
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeStoreInspection(); });
+  document.querySelectorAll('[data-store-mode]').forEach((button) => button.addEventListener('click', () => setStoreMode(button.dataset.storeMode)));
   initExperience({ navigate: showView, setFocusDuration });
   window.addEventListener('popstate', () => showView(location.hash.replace('#view-', '') || 'status', null, false));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) tickTimer(); });

@@ -27,6 +27,43 @@ test('AI replies render readable Markdown and reject executable HTML', async ({ 
   expect(errors).toEqual([]);
 });
 
+test('cosmetic store purchases, equips and applies profile themes', async ({ page }) => {
+  const errors = await setup(page);
+  let state = {
+    coins: 300,
+    items: [{
+      id: 'theme-aurora',
+      category: 'THEME',
+      rarity: 'RARE',
+      name: 'Aurora Theme',
+      description: 'Paleta fria inspirada nas luzes do norte.',
+      cost: 120,
+      featured: true,
+      owned: false,
+      equipped: false,
+      slot: 'THEME'
+    }]
+  };
+  await page.route('**/api/cosmetics**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/purchase')) {
+      state = { coins: 180, items: [{ ...state.items[0], owned: true }] };
+    } else if (path.endsWith('/equipped') && route.request().method() === 'PUT') {
+      state = { coins: state.coins, items: [{ ...state.items[0], owned: true, equipped: true }] };
+    }
+    await route.fulfill({ json: state });
+  });
+
+  await page.locator('#app-sidebar .sidebar-link[data-view=shop]').click();
+  await page.locator('[data-store-mode=cosmetics]').click();
+  await expect(page.locator('#cosmetic-grid .store-cosmetic-card')).toHaveCount(1);
+  await page.locator('#cosmetic-grid .store-cosmetic-card button.btn-complete').click();
+  await expect(page.locator('#cosmetic-grid .store-cosmetic-card button.btn-complete')).toHaveText('Equipar');
+  await page.locator('#cosmetic-grid .store-cosmetic-card button.btn-complete').click();
+  await expect(page.locator('body')).toHaveClass(/cosmetic-theme-aurora/);
+  expect(errors).toEqual([]);
+});
+
 async function navigateOnMobile(page, view) {
   const mobileLink = page.locator(`.mobile-tabbar .mobile-nav-link[data-view=${view}]`);
   if (await mobileLink.count()) {

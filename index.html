@@ -302,6 +302,7 @@
               <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">SUA JORNADA</span><h2>Sobre mim</h2></div></div>
               <p id="profile-bio" class="ascend-profile-bio">Adicione uma bio para contar sua jornada.</p>
               <div id="profile-tags" class="ascend-profile-tags"></div>
+              <div id="profile-cosmetics" class="ascend-profile-cosmetics" aria-label="Cosméticos equipados"></div>
             </aside>
             <section class="ascend-profile-main" aria-label="Atividade do perfil">
               <nav class="ascend-profile-tabs" role="tablist" aria-label="Seções do perfil">
@@ -759,33 +760,29 @@
       </section>
 
       <section class="app-view" id="view-shop" data-view-panel="shop" aria-labelledby="shop-title" hidden>
-        <div class="ascend-section-heading"><div><span class="ascend-eyebrow">THE VAULT / RECOMPENSAS</span><h1 class="section-title" id="shop-title">Loja de recompensas</h1><p class="feature-copy">Escolha uma recompensa para o seu progresso.</p></div></div>
+        <div class="store-hero">
+          <div><span class="ascend-eyebrow">ASCEND EXCHANGE / THE VAULT</span><h1 class="section-title" id="shop-title">Recompensas para sua próxima conquista</h1><p class="feature-copy">Transforme progresso em pausas, foco e experiências escolhidas por você.</p></div>
+          <a class="store-balance" href="#view-vault" data-view="vault"><span class="store-balance-label">SEU SALDO</span><strong><span id="store-balance">0</span> <small>AC</small></strong><span class="store-balance-link">Ver histórico <i class="bi bi-arrow-up-right" aria-hidden="true"></i></span></a>
+        </div>
         <p id="shop-feedback" class="ascend-shop-feedback" role="status" aria-live="polite"></p>
-        <div class="dashboard-grid">
-          <article class="feature-panel shop-item">
-            <div>
-              <div class="feature-kicker">RECOMPENSA</div>
-              <h2 class="feature-title">Pausa estrategica</h2>
-              <p class="feature-copy">Troque moedas por 30 minutos de descanso planejado.</p>
-            </div>
-            <button class="btn-complete" type="button" data-shop-item="pausa-estrategica">120 moedas</button>
-          </article>
-          <article class="feature-panel shop-item">
-            <div>
-              <div class="feature-kicker">UPGRADE</div>
-              <h2 class="feature-title">Equipamento de treino</h2>
-              <p class="feature-copy">Registre uma melhoria real para sua rotina fisica.</p>
-            </div>
-            <button class="btn-complete" type="button" data-shop-item="equipamento-treino">300 moedas</button>
-          </article>
-          <article class="feature-panel shop-item">
-            <div>
-              <div class="feature-kicker">FOCO</div>
-              <h2 class="feature-title">Sessao premium</h2>
-              <p class="feature-copy">Reserve um bloco especial para estudo profundo.</p>
-            </div>
-            <button class="btn-complete" type="button" data-shop-item="sessao-premium">200 moedas</button>
-          </article>
+        <nav class="store-modes" aria-label="Tipo de catálogo"><button type="button" class="store-mode is-active" data-store-mode="daily" aria-pressed="true">Recompensas diárias</button><button type="button" class="store-mode" data-store-mode="cosmetics" aria-pressed="false">Cosméticos</button></nav>
+        <div id="daily-shop-panel">
+          <nav class="store-categories" id="store-categories" aria-label="Categorias de recompensas"></nav>
+          <div class="store-section-heading"><div><span class="ascend-eyebrow">SELEÇÃO DE HOJE</span><h2>Encontre sua próxima recompensa</h2></div><span class="store-rotation"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Seleção renovada diariamente</span></div>
+          <div class="dashboard-grid store-grid" aria-live="polite"></div>
+        </div>
+        <section id="cosmetic-shop-panel" hidden aria-labelledby="cosmetic-shop-title">
+          <div class="store-section-heading"><div><span class="ascend-eyebrow">COLEÇÃO ASCEND</span><h2 id="cosmetic-shop-title">Cosméticos e itens de perfil</h2></div><span class="store-rotation">Itens permanentes · AC <span id="cosmetic-store-status"></span></span></div>
+          <div class="store-categories" id="cosmetic-categories" aria-label="Filtrar cosméticos"></div>
+          <div class="dashboard-grid store-grid" id="cosmetic-grid" aria-live="polite"></div>
+        </section>
+        <div class="store-modal" id="store-inspection" aria-hidden="true" hidden>
+          <button class="store-modal-backdrop" type="button" data-close-inspection aria-label="Fechar visualização"></button>
+          <section class="store-inspection-panel" role="dialog" aria-modal="true" aria-labelledby="inspection-title" aria-describedby="inspection-description">
+            <button class="store-close" type="button" data-close-inspection aria-label="Fechar"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            <div class="inspection-art" id="inspection-art"><span class="inspection-symbol"></span><span class="inspection-orbit"></span></div>
+            <div class="inspection-copy"><span class="ascend-eyebrow" id="inspection-category"></span><h2 id="inspection-title"></h2><p id="inspection-description"></p><div class="inspection-value" id="inspection-value"></div><p class="inspection-note"><i class="bi bi-shield-check" aria-hidden="true"></i> Compra confirmada com segurança pelo ASCEND.</p><button class="btn-complete" id="inspection-buy" type="button"></button></div>
+          </section>
         </div>
       </section>
 
