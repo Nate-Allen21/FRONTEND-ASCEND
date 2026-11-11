@@ -455,7 +455,7 @@ const apiBaseUrlCandidates = buildApiBaseUrlCandidates();
 async function discoverApiBaseUrl() {
   for (const baseUrl of apiBaseUrlCandidates) {
     try {
-      const response = await fetch(baseUrl + '/health', { signal: AbortSignal.timeout(12000) });
+      const response = await fetch(baseUrl + '/health', { signal: AbortSignal.timeout(90000) });
       if (!response.ok) {
         continue;
       }
@@ -1923,7 +1923,7 @@ async function handleLogin(event) {
   const submitButton = form.querySelector('button[type="submit"]');
 
   submitButton.disabled = true;
-  setAuthMessage('Entrando...');
+  setAuthMessage('Conectando ao servidor... Se for a primeira tentativa em algum tempo, aguarde; não precisa clicar novamente.');
 
   try {
     const data = await apiRequest('/auth/login', {

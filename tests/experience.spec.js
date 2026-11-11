@@ -50,6 +50,7 @@ async function navigateOnMobile(page, view) {
 async function setup(page, authenticated = true, onboardingCompleted = true) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  await page.route('https://accounts.google.com/gsi/client', (route) => route.abort());
   if (authenticated) await page.addInitScript(() => localStorage.setItem('ascend.auth.token.2026-04-27-reset-1', 'test-token'));
   let user = { id: 1, name: 'Hunter Teste', email: 'hunter@example.com', avatar: null, onboardingCompleted };
   let profilePosts = [];
@@ -144,8 +145,28 @@ test('authentication, password visibility and login', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('login waits for a sleeping API to wake before reporting a connection error', async ({ page }) => {
+  test.setTimeout(60_000);
+  await setup(page, false);
+  await page.route('**/api/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/health')) {
+      await new Promise((resolve) => setTimeout(resolve, 13_000));
+      await route.fulfill({ json: { status: 'UP', application: 'ascend-api' } });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.locator('#login-email').fill('hunter@example.com');
+  await page.locator('#login-password').fill('test-password');
+  await page.locator('#login-form button[type=submit]').click();
+
+  await expect(page.locator('#login-form button[type=submit]')).toBeDisabled();
+  await expect(page.locator('#auth-message')).toContainText('não precisa clicar novamente');
+  await expect(page.locator('.evolution-hero')).toBeVisible({ timeout: 25_000 });
+});
+
 test('Google login button forwards clicks to the rendered sign-in control', async ({ page }) => {
-  await page.route('https://accounts.google.com/gsi/client', (route) => route.abort());
   await page.addInitScript(() => {
     window.googleButtonClicked = false;
     window.google = {
@@ -183,6 +204,7 @@ test('profile loads account details and publishes a post', async ({ page }) => {
   const errors = await setup(page);
   await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
   await expect(page.locator('#profile-title')).toHaveText('Hunter Teste');
+  await expect(page.locator('.ascend-profile-banner-code')).toHaveText('PROFILE SYSTEM ONLINE');
   await expect(page.locator('#profile-bio')).toHaveText('Uma jornada por dia.');
   await expect(page.locator('#profile-avatar')).toBeVisible();
   await expect.poll(() => page.locator('#profile-avatar').evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
@@ -214,6 +236,24 @@ test('profile loads account details and publishes a post', async ({ page }) => {
   await expect(page.locator('#profile-posts')).toContainText('Mais um passo na jornada.');
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.locator('#view-profile').evaluate((view) => view.scrollWidth <= view.clientWidth + 1)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('profile discovery searches players and opens their public profile', async ({ page }) => {
+  const errors = await setup(page);
+  await page.route('**/api/profile/discover**', async (route) => {
+    const query = new URL(route.request().url()).searchParams.get('q');
+    expect(query).toBe('Astra');
+    await route.fulfill({ json: [
+      { id: 2, name: 'Astra', username: 'astra-2', following: false, friendStatus: 'NONE' }
+    ] });
+  });
+
+  await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
+  await page.locator('#player-search').fill('Astra');
+  await expect(page.locator('#player-search-results')).toContainText('@astra-2');
+  await page.locator('#player-search-results .ascend-player-row > button').first().click();
+  await expect(page.locator('#profile-title')).toHaveText('Aliada ASCEND');
   expect(errors).toEqual([]);
 });
 

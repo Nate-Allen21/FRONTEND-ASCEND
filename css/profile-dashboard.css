@@ -44,6 +44,23 @@
   z-index: 1;
 }
 
+.ascend-profile-banner-code {
+  display: inline-flex;
+  align-items: center;
+  color: var(--profile-muted);
+  font: 600 .67rem var(--font-display);
+  letter-spacing: .12em;
+}
+
+.ascend-profile-banner-code i {
+  width: 7px;
+  height: 7px;
+  margin: 0 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 10px var(--success);
+}
+
 .ascend-profile-layout {
   padding: 0 12px 24px;
 }
