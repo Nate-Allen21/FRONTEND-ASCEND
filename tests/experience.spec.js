@@ -64,6 +64,29 @@ test('cosmetic store purchases, equips and applies profile themes', async ({ pag
   expect(errors).toEqual([]);
 });
 
+test('gold appearance preset applies, persists and keeps ASCEND glass panels', async ({ page }) => {
+  const errors = await setup(page);
+  await page.locator('#btn-customize').click();
+  await page.locator('[data-theme-preset="gold"]').click();
+
+  await expect(page.locator('#customization-preview-theme')).toHaveText('Gold');
+  await expect(page.locator('body')).toHaveAttribute('data-custom-skin', 'gold');
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim())).toBe('#e6b84c');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('ascend.customization.v1')).preset)).toBe('gold');
+
+  const glass = await page.locator('#app-shell .feature-panel').first().evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { blur: style.backdropFilter, background: style.backgroundImage };
+  });
+  expect(glass.blur).toContain('blur(');
+  expect(glass.background).toContain('linear-gradient');
+
+  await page.reload();
+  await expect(page.locator('body')).toHaveAttribute('data-custom-skin', 'gold');
+  await expect(page.locator('#customization-preview-theme')).toHaveText('Gold');
+  expect(errors).toEqual([]);
+});
+
 async function navigateOnMobile(page, view) {
   const mobileLink = page.locator(`.mobile-tabbar .mobile-nav-link[data-view=${view}]`);
   if (await mobileLink.count()) {

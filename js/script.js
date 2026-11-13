@@ -18,7 +18,8 @@ const THEME_PRESETS = {
   crimson: { label: 'Crimson', accent: '#df2531', secondary: '#ffffff', bg: '#000000', panel: '#202020', panelRgb: '32, 32, 32', ambient: '#df2531' },
   lime: { label: 'Lime', accent: '#5dd62c', secondary: '#337418', bg: '#0f0f0f', panel: '#202020', panelRgb: '32, 32, 32', ambient: '#5dd62c' },
   purple: { label: 'Purple', accent: '#7b45f0', secondary: '#a981ff', bg: '#34117e', panel: '#491ab1', panelRgb: '73, 26, 177', ambient: '#6631db' },
-  blue: { label: 'Blue', accent: '#4a74a7', secondary: '#dceaf7', bg: '#081426', panel: '#142a44', panelRgb: '20, 42, 68', ambient: '#4a74a7' }
+  blue: { label: 'Blue', accent: '#4a74a7', secondary: '#dceaf7', bg: '#081426', panel: '#142a44', panelRgb: '20, 42, 68', ambient: '#4a74a7' },
+  gold: { label: 'Gold', accent: '#e6b84c', secondary: '#fff0bd', bg: '#100d08', panel: '#302719', panelRgb: '48, 39, 25', ambient: '#d8a638' }
 };
 const ROUTINE_PROFILE_KEY = 'ascend.routine.profile.' + STORAGE_RESET_VERSION;
 const APP_TIME_ZONE = 'America/Sao_Paulo';

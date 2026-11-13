@@ -69,9 +69,9 @@ body:has(#app-shell:not(.d-none)) { background: #030713 !important; }
 #app-shell :is(.system-summary-card, .mini-card, .feature-panel, .player-card, .stat-panel, .mission-card, .shop-item, .inventory-card, .vault-card, .agenda-item) { transition: border-color .22s, box-shadow .22s, transform .22s; }
 #app-shell :is(.system-summary-card, .mini-card, .feature-panel, .player-card, .stat-panel, .mission-card, .shop-item, .inventory-card, .vault-card, .agenda-item):hover { border-color: rgba(var(--accent-rgb), .40) !important; box-shadow: 0 22px 66px rgba(0,0,0,.28), 0 0 28px rgba(var(--accent-rgb),.10), inset 0 1px rgba(221,243,255,.12) !important; }
 #app-shell :is(.auth-submit, .hero-actions .auth-submit, .btn-complete, .customization-preview-button, .btn-start) {
-  color: #06152a !important; background: linear-gradient(110deg, #b8f5ff, #4aa8ff 58%, #7d8bff) !important;
-  border: 1px solid rgba(184,245,255,.72) !important; border-radius: 13px;
-  box-shadow: 0 12px 30px rgba(45,144,255,.25), inset 0 1px rgba(255,255,255,.55) !important;
+  color: var(--accent-contrast, #06152a) !important; background: linear-gradient(110deg, color-mix(in srgb, var(--accent) 30%, #fff), var(--accent) 58%, color-mix(in srgb, var(--accent) 76%, #fff)) !important;
+  border: 1px solid var(--accent-border, rgba(184,245,255,.72)) !important; border-radius: 13px;
+  box-shadow: 0 12px 30px var(--accent-soft, rgba(45,144,255,.25)), inset 0 1px rgba(255,255,255,.55) !important;
   transition: transform .2s, box-shadow .2s, filter .2s;
 }
 #app-shell :is(.auth-submit, .hero-actions .auth-submit, .btn-complete, .btn-start):hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 16px 38px rgba(53,169,255,.38) !important; }

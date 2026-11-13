@@ -4240,6 +4240,7 @@ body { background: radial-gradient(760px 520px at 88% -8%, color-mix(in srgb, va
 .theme-preview-lime { background: linear-gradient(145deg, #5dd62c 0 34%, #337418 34% 58%, #0f0f0f 58%); }
 .theme-preview-purple { background: linear-gradient(145deg, #7b45f0 0 28%, #491ab1 28% 54%, #34117e 54%); }
 .theme-preview-blue { background: linear-gradient(145deg, #dceaf7 0 28%, #4a74a7 28% 54%, #142a44 54%); }
+.theme-preview-gold { background: linear-gradient(145deg, #fff0bd 0 28%, #e6b84c 28% 54%, #302719 54%); }
 
 /* Liquid glass system: one consistent material across the entire interface. */
 :root {
