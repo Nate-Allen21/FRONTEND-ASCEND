@@ -152,3 +152,93 @@ body[data-theme='light'] #app-shell :is(.auth-input, input:not([type='checkbox']
 #app-shell .sigil-ring::after { background: var(--ascend-magenta); box-shadow: 0 0 14px var(--ascend-magenta); }
 #app-shell .sigil-mark { color: #b9f7ff; text-shadow: 0 0 30px rgba(92,232,255,.70); }
 #app-shell .sidebar-link.active { background: linear-gradient(100deg, rgba(22,141,255,.24), rgba(139,61,255,.15)) !important; box-shadow: inset 3px 0 var(--ascend-cyan), 0 8px 30px rgba(22,141,255,.15) !important; }
+
+body[data-theme='light'] #app-shell {
+  --bg-void: #edf2fa;
+  --bg-panel: #f7f9fd;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f2f6fd;
+  --text-primary: #172943;
+  --text-secondary: #4c607a;
+  --text-muted: #687d98;
+  --accent: #315fe8;
+  --accent-rgb: 49, 95, 232;
+  --shell-line: rgba(57, 91, 145, .17);
+  --shell-glass: linear-gradient(145deg, #ffffff, #f4f7fc);
+  color: var(--text-primary);
+  background:
+    radial-gradient(ellipse at 86% 0%, rgba(86, 128, 237, .12), transparent 35%),
+    radial-gradient(ellipse at 10% 70%, rgba(154, 117, 244, .08), transparent 38%),
+    linear-gradient(145deg, #f4f7fc, #e9eff8 58%, #f5f7fb) !important;
+}
+body[data-theme='light'] #app-shell .ascend-topbar,
+body[data-theme='light'] #app-shell .sidebar {
+  background: linear-gradient(145deg, #ffffff, #f0f4fb) !important;
+  border-color: var(--shell-line) !important;
+  box-shadow: 0 12px 32px rgba(38, 57, 91, .08), inset 0 1px #fff !important;
+}
+body[data-theme='light'] #app-shell :is(.system-summary-card, .feature-panel, .player-card, .stat-panel, .mini-card, .status-subcard, .pillar-card, .mission-card, .shop-item, .calendar-screen, .calendar-month-panel, .calendar-agenda-panel, .agenda-item, .ascend-ai-main, .ascend-ai-aside, .ranking-list, .inventory-card, .vault-card, .system-popup, .command-dialog, .ascend-help-dialog, .level-up-card, .customization-dialog, .planner-panel, .training-plan-panel, .timer-panel, .calendar-config-panel) {
+  background: linear-gradient(145deg, #ffffff, #f5f8fd) !important;
+  border-color: var(--shell-line) !important;
+  box-shadow: 0 12px 32px rgba(38, 57, 91, .08), inset 0 1px #fff !important;
+  color: var(--text-primary) !important;
+}
+body[data-theme='light'] #app-shell .evolution-hero {
+  background:
+    radial-gradient(ellipse at 84% 43%, rgba(72, 131, 255, .28), transparent 42%),
+    radial-gradient(ellipse at 18% 100%, rgba(159, 108, 255, .2), transparent 44%),
+    linear-gradient(125deg, #17346d, #101a40 72%, #19133c) !important;
+  border-color: rgba(73, 127, 220, .36) !important;
+}
+body[data-theme='light'] #app-shell .evolution-hero :is(.hero-copy h1, .hero-copy p) { color: #f5f8ff !important; }
+body[data-theme='light'] #app-shell .evolution-hero .hero-copy h1 span { color: #8deaff !important; }
+body[data-theme='light'] #app-shell :is(.section-title, .feature-title, .system-summary-title, .planner-headline, .player-name, .training-day-name, .ascend-profile-heading h1, .ascend-profile-section-heading h2, .ascend-profile-metric strong, .ascend-profile-overview-card strong, .ascend-profile-achievement-copy strong, .ascend-profile-level strong, .ascend-profile-detail-row strong) {
+  color: #172943 !important;
+}
+body[data-theme='light'] #app-shell :is(.hero-copy p, .feature-copy, .system-summary-copy, .stat-description, .mission-description, .calendar-screen p, .ascend-profile-bio, .ascend-profile-heading p, .ascend-profile-metric small, .ascend-profile-overview-card small, .ascend-profile-achievement-copy small, .ascend-profile-level small, .ascend-profile-joined, .ascend-profile-post > p, .ascend-profile-count, .ascend-profile-detail-row) {
+  color: #4c607a !important;
+}
+body[data-theme='light'] #app-shell :is(.ascend-profile-main, .ascend-profile-level-card, .ascend-profile-side-card) {
+  background: linear-gradient(145deg, #ffffff, #f5f8fd) !important;
+  border-color: var(--shell-line) !important;
+  box-shadow: 0 12px 32px rgba(38, 57, 91, .08) !important;
+}
+body[data-theme='light'] #app-shell :is(.ascend-profile-metrics, .ascend-profile-post-form, .ascend-profile-overview-card, .ascend-profile-achievement, .ascend-profile-detail-row) {
+  background: #f2f6fc !important;
+  border-color: rgba(57, 91, 145, .13) !important;
+}
+body[data-theme='light'] #app-shell :is(.ascend-profile-tabs button, .ascend-profile-post-form label, .ascend-profile-friend, .ascend-profile-search-label) { color: #4c607a !important; }
+body[data-theme='light'] #app-shell .ascend-profile-tabs button:hover,
+body[data-theme='light'] #app-shell .ascend-profile-tabs button.is-active { color: #244bc4 !important; }
+body[data-theme='light'] #app-shell :is(.sidebar-link, .nav-section-label) { color: #4c607a !important; }
+body[data-theme='light'] #app-shell .sidebar-link:hover { color: #244bc4 !important; background: rgba(49, 95, 232, .08) !important; }
+body[data-theme='light'] #app-shell .sidebar-link.active { color: #244bc4 !important; }
+body[data-theme='light'] #app-shell .user-profile-trigger {
+  color: #405570 !important;
+  border-color: rgba(57, 91, 145, .18) !important;
+  background: linear-gradient(145deg, #ffffff, #edf2fa) !important;
+}
+body[data-theme='light'] #app-shell :is(.btn-timer, .auth-tab, .focus-presets button, .planner-day-option, .command-result, .customization-close, .calendar-configure, .theme-preset) {
+  color: #405570 !important;
+  border-color: rgba(57, 91, 145, .18) !important;
+  background: linear-gradient(145deg, #ffffff, #edf2fa) !important;
+  box-shadow: 0 4px 12px rgba(38, 57, 91, .07) !important;
+}
+body[data-theme='light'] #app-shell :is(.auth-input, input:not([type='checkbox']):not([type='range']):not([type='radio']), select, textarea) {
+  color: #172943 !important;
+  border-color: rgba(57, 91, 145, .22) !important;
+  background: #ffffff !important;
+  box-shadow: inset 0 1px 2px rgba(38, 57, 91, .04) !important;
+}
+body[data-theme='light'] #app-shell :is(.auth-input, input:not([type='checkbox']):not([type='range']):not([type='radio']), select, textarea)::placeholder { color: #71839b !important; }
+body[data-theme='light'] #app-shell :is(.system-summary-kicker, .feature-kicker, .ascend-eyebrow, .exp-label, .section-kicker, .stat-label) { color: #315fe8 !important; }
+body[data-theme='light'] #app-shell :is(.system-summary-copy, .feature-copy, .ascend-profile-side-card .ascend-profile-section-heading h2, .ascend-profile-heading h1, .ascend-profile-post-meta strong, .ascend-profile-achievement-copy strong) { text-shadow: none !important; }
+body[data-theme='light'] { color-scheme: light; }
+body[data-theme='light'] #app-shell .sidebar-link:hover { border-color: rgba(49, 95, 232, .14) !important; }
+body[data-theme='light'] #app-shell .auth-tab.active,
+body[data-theme='light'] #app-shell .focus-presets button[aria-pressed='true'],
+body[data-theme='light'] #app-shell .theme-preset.is-selected { color: #244bc4 !important; }
+body[data-theme='light'] #app-shell .sidebar-footer,
+body[data-theme='light'] #app-shell .sidebar-header,
+body[data-theme='light'] #app-shell .system-popup,
+body[data-theme='light'] #app-shell .connection-notice { background: #f7f9fd !important; }

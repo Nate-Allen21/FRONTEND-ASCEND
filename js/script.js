@@ -54,6 +54,8 @@ let running = false;
 let timerDeadline = null;
 let currentPlayerStatus = null;
 let currentUser = null;
+let viewingProfileId = null;
+let playerSearchTimer = null;
 let currentStorageScope = 'guest';
 let currentRoutineProfile = null;
 let currentAdaptivePlan = null;
@@ -451,7 +453,7 @@ const apiBaseUrlCandidates = buildApiBaseUrlCandidates();
 async function discoverApiBaseUrl() {
   for (const baseUrl of apiBaseUrlCandidates) {
     try {
-      const response = await fetch(baseUrl + '/health', { signal: AbortSignal.timeout(12000) });
+      const response = await fetch(baseUrl + '/health', { signal: AbortSignal.timeout(90000) });
       if (!response.ok) {
         continue;
       }
@@ -1066,6 +1068,7 @@ async function handleAvatarConfirm() {
 function showView(viewName, activeLink = null, updateHistory = true) {
   const target = document.getElementById('view-' + viewName);
   if (!target?.matches('[data-view-panel]')) return;
+  if (viewName === 'profile') { viewingProfileId = null; loadProfileView(); }
   if (updateHistory && location.hash !== '#view-' + viewName) history.pushState(null, '', '#view-' + viewName);
   const label = document.querySelector('.sidebar-link[data-view="' + viewName + '"]')?.textContent.trim();
   document.title = 'ASCEND · ' + (label || 'Sua evolução');
@@ -1093,6 +1096,135 @@ function showView(viewName, activeLink = null, updateHistory = true) {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 }
+
+async function loadProfileView(profileId = viewingProfileId) {
+  const container = getElement('profile-posts');
+  if (!container) return;
+  container.textContent = 'Carregando perfil...';
+  try {
+    const profile = await apiRequest(profileId ? '/profile/players/'+encodeURIComponent(profileId) : '/profile');
+    viewingProfileId = profileId || null;
+    const ownProfile = !profileId || profile.id === currentUser?.id;
+    const status = ownProfile ? currentPlayerStatus : null;
+    const unlocked = status ? ACHIEVEMENTS.filter((achievement) => achievement.unlocked(status)) : [];
+    getElement('profile-edit').hidden = !ownProfile;
+    getElement('profile-post-form').hidden = !ownProfile;
+    getElement('profile-follow-button').hidden = ownProfile;
+    getElement('profile-friend-button').hidden = ownProfile;
+    setText('profile-title', profile.name || 'Meu perfil');
+    setText('profile-handle', '@' + (profile.username || 'player') + ' ? ID ' + profile.id);
+    setText('profile-bio', profile.bio || 'Adicione uma bio para contar sua jornada.');
+    setText('profile-joined', profile.joinedAt ? 'No ASCEND desde ' + new Date(profile.joinedAt).toLocaleDateString('pt-BR') : '');
+    const avatar = getElement('profile-avatar');
+    if (avatar && AVATAR_OPTIONS[profile.avatar]) { avatar.src = AVATAR_OPTIONS[profile.avatar].image; avatar.hidden = false; avatar.nextElementSibling.hidden = true; }
+    const tags = getElement('profile-tags'); tags.textContent = '';
+    (profile.tags || []).forEach((tag) => { const chip=document.createElement('span'); chip.textContent=tag; tags.appendChild(chip); });
+    const xp = Math.max(0, Number(profile.xp)||0), next = Math.max(xp+1, Number(profile.nextLevelXp)||xp+1);
+    const progression = getElement('profile-progression'); progression.replaceChildren();
+    const followingCount = ownProfile ? profile.following : profile.followingCount;
+    const metrics = [['N?VEL',profile.level,'bi-bar-chart-line'],['CONQUISTAS',ownProfile?unlocked.length:'?','bi-trophy'],['SEGUIDORES',profile.followers??'?','bi-people'],['SEGUINDO',followingCount??'?','bi-person-plus']];
+    metrics.forEach(([label,value,icon])=>{const card=document.createElement('div');card.className='ascend-profile-metric';const mark=document.createElement('i');mark.className='bi '+icon;mark.setAttribute('aria-hidden','true');const copy=document.createElement('span');copy.className='ascend-profile-metric-copy';const small=document.createElement('small');small.textContent=label;const strong=document.createElement('strong');strong.textContent=value;copy.append(small,strong);card.append(mark,copy);progression.appendChild(card);});
+    const level=getElement('profile-level'); level.replaceChildren(); const badge=document.createElement('strong');badge.textContent='N?VEL '+profile.level+' ? '+profile.rank;level.appendChild(badge);
+    if(ownProfile){const bar=document.createElement('progress');bar.max=next;bar.value=xp;bar.setAttribute('aria-label','Progresso de XP');const caption=document.createElement('small');caption.textContent=xp.toLocaleString('pt-BR')+' / '+next.toLocaleString('pt-BR')+' XP';level.append(bar,caption);}else{const note=document.createElement('small');note.textContent='XP detalhado vis?vel apenas para voc?.';level.appendChild(note);}
+    const followButton=getElement('profile-follow-button');followButton.textContent=profile.following?'Deixar de seguir':'Seguir jogador';followButton.dataset.following=String(Boolean(profile.following));
+    const friendButton=getElement('profile-friend-button');friendButton.textContent=profile.friendStatus==='ACCEPTED'?'Remover amigo':profile.friendStatus==='OUTGOING'?'Cancelar pedido':profile.friendStatus==='INCOMING'?'Aceitar amizade':'Adicionar amigo';friendButton.dataset.friendStatus=profile.friendStatus||'NONE';
+    setText('profile-friend-count',ownProfile?'':(profile.friendStatus==='ACCEPTED'?'Amigo':'ASCEND'));
+    renderProfileOverview(profile, ownProfile, status, unlocked);
+    renderProfileAchievements(ownProfile, unlocked);
+    renderProfileDetails(profile, ownProfile, status);
+    container.replaceChildren();
+    if (!(profile.posts||[]).length) {const empty=document.createElement('p');empty.className='feature-copy';empty.textContent='Suas publica??es aparecer?o aqui.';container.appendChild(empty);}
+    (profile.posts||[]).forEach((post)=>{const article=document.createElement('article');article.className='ascend-profile-post';const header=document.createElement('div');header.className='ascend-profile-post-meta';const author=document.createElement('strong');author.textContent=profile.name+' ? @'+profile.username;const date=document.createElement('time');date.dateTime=post.createdAt;date.textContent=new Date(post.createdAt).toLocaleString('pt-BR');header.append(author,date);const body=document.createElement('p');body.textContent=post.content;const actions=document.createElement('div');actions.className='ascend-social-actions';const like=document.createElement('button');like.type='button';like.className='btn-timer';like.textContent=(post.liked?'?':'?')+' '+post.likes;like.setAttribute('aria-label','Curtir publica??o');like.addEventListener('click',async()=>{try{await apiRequest('/profile/posts/'+post.id+'/like',{method:'POST'});await loadProfileView(profile.id===currentUser?.id?null:profile.id);}catch(error){setText('profile-feedback',error.message);}});const reply=document.createElement('button');reply.type='button';reply.className='btn-timer';reply.textContent='Coment?rios ('+post.comments+')';reply.addEventListener('click',async()=>{try{const rows=await apiRequest('/profile/posts/'+post.id+'/comments');const current=rows.map(c=>'#'+c.id+(c.parentId?' ? #'+c.parentId:'')+' '+c.name+': '+c.content).join('\n');const parentText=rows.length?prompt((current||'')+'\n\nID para responder (vazio cria coment?rio):',''):'';if(parentText===null)return;const content=prompt('Escreva seu coment?rio ou resposta:');if(content?.trim()){const parentId=parentText?.trim()?Number(parentText.replace(/^#/,'')):null;if(parentId&&!rows.some(c=>c.id===parentId)){setText('profile-feedback','Esse coment?rio n?o foi encontrado.');return;}await apiRequest('/profile/posts/'+post.id+'/comments',{method:'POST',body:JSON.stringify({content,parentId})});}await loadProfileView(profile.id===currentUser?.id?null:profile.id);}catch(error){setText('profile-feedback',error.message);}});actions.append(like,reply);article.append(header,body,actions);if(profile.id===currentUser?.id){const remove=document.createElement('button');remove.type='button';remove.className='btn-timer';remove.textContent='Excluir';remove.addEventListener('click',async()=>{try{await apiRequest('/profile/posts/'+encodeURIComponent(post.id),{method:'DELETE'});await loadProfileView();}catch(error){setText('profile-feedback',error.message);}});article.appendChild(remove);}container.appendChild(article);});
+    openProfileTab('overview');
+    if(ownProfile) loadProfileFriends(); else getElement('profile-friends').textContent='A lista de amigos n?o ? exibida neste perfil.';
+  } catch(error) { container.textContent='N?o foi poss?vel carregar o perfil: '+error.message; }
+}
+
+function renderProfileOverview(profile, ownProfile, status, unlocked) {
+  const node=getElement('profile-overview-stats');node.replaceChildren();
+  const entries=ownProfile?[['MISS?ES CONCLU?DAS',getStatValue(status,'missions'),'bi-check2-circle'],['XP ACUMULADO',Number(profile.xp||0).toLocaleString('pt-BR'),'bi-stars'],['DIAS DE ATIVIDADE',Number(profile.streakDays||0),'bi-fire'],['ATRIBUTO MAIS FORTE',getStrongestAttribute(status),'bi-lightning-charge']]:[['N?VEL',profile.level,'bi-bar-chart-line'],['PATENTE',profile.rank,'bi-shield-check']];
+  entries.forEach(([label,value,icon])=>{const card=document.createElement('article');card.className='ascend-profile-overview-card';const mark=document.createElement('i');mark.className='bi '+icon;const small=document.createElement('small');small.textContent=label;const strong=document.createElement('strong');strong.textContent=value??'?';card.append(mark,small,strong);node.appendChild(card);});
+  const recent=getElement('profile-recent-achievements');recent.replaceChildren();
+  if(!ownProfile||!unlocked.length){const empty=document.createElement('p');empty.className='feature-copy';empty.textContent=ownProfile?'Continue suas miss?es para desbloquear conquistas.':'Conquistas n?o dispon?veis para este perfil.';recent.appendChild(empty);return;}
+  unlocked.slice(-3).reverse().forEach((achievement)=>recent.appendChild(createProfileAchievementCard(achievement)));
+}
+
+function renderProfileAchievements(ownProfile, unlocked) {
+  ['profile-achievements','profile-side-achievements'].forEach((id)=>{const node=getElement(id);node.replaceChildren();if(!ownProfile||!unlocked.length){const empty=document.createElement('p');empty.className='feature-copy';empty.textContent=ownProfile?'Nenhuma conquista desbloqueada ainda.':'Conquistas n?o dispon?veis para este perfil.';node.appendChild(empty);return;}unlocked.slice().reverse().forEach((achievement)=>node.appendChild(createProfileAchievementCard(achievement)));});
+}
+
+function createProfileAchievementCard(achievement) {
+  const card=document.createElement('article');card.className='ascend-profile-achievement';const icon=document.createElement('span');icon.className='ascend-profile-achievement-icon';const mark=document.createElement('i');mark.className='bi '+achievement.icone;icon.appendChild(mark);const copy=document.createElement('span');copy.className='ascend-profile-achievement-copy';const name=document.createElement('strong');name.textContent=achievement.titulo;const description=document.createElement('small');description.textContent=achievement.descricao;copy.append(name,description);card.append(icon,copy);return card;
+}
+
+function getStrongestAttribute(status) {
+  const attributes=(status?.stats||[]).filter((entry)=>entry.key!=='missions').sort((a,b)=>Number(b.value)-Number(a.value));
+  return attributes.length?attributes[0].name+' ? '+attributes[0].value:'Sem dados';
+}
+
+function renderProfileDetails(profile, ownProfile, status) {
+  const node=getElement('profile-detail-stats');node.replaceChildren();
+  const entries=ownProfile?[['Miss?es conclu?das',getStatValue(status,'missions')],['XP acumulado',Number(profile.xp||0).toLocaleString('pt-BR')],['N?vel atual',profile.level],['Patente',profile.rank],['Dias consecutivos',Number(profile.streakDays||0)],...(status?.stats||[]).filter((entry)=>entry.key!=='missions').map((entry)=>[entry.name,entry.value])]:[['N?vel atual',profile.level],['Patente',profile.rank]];
+  entries.forEach(([name,value])=>{const row=document.createElement('div');row.className='ascend-profile-detail-row';const label=document.createElement('span');label.textContent=name;const amount=document.createElement('strong');amount.textContent=value??'?';row.append(label,amount);node.appendChild(row);});
+}
+
+function openProfileTab(name) {
+  document.querySelectorAll('[data-profile-tab]').forEach((button)=>{const active=button.dataset.profileTab===name;button.classList.toggle('is-active',active);button.setAttribute('aria-selected',String(active));});
+  document.querySelectorAll('[data-profile-panel]').forEach((panel)=>{panel.hidden=panel.dataset.profilePanel!==name;});
+}
+
+async function loadProfileFriends() {
+  const node=getElement('profile-friends');node.textContent='Carregando amigos...';
+  try {const friends=await apiRequest('/profile/friends');node.replaceChildren();setText('profile-friend-count',friends.length+' amigos');if(!friends.length){node.textContent='Sua lista de amigos aparecer? aqui.';return;}friends.slice(0,8).forEach((friend)=>{const button=document.createElement('button');button.type='button';button.className='ascend-profile-friend';button.title='Ver perfil de '+friend.name;const avatar=document.createElement('span');avatar.className='ascend-profile-friend-avatar';if(AVATAR_OPTIONS[friend.avatar]){const image=document.createElement('img');image.src=AVATAR_OPTIONS[friend.avatar].image;image.alt='';avatar.appendChild(image);}else{const icon=document.createElement('i');icon.className='bi bi-person';avatar.appendChild(icon);}const name=document.createElement('small');name.textContent=friend.name;button.append(avatar,name);button.addEventListener('click',()=>loadProfileView(friend.id));node.appendChild(button);});}
+  catch(error){node.textContent='N?o foi poss?vel carregar amigos: '+error.message;}
+}
+
+function openProfileTabFromEvent(event) {
+  const tab=event.target.closest('[data-profile-tab]');
+  const link=event.target.closest('[data-profile-tab-link]');
+  if(tab) openProfileTab(tab.dataset.profileTab);
+  else if(link) openProfileTab(link.dataset.profileTabLink);
+}
+
+async function handleProfileFollow() {
+  if(!viewingProfileId)return;
+  const button=getElement('profile-follow-button');const following=button.dataset.following==='true';
+  try{await apiRequest('/profile/follow/'+viewingProfileId,{method:following?'DELETE':'POST'});await loadProfileView(viewingProfileId);}catch(error){setText('profile-feedback',error.message);}
+}
+
+async function handleProfileFriend() {
+  if(!viewingProfileId)return;
+  const button=getElement('profile-friend-button');const state=button.dataset.friendStatus||'NONE';
+  try{if(state==='INCOMING')await apiRequest('/profile/friends/'+viewingProfileId,{method:'PUT'});else if(state==='ACCEPTED'||state==='OUTGOING')await apiRequest('/profile/friends/'+viewingProfileId,{method:'DELETE'});else await apiRequest('/profile/friends/'+viewingProfileId,{method:'POST'});await loadProfileView(viewingProfileId);}catch(error){setText('profile-feedback',error.message);}
+}
+
+async function saveProfilePost(event) {
+  event.preventDefault(); const input=getElement('profile-post-content'); const feedback=getElement('profile-feedback');
+  try { await apiRequest('/profile/posts',{method:'POST',body:JSON.stringify({content:input.value})}); input.value=''; feedback.textContent='Publicação salva.'; await loadProfileView(); }
+  catch(error) { feedback.textContent=error.message; }
+}
+
+async function editProfile() {
+  try {
+    const current=await apiRequest('/profile');
+    const bio=prompt('Sua bio (até 500 caracteres):',current.bio||''); if(bio===null) return;
+    const tagsText=prompt('Até 5 tags separadas por vírgula:',(current.tags||[]).join(', ')); if(tagsText===null) return;
+    const visibility=prompt('Visibilidade: PUBLIC, FRIENDS ou PRIVATE',current.visibility||'PUBLIC'); if(visibility===null) return;
+    await apiRequest('/profile',{method:'PUT',body:JSON.stringify({bio,tags:tagsText.split(',').map(s=>s.trim()).filter(Boolean),visibility})});
+    await loadProfileView(); setText('profile-feedback','Perfil atualizado.');
+  } catch(error) { setText('profile-feedback',error.message); }
+}
+
+async function searchPlayers() {
+  const input=getElement('player-search'), results=getElement('player-search-results'); if(!input||!results)return;
+  const q=input.value.trim(); if(q.length<2){results.textContent='Digite ao menos 2 caracteres.';return;}
+  results.textContent='Buscando...';
+  try { const players=await apiRequest('/profile/discover?q='+encodeURIComponent(q)); results.textContent=''; if(!players.length){results.textContent='Nenhum jogador encontrado.';return;}
+    players.forEach(player=>{const row=document.createElement('div');row.className='ascend-player-row';const name=document.createElement('button');name.type='button';name.className='btn-timer';name.textContent=player.name+' · @'+player.username;name.addEventListener('click',()=>loadProfileView(player.id));const follow=document.createElement('button');follow.type='button';follow.className='btn-timer';follow.textContent=player.following?'Deixar de seguir':'Seguir';follow.addEventListener('click',async()=>{await apiRequest('/profile/follow/'+player.id,{method:player.following?'DELETE':'POST'});searchPlayers();});const friend=document.createElement('button');friend.type='button';friend.className='btn-timer';friend.textContent=player.friendStatus==='ACCEPTED'?'Remover amizade':player.friendStatus==='OUTGOING'?'Cancelar pedido':player.friendStatus==='INCOMING'?'Aceitar amizade':'Adicionar';friend.addEventListener('click',async()=>{if(player.friendStatus==='INCOMING')await apiRequest('/profile/friends/'+player.id,{method:'PUT'});else if(player.friendStatus==='ACCEPTED'||player.friendStatus==='OUTGOING')await apiRequest('/profile/friends/'+player.id,{method:'DELETE'});else await apiRequest('/profile/friends/'+player.id,{method:'POST'});searchPlayers();});const block=document.createElement('button');block.type='button';block.className='btn-timer';block.textContent='Bloquear';block.addEventListener('click',async()=>{if(confirm('Bloquear '+player.name+'?')){await apiRequest('/profile/block/'+player.id,{method:'POST'});searchPlayers();}});row.append(name,follow,friend,block);results.appendChild(row);});
+  } catch(error){results.textContent=error.message;}
+}
+
+async function loadFriendRequests(){const node=getElement('friend-requests');if(!node)return;node.textContent='Carregando...';try{const requests=await apiRequest('/profile/friends/requests');node.textContent='';if(!requests.length){node.textContent='Nenhuma solicitação pendente.';return;}requests.forEach(item=>{const row=document.createElement('div');row.className='ascend-player-row';const name=document.createElement('strong');name.textContent=item.name;const accept=document.createElement('button');accept.type='button';accept.className='btn-timer';accept.textContent='Aceitar';accept.addEventListener('click',async()=>{await apiRequest('/profile/friends/'+item.id,{method:'PUT'});loadFriendRequests();});row.append(name,accept);node.appendChild(row);});}catch(error){node.textContent=error.message;}}
 
 function openSidebar() {
   const sidebar = getElement('app-sidebar');
@@ -1191,7 +1323,7 @@ async function handleLogin(event) {
   const submitButton = form.querySelector('button[type="submit"]');
 
   submitButton.disabled = true;
-  setAuthMessage('Entrando...');
+  setAuthMessage('Conectando ao servidor... Se for a primeira tentativa em algum tempo, aguarde; não precisa clicar novamente.');
 
   try {
     const data = await apiRequest('/auth/login', {
@@ -3989,6 +4121,14 @@ function bindEvents() {
       closeSidebar();
     });
   });
+
+  getElement('profile-post-form')?.addEventListener('submit', saveProfilePost);
+  getElement('profile-edit')?.addEventListener('click', editProfile);
+  getElement('profile-follow-button')?.addEventListener('click', handleProfileFollow);
+  getElement('profile-friend-button')?.addEventListener('click', handleProfileFriend);
+  getElement('view-profile')?.addEventListener('click', openProfileTabFromEvent);
+  getElement('player-search')?.addEventListener('input', () => { clearTimeout(playerSearchTimer); playerSearchTimer = setTimeout(searchPlayers, 250); });
+  getElement('friend-requests-open')?.addEventListener('click', loadFriendRequests);
 
   initSidebarDrawer();
   mountRoutinePlannerInTraining();

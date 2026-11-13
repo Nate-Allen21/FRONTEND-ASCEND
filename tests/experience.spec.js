@@ -100,6 +100,45 @@ test('status and progress overview are visible without the extra dashboard banne
   expect(await page.locator('.evolution-hero').evaluate((hero) => hero.offsetHeight)).toBeLessThan(260);
 });
 
+test('profile loads persisted data, creates a post once, and discovers players', async ({ page }) => {
+  await setup(page);
+  let posts = [];
+  const profile = { id: 1, name: 'Hunter Teste', username: 'hunter-teste-1', avatar: null, bio: 'Em evolução', tags: ['Estudos'], visibility: 'PUBLIC', joinedAt: '2026-01-01T00:00:00Z', level: 3, rank: 'E', xp: 250, nextLevelXp: 500, streakDays: 4, followers: 0, following: 0 };
+  await page.route('**/api/profile**', async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    const method = route.request().method();
+    if (path === '/api/profile' && method === 'GET') return route.fulfill({ json: { ...profile, posts } });
+    if (path === '/api/profile/friends') return route.fulfill({ json: [] });
+    if (path === '/api/profile/posts' && method === 'POST') {
+      const request = route.request().postDataJSON();
+      posts.unshift({ id: 42, content: request.content, createdAt: '2026-11-09T12:00:00Z', likes: 0, liked: false, comments: 0 });
+      return route.fulfill({ status: 201, json: posts[0] });
+    }
+    if (path === '/api/profile/discover') return route.fulfill({ json: [{ id: 2, name: 'Astra', username: 'astra-2', following: false, friendStatus: 'NONE' }] });
+    if (path === '/api/profile/players/2') return route.fulfill({ json: { id: 2, name: 'Astra', username: 'astra-2', bio: 'Jogadora', tags: [], level: 4, rank: 'C', joinedAt: '2026-01-01T00:00:00Z', posts: [], following: false, friendStatus: 'NONE' } });
+    return route.fulfill({ json: {} });
+  });
+
+  await page.locator('.sidebar-link[data-view=profile]').click();
+  await expect(page.locator('#profile-title')).toHaveText('Hunter Teste');
+  await page.locator('#btn-theme-toggle').click();
+  await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
+  await expect.poll(() => page.locator('#profile-title').evaluate((element) => getComputedStyle(element).color)).toBe('rgb(23, 41, 67)');
+  await expect.poll(() => page.locator('.ascend-profile-main').evaluate((element) => getComputedStyle(element).backgroundImage)).toContain('rgb(255, 255, 255)');
+  await page.screenshot({ path: 'test-results/profile-dashboard.png', fullPage: true });
+  await page.locator('[data-profile-tab=posts]').click();
+  await page.locator('#profile-post-content').fill('Primeira publicação');
+  await page.locator('#profile-post-form button[type=submit]').click();
+  await expect(page.locator('#profile-posts')).toContainText('Primeira publicação');
+  expect(posts).toHaveLength(1);
+  await page.locator('#player-search').fill('Astra');
+  await expect(page.locator('#player-search-results')).toContainText('@astra-2');
+  await page.locator('#player-search-results button').first().click();
+  await expect(page.locator('#profile-title')).toHaveText('Astra');
+  await expect(page.locator('#profile-post-form')).toBeHidden();
+});
+
 test('new accounts choose an avatar before dashboard and can change it later', async ({ page }) => {
   const errors = await setup(page, false, false);
   await page.locator('#login-email').fill('new-hunter@example.com');
