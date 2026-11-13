@@ -64,7 +64,7 @@
       <div class="auth-options"><label><input type="checkbox" /> <span>Lembrar de mim</span></label><a href="#" onclick="return false">Esqueceu sua senha?</a></div>
 
       <button class="auth-submit" type="submit"><span>Entrar</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
-      <div class="auth-divider"><span>OU</span></div><button class="auth-google" id="btn-google-login" type="button"><img src="assets/google-logo.svg" alt="" aria-hidden="true" /> Entrar com Google</button><div id="google-signin-container" class="google-signin-container" aria-hidden="true"></div>
+      <div class="auth-divider"><span>OU</span></div><div class="google-login-wrap"><button class="auth-google" id="btn-google-login" type="button"><img src="assets/google-logo.svg" alt="" aria-hidden="true" /> Entrar com Google</button><div id="google-signin-container" class="google-signin-container" aria-hidden="true"></div></div>
     </form>
 
     <form class="auth-form d-none" id="register-form" role="tabpanel" aria-labelledby="tab-register" aria-hidden="true" hidden>
@@ -280,28 +280,115 @@
 
     <main class="main-content" id="conteudo-principal" tabindex="-1">
       <section class="app-view" id="view-profile" data-view-panel="profile" aria-labelledby="profile-title" hidden>
-        <div class="ascend-profile-banner"><span class="ascend-eyebrow">ASCEND // PLAYER IDENTITY</span><span class="ascend-profile-banner-code">PROFILE SYSTEM <i></i> ONLINE</span></div>
+        <div class="ascend-profile-banner">
+          <span class="ascend-eyebrow">ASCEND // IDENTIDADE DO JOGADOR</span>
+          <span class="ascend-profile-banner-code">PROFILE SYSTEM <i aria-hidden="true"></i> ONLINE</span>
+        </div>
         <div class="ascend-profile-layout">
-          <section class="feature-panel ascend-profile-hero">
-            <header class="ascend-profile-heading"><span class="ascend-profile-avatar"><img id="profile-avatar" data-profile-avatar alt="" hidden><i class="bi bi-person-badge" aria-hidden="true"></i></span><div class="ascend-profile-heading-copy"><span class="ascend-eyebrow">SEU LEGADO</span><h1 id="profile-title">Meu perfil</h1><p id="profile-handle"></p></div><div class="ascend-profile-heading-actions"><button id="profile-follow-button" class="btn-timer" type="button" hidden></button><button id="profile-friend-button" class="btn-timer" type="button" hidden></button><button id="profile-edit" class="btn-timer" type="button"><i class="bi bi-pencil"></i> Editar perfil</button></div></header>
-            <p id="profile-bio" class="ascend-profile-bio">Adicione uma bio para contar sua jornada.</p><div id="profile-tags" class="ascend-profile-tags"></div>
-            <div class="ascend-profile-metrics" id="profile-progression"></div>
+          <section class="feature-panel ascend-profile-hero" aria-label="Identidade do jogador">
+            <header class="ascend-profile-heading">
+              <span class="ascend-profile-avatar"><img id="profile-avatar" data-profile-avatar alt="" hidden><i class="bi bi-person-badge" aria-hidden="true"></i></span>
+              <div class="ascend-profile-heading-copy"><span class="ascend-eyebrow">SEU LEGADO</span><h1 id="profile-title">Meu perfil</h1><p id="profile-handle"></p></div>
+              <div class="ascend-profile-heading-actions">
+                <button id="profile-follow-button" class="btn-timer" type="button" hidden></button>
+                <button id="profile-friend-button" class="btn-timer" type="button" hidden></button>
+                <button id="profile-edit" class="btn-timer" type="button"><i class="bi bi-pencil" aria-hidden="true"></i> Editar perfil</button>
+              </div>
+            </header>
+            <div id="profile-progression" class="ascend-profile-metrics" aria-label="Resumo do perfil"></div>
           </section>
           <div class="ascend-profile-content">
-            <main class="ascend-profile-main">
-              <nav class="ascend-profile-tabs" role="tablist" aria-label="Seções do perfil"><button class="is-active" type="button" role="tab" aria-selected="true" data-profile-tab="overview">Visão geral</button><button type="button" role="tab" aria-selected="false" data-profile-tab="posts">Publicações</button><button type="button" role="tab" aria-selected="false" data-profile-tab="achievements">Conquistas</button><button type="button" role="tab" aria-selected="false" data-profile-tab="statistics">Estatísticas</button></nav>
-              <section class="ascend-profile-tab-panel" data-profile-panel="overview"><div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">JORNADA EM NÚMEROS</span><h2>Estatísticas gerais</h2></div></div><div id="profile-overview-stats" class="ascend-profile-overview-stats"></div><div class="ascend-profile-recent-wrap"><div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">MARCOS RECENTES</span><h2>Conquistas</h2></div><button class="ascend-profile-text-button" type="button" data-profile-tab-link="achievements">Ver todas <i class="bi bi-arrow-right"></i></button></div><div id="profile-recent-achievements" class="ascend-profile-achievement-grid"></div></div></section>
-              <section class="ascend-profile-tab-panel" data-profile-panel="posts" hidden><form id="profile-post-form" class="ascend-profile-post-form"><label for="profile-post-content">Compartilhe sua jornada</label><textarea id="profile-post-content" maxlength="1200" rows="3" placeholder="Compartilhe uma conquista, pensamento ou progresso..." required></textarea><div class="ascend-profile-post-compose-footer"><span>Até 1.200 caracteres</span><button class="auth-submit" type="submit"><i class="bi bi-send"></i> Publicar</button></div><p id="profile-feedback" role="status"></p></form><div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">DIÁRIO DE EVOLUÇÃO</span><h2>Publicações</h2></div></div><div id="profile-posts" class="ascend-profile-posts" aria-live="polite"><p class="feature-copy">Carregando publicações...</p></div></section>
-              <section class="ascend-profile-tab-panel" data-profile-panel="achievements" hidden><div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">MARCOS DESBLOQUEADOS</span><h2>Conquistas</h2></div></div><div id="profile-achievements" class="ascend-profile-achievement-grid"></div></section>
-              <section class="ascend-profile-tab-panel" data-profile-panel="statistics" hidden><div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">DADOS DA JORNADA</span><h2>Estatísticas detalhadas</h2></div></div><div id="profile-detail-stats" class="ascend-profile-detail-stats"></div></section>
-            </main>
+            <aside class="feature-panel ascend-profile-about">
+              <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">SUA JORNADA</span><h2>Sobre mim</h2></div></div>
+              <p id="profile-bio" class="ascend-profile-bio">Adicione uma bio para contar sua jornada.</p>
+              <div id="profile-tags" class="ascend-profile-tags"></div>
+              <div id="profile-cosmetics" class="ascend-profile-cosmetics" aria-label="Cosméticos equipados"></div>
+            </aside>
+            <section class="ascend-profile-main" aria-label="Atividade do perfil">
+              <nav class="ascend-profile-tabs" role="tablist" aria-label="Seções do perfil">
+                <button class="is-active" id="profile-tab-posts" type="button" role="tab" aria-selected="true" aria-controls="profile-panel-posts" data-profile-tab="posts">Publicações</button>
+                <button id="profile-tab-overview" type="button" role="tab" aria-selected="false" aria-controls="profile-panel-overview" data-profile-tab="overview">Visão geral</button>
+                <button id="profile-tab-achievements" type="button" role="tab" aria-selected="false" aria-controls="profile-panel-achievements" data-profile-tab="achievements">Conquistas</button>
+                <button id="profile-tab-statistics" type="button" role="tab" aria-selected="false" aria-controls="profile-panel-statistics" data-profile-tab="statistics">Estatísticas</button>
+              </nav>
+              <section class="ascend-profile-tab-panel" id="profile-panel-posts" role="tabpanel" aria-labelledby="profile-tab-posts" data-profile-panel="posts">
+                <form id="profile-post-form" class="ascend-profile-post-form">
+                  <label for="profile-post-content">Compartilhe sua jornada</label>
+                  <textarea id="profile-post-content" maxlength="1200" rows="3" placeholder="Compartilhe uma conquista, pensamento ou progresso..." required></textarea>
+                  <div class="ascend-profile-post-compose-footer"><span>Até 1.200 caracteres</span><button class="auth-submit" type="submit"><i class="bi bi-send" aria-hidden="true"></i> Publicar</button></div>
+                  <p id="profile-feedback" role="status"></p>
+                </form>
+                <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">DIÁRIO DE EVOLUÇÃO</span><h2>Publicações</h2></div></div>
+                <div id="profile-posts" class="ascend-profile-posts" aria-live="polite"><p class="feature-copy">Carregando publicações...</p></div>
+              </section>
+              <section class="ascend-profile-tab-panel" id="profile-panel-overview" role="tabpanel" aria-labelledby="profile-tab-overview" data-profile-panel="overview" hidden>
+                <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">JORNADA EM NÚMEROS</span><h2>Resumo da jornada</h2></div></div>
+                <div id="profile-overview-stats" class="ascend-profile-overview-stats"></div>
+              </section>
+              <section class="ascend-profile-tab-panel" id="profile-panel-achievements" role="tabpanel" aria-labelledby="profile-tab-achievements" data-profile-panel="achievements" hidden>
+                <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">MARCOS DESBLOQUEADOS</span><h2>Conquistas</h2></div></div>
+                <div id="profile-achievements" class="ascend-profile-achievement-grid"></div>
+              </section>
+              <section class="ascend-profile-tab-panel" id="profile-panel-statistics" role="tabpanel" aria-labelledby="profile-tab-statistics" data-profile-panel="statistics" hidden>
+                <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">DADOS DA JORNADA</span><h2>Estatísticas detalhadas</h2></div></div>
+                <div id="profile-detail-stats" class="ascend-profile-detail-stats"></div>
+              </section>
+            </section>
             <aside class="ascend-profile-side">
               <section class="feature-panel ascend-profile-level-card"><span class="ascend-eyebrow">PROGRESSÃO REAL</span><div class="ascend-profile-level-mark" aria-hidden="true"><i class="bi bi-stars"></i></div><div id="profile-level" class="ascend-profile-level"></div><p id="profile-joined" class="ascend-profile-joined"></p></section>
-              <section class="feature-panel ascend-profile-side-card"><div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">RECENTES</span><h2>Conquistas</h2></div><button class="ascend-profile-text-button" type="button" data-profile-tab-link="achievements">Ver todas <i class="bi bi-arrow-right"></i></button></div><div id="profile-side-achievements" class="ascend-profile-side-achievements"></div></section>
-              <section class="feature-panel ascend-profile-side-card"><div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">SUA REDE</span><h2>Amigos</h2></div><span id="profile-friend-count" class="ascend-profile-count"></span></div><div id="profile-friends" class="ascend-profile-friends"></div><label class="ascend-profile-search-label" for="player-search">Descobrir jogadores</label><input id="player-search" class="auth-input" type="search" minlength="2" placeholder="Busque pelo nome"><div id="player-search-results" class="ascend-player-results" aria-live="polite"></div><button id="friend-requests-open" class="btn-timer ascend-profile-requests" type="button"><i class="bi bi-person-plus"></i> Solicitações</button><div id="friend-requests" class="ascend-player-results"></div></section>
+              <section class="feature-panel ascend-profile-side-card">
+                <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">MARCOS</span><h2>Conquistas</h2></div><button class="ascend-profile-text-button" type="button" data-profile-tab-link="achievements">Ver todas <i class="bi bi-arrow-right" aria-hidden="true"></i></button></div>
+                <div id="profile-side-achievements" class="ascend-profile-side-achievements"></div>
+              </section>
+              <section class="feature-panel ascend-profile-side-card">
+                <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">SUA REDE</span><h2>Amigos</h2></div><span id="profile-friend-count" class="ascend-profile-count"></span></div>
+                <div id="profile-friends" class="ascend-profile-friends"></div>
+                <label class="ascend-profile-search-label" for="player-search">Descobrir jogadores</label>
+                <input id="player-search" class="auth-input" type="search" minlength="2" placeholder="Busque pelo nome">
+                <div id="player-search-results" class="ascend-player-results" aria-live="polite"></div>
+                <button id="friend-requests-open" class="btn-timer ascend-profile-requests" type="button"><i class="bi bi-person-plus" aria-hidden="true"></i> Solicitações</button>
+                <div id="friend-requests" class="ascend-player-results"></div>
+                <p id="profile-social-feedback" class="ascend-profile-social-feedback" role="status"></p>
+              </section>
             </aside>
           </div>
         </div>
+        <dialog id="profile-edit-dialog" class="profile-edit-dialog" aria-labelledby="profile-edit-title">
+          <form id="profile-edit-form" class="profile-edit-form">
+            <header class="profile-edit-header">
+              <div><span class="ascend-eyebrow">IDENTIDADE DO JOGADOR</span><h2 id="profile-edit-title">Editar perfil</h2></div>
+              <button id="profile-edit-close" class="glass-btn glass-btn--icon" type="button" aria-label="Fechar edição do perfil"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            </header>
+            <div class="profile-edit-photo-section">
+              <span class="profile-edit-photo-preview"><img id="profile-edit-preview" alt="Prévia da foto de perfil" hidden><i class="bi bi-person-badge" aria-hidden="true"></i></span>
+              <div class="profile-edit-photo-controls">
+                <strong>Foto de perfil</strong>
+                <span>Escolha uma imagem do seu dispositivo. Ela será ajustada para caber no perfil.</span>
+                <div class="profile-edit-photo-actions">
+                  <label class="btn-timer" for="profile-image-input"><i class="bi bi-upload" aria-hidden="true"></i> Escolher foto</label>
+                  <button id="profile-image-remove" class="btn-timer" type="button">Remover foto</button>
+                </div>
+                <input id="profile-image-input" class="profile-edit-file-input" type="file" accept="image/jpeg,image/png,image/webp">
+                <small>JPG, PNG ou WebP · até 8 MB</small>
+              </div>
+            </div>
+            <label class="profile-edit-field" for="profile-edit-bio">Bio <span>Até 500 caracteres</span></label>
+            <textarea id="profile-edit-bio" maxlength="500" rows="4" placeholder="Conte um pouco sobre a sua jornada..."></textarea>
+            <label class="profile-edit-field" for="profile-edit-tags">Tags <span>Separe por vírgulas (até 5)</span></label>
+            <input id="profile-edit-tags" class="auth-input" type="text" maxlength="200" placeholder="Ex.: Tecnologia, Leitura, Foco">
+            <label class="profile-edit-field" for="profile-edit-visibility">Visibilidade do perfil</label>
+            <select id="profile-edit-visibility" class="auth-input">
+              <option value="PUBLIC">Público</option>
+              <option value="FRIENDS">Somente amigos</option>
+              <option value="PRIVATE">Privado</option>
+            </select>
+            <p id="profile-edit-feedback" class="profile-edit-feedback" role="status"></p>
+            <footer class="profile-edit-footer">
+              <button id="profile-edit-cancel" class="btn-timer" type="button">Cancelar</button>
+              <button id="profile-edit-save" class="auth-submit" type="submit"><i class="bi bi-check2" aria-hidden="true"></i> Salvar alterações</button>
+            </footer>
+          </form>
+        </dialog>
       </section>
       <section class="app-view active" id="view-status" data-view-panel="status" aria-label="Painel de status">
         <div class="evolution-hero">
@@ -673,33 +760,29 @@
       </section>
 
       <section class="app-view" id="view-shop" data-view-panel="shop" aria-labelledby="shop-title" hidden>
-        <div class="ascend-section-heading"><div><span class="ascend-eyebrow">THE VAULT / RECOMPENSAS</span><h1 class="section-title" id="shop-title">Loja de recompensas</h1><p class="feature-copy">Escolha uma recompensa para o seu progresso.</p></div></div>
+        <div class="store-hero">
+          <div><span class="ascend-eyebrow">ASCEND EXCHANGE / THE VAULT</span><h1 class="section-title" id="shop-title">Recompensas para sua próxima conquista</h1><p class="feature-copy">Transforme progresso em pausas, foco e experiências escolhidas por você.</p></div>
+          <a class="store-balance" href="#view-vault" data-view="vault"><span class="store-balance-label">SEU SALDO</span><strong><span id="store-balance">0</span> <small>AC</small></strong><span class="store-balance-link">Ver histórico <i class="bi bi-arrow-up-right" aria-hidden="true"></i></span></a>
+        </div>
         <p id="shop-feedback" class="ascend-shop-feedback" role="status" aria-live="polite"></p>
-        <div class="dashboard-grid">
-          <article class="feature-panel shop-item">
-            <div>
-              <div class="feature-kicker">RECOMPENSA</div>
-              <h2 class="feature-title">Pausa estrategica</h2>
-              <p class="feature-copy">Troque moedas por 30 minutos de descanso planejado.</p>
-            </div>
-            <button class="btn-complete" type="button" data-shop-item="pausa-estrategica">120 moedas</button>
-          </article>
-          <article class="feature-panel shop-item">
-            <div>
-              <div class="feature-kicker">UPGRADE</div>
-              <h2 class="feature-title">Equipamento de treino</h2>
-              <p class="feature-copy">Registre uma melhoria real para sua rotina fisica.</p>
-            </div>
-            <button class="btn-complete" type="button" data-shop-item="equipamento-treino">300 moedas</button>
-          </article>
-          <article class="feature-panel shop-item">
-            <div>
-              <div class="feature-kicker">FOCO</div>
-              <h2 class="feature-title">Sessao premium</h2>
-              <p class="feature-copy">Reserve um bloco especial para estudo profundo.</p>
-            </div>
-            <button class="btn-complete" type="button" data-shop-item="sessao-premium">200 moedas</button>
-          </article>
+        <nav class="store-modes" aria-label="Tipo de catálogo"><button type="button" class="store-mode is-active" data-store-mode="daily" aria-pressed="true">Recompensas diárias</button><button type="button" class="store-mode" data-store-mode="cosmetics" aria-pressed="false">Cosméticos</button></nav>
+        <div id="daily-shop-panel">
+          <nav class="store-categories" id="store-categories" aria-label="Categorias de recompensas"></nav>
+          <div class="store-section-heading"><div><span class="ascend-eyebrow">SELEÇÃO DE HOJE</span><h2>Encontre sua próxima recompensa</h2></div><span class="store-rotation"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Seleção renovada diariamente</span></div>
+          <div class="dashboard-grid store-grid" aria-live="polite"></div>
+        </div>
+        <section id="cosmetic-shop-panel" hidden aria-labelledby="cosmetic-shop-title">
+          <div class="store-section-heading"><div><span class="ascend-eyebrow">COLEÇÃO ASCEND</span><h2 id="cosmetic-shop-title">Cosméticos e itens de perfil</h2></div><span class="store-rotation">Itens permanentes · AC <span id="cosmetic-store-status"></span></span></div>
+          <div class="store-categories" id="cosmetic-categories" aria-label="Filtrar cosméticos"></div>
+          <div class="dashboard-grid store-grid" id="cosmetic-grid" aria-live="polite"></div>
+        </section>
+        <div class="store-modal" id="store-inspection" aria-hidden="true" hidden>
+          <button class="store-modal-backdrop" type="button" data-close-inspection aria-label="Fechar visualização"></button>
+          <section class="store-inspection-panel" role="dialog" aria-modal="true" aria-labelledby="inspection-title" aria-describedby="inspection-description">
+            <button class="store-close" type="button" data-close-inspection aria-label="Fechar"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            <div class="inspection-art" id="inspection-art"><span class="inspection-symbol"></span><span class="inspection-orbit"></span></div>
+            <div class="inspection-copy"><span class="ascend-eyebrow" id="inspection-category"></span><h2 id="inspection-title"></h2><p id="inspection-description"></p><div class="inspection-value" id="inspection-value"></div><p class="inspection-note"><i class="bi bi-shield-check" aria-hidden="true"></i> Compra confirmada com segurança pelo ASCEND.</p><button class="btn-complete" id="inspection-buy" type="button"></button></div>
+          </section>
         </div>
       </section>
 

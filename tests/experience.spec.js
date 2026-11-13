@@ -27,6 +27,43 @@ test('AI replies render readable Markdown and reject executable HTML', async ({ 
   expect(errors).toEqual([]);
 });
 
+test('cosmetic store purchases, equips and applies profile themes', async ({ page }) => {
+  const errors = await setup(page);
+  let state = {
+    coins: 300,
+    items: [{
+      id: 'theme-aurora',
+      category: 'THEME',
+      rarity: 'RARE',
+      name: 'Aurora Theme',
+      description: 'Paleta fria inspirada nas luzes do norte.',
+      cost: 120,
+      featured: true,
+      owned: false,
+      equipped: false,
+      slot: 'THEME'
+    }]
+  };
+  await page.route('**/api/cosmetics**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/purchase')) {
+      state = { coins: 180, items: [{ ...state.items[0], owned: true }] };
+    } else if (path.endsWith('/equipped') && route.request().method() === 'PUT') {
+      state = { coins: state.coins, items: [{ ...state.items[0], owned: true, equipped: true }] };
+    }
+    await route.fulfill({ json: state });
+  });
+
+  await page.locator('#app-sidebar .sidebar-link[data-view=shop]').click();
+  await page.locator('[data-store-mode=cosmetics]').click();
+  await expect(page.locator('#cosmetic-grid .store-cosmetic-card')).toHaveCount(1);
+  await page.locator('#cosmetic-grid .store-cosmetic-card button.btn-complete').click();
+  await expect(page.locator('#cosmetic-grid .store-cosmetic-card button.btn-complete')).toHaveText('Equipar');
+  await page.locator('#cosmetic-grid .store-cosmetic-card button.btn-complete').click();
+  await expect(page.locator('body')).toHaveClass(/cosmetic-theme-aurora/);
+  expect(errors).toEqual([]);
+});
+
 async function navigateOnMobile(page, view) {
   const mobileLink = page.locator(`.mobile-tabbar .mobile-nav-link[data-view=${view}]`);
   if (await mobileLink.count()) {
@@ -50,8 +87,18 @@ async function navigateOnMobile(page, view) {
 async function setup(page, authenticated = true, onboardingCompleted = true) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  await page.route('https://accounts.google.com/gsi/client', (route) => route.abort());
   if (authenticated) await page.addInitScript(() => localStorage.setItem('ascend.auth.token.2026-04-27-reset-1', 'test-token'));
   let user = { id: 1, name: 'Hunter Teste', email: 'hunter@example.com', avatar: null, onboardingCompleted };
+  let profilePosts = [];
+  let publicFollowing = true;
+  let publicFriendStatus = 'INCOMING';
+  const profile = {
+    id: 1, name: 'Hunter Teste', username: 'hunter', avatar: 'male',
+    bio: 'Uma jornada por dia.', tags: ['consistência'], visibility: 'PUBLIC',
+    joinedAt: '2026-01-01T12:00:00Z', level: 3, rank: 'E', xp: 250,
+    nextLevelXp: 500, streakDays: 4, followers: 12, following: 8
+  };
   let completed = ['training'];
   const status = () => ({ name: 'Hunter Teste', handle: '@hunter', level: 3, rank: 'E', experience: 250, nextLevelExperience: 500, streakDays: 4, coins: 300, stats: [], dailyMissions: missions, completedMissionIds: completed });
   await page.route('**/api/**', async (route) => {
@@ -64,6 +111,50 @@ async function setup(page, authenticated = true, onboardingCompleted = true) {
       data = user;
     }
     else if (path.endsWith('/auth/login') || path.endsWith('/auth/register')) data = { token: 'test-token', user };
+    else if (path.endsWith('/profile/follow/2')) {
+      publicFollowing = route.request().method() === 'POST';
+      data = {};
+    }
+    else if (path.endsWith('/profile/friends/2')) {
+      if (route.request().method() === 'PUT') publicFriendStatus = 'ACCEPTED';
+      else if (route.request().method() === 'DELETE') publicFriendStatus = 'NONE';
+      else publicFriendStatus = 'OUTGOING';
+      data = { status: publicFriendStatus };
+    }
+    else if (path.endsWith('/profile/players/2')) {
+      const { xp, nextLevelXp, streakDays, ...publicProfile } = profile;
+      data = {
+        ...publicProfile,
+        id: 2,
+        name: 'Aliada ASCEND',
+        username: 'aliada',
+        followingCount: 3,
+        following: publicFollowing,
+        friendStatus: publicFriendStatus,
+        posts: []
+      };
+    }
+    else if (path.endsWith('/profile/posts') && route.request().method() === 'POST') {
+      profilePosts.unshift({
+        id: profilePosts.length + 1,
+        content: route.request().postDataJSON().content,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        comments: 0,
+        liked: false
+      });
+      data = profilePosts[0];
+    }
+    else if (path.endsWith('/profile') && route.request().method() === 'PUT') {
+      const updates = route.request().postDataJSON();
+      profile.bio = updates.bio;
+      profile.tags = updates.tags;
+      profile.visibility = updates.visibility;
+      if (Object.hasOwn(updates, 'profileImage')) profile.profileImage = updates.profileImage || null;
+      data = { ...profile, posts: profilePosts };
+    }
+    else if (path.endsWith('/profile') && route.request().method() === 'GET') data = { ...profile, posts: profilePosts };
+    else if (path.endsWith('/profile/friends')) data = [{ id: 2, name: 'Aliada ASCEND', username: 'aliada', avatar: 'female' }];
     else if (path.endsWith('/complete')) { completed = ['training', 'study']; data = status(); }
     else if (path.endsWith('/player/status')) data = status();
     else if (path.endsWith('/planner')) data = { headline: 'Seu plano de evolução', summary: 'Um passo por dia.', insights: [], dailyMissions: missions, weeklyMissions: [], monthlyMissions: [], completedMissionIds: completed };
@@ -91,6 +182,52 @@ test('authentication, password visibility and login', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('login waits for a sleeping API to wake before reporting a connection error', async ({ page }) => {
+  test.setTimeout(60_000);
+  await setup(page, false);
+  await page.route('**/api/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/health')) {
+      await new Promise((resolve) => setTimeout(resolve, 13_000));
+      await route.fulfill({ json: { status: 'UP', application: 'ascend-api' } });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.locator('#login-email').fill('hunter@example.com');
+  await page.locator('#login-password').fill('test-password');
+  await page.locator('#login-form button[type=submit]').click();
+
+  await expect(page.locator('#login-form button[type=submit]')).toBeDisabled();
+  await expect(page.locator('#auth-message')).toContainText('não precisa clicar novamente');
+  await expect(page.locator('.evolution-hero')).toBeVisible({ timeout: 25_000 });
+});
+
+test('Google login button forwards clicks to the rendered sign-in control', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.googleButtonClicked = false;
+    window.google = {
+      accounts: {
+        id: {
+          initialize: () => {},
+          renderButton: (container) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = 'Google iframe button mock';
+            button.addEventListener('click', () => { window.googleButtonClicked = true; });
+            container.appendChild(button);
+          }
+        }
+      }
+    };
+  });
+  await setup(page, false);
+  const login = page.locator('.google-login-wrap');
+  await expect(login).toHaveClass(/is-configured/);
+  await login.click();
+  await expect.poll(() => page.evaluate(() => window.googleButtonClicked)).toBe(true);
+});
+
 test('status and progress overview are visible without the extra dashboard banner', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 768 });
   await setup(page);
@@ -100,43 +237,125 @@ test('status and progress overview are visible without the extra dashboard banne
   expect(await page.locator('.evolution-hero').evaluate((hero) => hero.offsetHeight)).toBeLessThan(260);
 });
 
-test('profile loads persisted data, creates a post once, and discovers players', async ({ page }) => {
-  await setup(page);
-  let posts = [];
-  const profile = { id: 1, name: 'Hunter Teste', username: 'hunter-teste-1', avatar: null, bio: 'Em evolução', tags: ['Estudos'], visibility: 'PUBLIC', joinedAt: '2026-01-01T00:00:00Z', level: 3, rank: 'E', xp: 250, nextLevelXp: 500, streakDays: 4, followers: 0, following: 0 };
-  await page.route('**/api/profile**', async (route) => {
-    const url = new URL(route.request().url());
-    const path = url.pathname;
-    const method = route.request().method();
-    if (path === '/api/profile' && method === 'GET') return route.fulfill({ json: { ...profile, posts } });
-    if (path === '/api/profile/friends') return route.fulfill({ json: [] });
-    if (path === '/api/profile/posts' && method === 'POST') {
-      const request = route.request().postDataJSON();
-      posts.unshift({ id: 42, content: request.content, createdAt: '2026-11-09T12:00:00Z', likes: 0, liked: false, comments: 0 });
-      return route.fulfill({ status: 201, json: posts[0] });
-    }
-    if (path === '/api/profile/discover') return route.fulfill({ json: [{ id: 2, name: 'Astra', username: 'astra-2', following: false, friendStatus: 'NONE' }] });
-    if (path === '/api/profile/players/2') return route.fulfill({ json: { id: 2, name: 'Astra', username: 'astra-2', bio: 'Jogadora', tags: [], level: 4, rank: 'C', joinedAt: '2026-01-01T00:00:00Z', posts: [], following: false, friendStatus: 'NONE' } });
-    return route.fulfill({ json: {} });
-  });
-
-  await page.locator('.sidebar-link[data-view=profile]').click();
+test('profile loads account details and publishes a post', async ({ page }) => {
+  const errors = await setup(page);
+  await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
   await expect(page.locator('#profile-title')).toHaveText('Hunter Teste');
+  await expect(page.locator('.ascend-profile-banner-code')).toHaveText('PROFILE SYSTEM ONLINE');
+  await expect(page.locator('#profile-bio')).toHaveText('Uma jornada por dia.');
+  await expect(page.locator('#profile-avatar')).toBeVisible();
+  await expect.poll(() => page.locator('#profile-avatar').evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
+  await expect(page.locator('#profile-progression .ascend-profile-metric')).toHaveCount(4);
+  await expect(page.locator('#profile-tab-posts')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#profile-friends .ascend-profile-friend')).toHaveCount(1);
+  await page.locator('#profile-tab-overview').click();
+  await expect(page.locator('#profile-panel-overview')).toBeVisible();
+  await expect(page.locator('#profile-overview-stats .ascend-profile-overview-card')).toHaveCount(4);
+  await page.locator('#profile-tab-achievements').click();
+  await expect(page.locator('#profile-panel-achievements')).toBeVisible();
+  await expect(page.locator('#profile-achievements')).not.toBeEmpty();
+  await page.locator('#profile-tab-achievements').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#profile-tab-statistics')).toHaveAttribute('aria-selected', 'true');
+  await page.locator('#profile-tab-posts').click();
+  const profileLayout = await page.locator('.ascend-profile-layout').evaluate((layout) => {
+    const banner = layout.previousElementSibling.getBoundingClientRect();
+    const main = layout.querySelector('.ascend-profile-main').getBoundingClientRect();
+    const side = layout.querySelector('.ascend-profile-side').getBoundingClientRect();
+    return { bannerHeight: banner.height, bannerBottom: banner.bottom, mainTop: main.top, sideTop: side.top };
+  });
+  expect(profileLayout.bannerHeight).toBeLessThan(110);
+  expect(profileLayout.mainTop).toBeGreaterThan(profileLayout.bannerBottom);
+  expect(Math.abs(profileLayout.mainTop - profileLayout.sideTop)).toBeLessThan(2);
+  await page.screenshot({ path: 'test-results/profile-dashboard.png', fullPage: true, animations: 'disabled' });
+  await page.locator('#profile-post-content').fill('Mais um passo na jornada.');
+  await page.locator('#profile-post-form button[type=submit]').click();
+  await expect(page.locator('#profile-posts')).toContainText('Mais um passo na jornada.');
   await page.locator('#btn-theme-toggle').click();
   await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
   await expect.poll(() => page.locator('#profile-title').evaluate((element) => getComputedStyle(element).color)).toBe('rgb(23, 41, 67)');
   await expect.poll(() => page.locator('.ascend-profile-main').evaluate((element) => getComputedStyle(element).backgroundImage)).toContain('rgb(255, 255, 255)');
-  await page.screenshot({ path: 'test-results/profile-dashboard.png', fullPage: true });
-  await page.locator('[data-profile-tab=posts]').click();
-  await page.locator('#profile-post-content').fill('Primeira publicação');
-  await page.locator('#profile-post-form button[type=submit]').click();
-  await expect(page.locator('#profile-posts')).toContainText('Primeira publicação');
-  expect(posts).toHaveLength(1);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.locator('#view-profile').evaluate((view) => view.scrollWidth <= view.clientWidth + 1)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('profile discovery searches players and opens their public profile', async ({ page }) => {
+  const errors = await setup(page);
+  await page.route('**/api/profile/discover**', async (route) => {
+    const query = new URL(route.request().url()).searchParams.get('q');
+    expect(query).toBe('Astra');
+    await route.fulfill({ json: [
+      { id: 2, name: 'Astra', username: 'astra-2', following: false, friendStatus: 'NONE' }
+    ] });
+  });
+
+  await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
   await page.locator('#player-search').fill('Astra');
   await expect(page.locator('#player-search-results')).toContainText('@astra-2');
-  await page.locator('#player-search-results button').first().click();
-  await expect(page.locator('#profile-title')).toHaveText('Astra');
+  await page.locator('#player-search-results .ascend-player-row > button').first().click();
+  await expect(page.locator('#profile-title')).toHaveText('Aliada ASCEND');
+  expect(errors).toEqual([]);
+});
+
+test('profile editor updates the bio and a custom profile photo', async ({ page }) => {
+  const errors = await setup(page);
+  await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
+  await page.locator('#profile-edit').click();
+  await expect(page.locator('#profile-edit-dialog')).toBeVisible();
+  await expect(page.locator('#profile-edit-bio')).toHaveValue('Uma jornada por dia.');
+  await page.locator('#profile-edit-bio').fill('Evoluindo um passo por vez.');
+
+  const pngDataUrl = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 8;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#36aaff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+  });
+  await page.locator('#profile-image-input').setInputFiles({
+    name: 'profile.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(pngDataUrl.split(',')[1], 'base64')
+  });
+  await expect(page.locator('#profile-edit-preview')).toBeVisible();
+  await expect(page.locator('#profile-edit-feedback')).toBeEmpty();
+  await page.locator('#profile-edit-save').click();
+
+  await expect(page.locator('#profile-edit-dialog')).toBeHidden();
+  await expect(page.locator('#profile-bio')).toHaveText('Evoluindo um passo por vez.');
+  await expect(page.locator('#profile-avatar')).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
+
+  await page.locator('#profile-edit').click();
+  await expect(page.locator('#profile-edit-preview')).toBeVisible();
+  await page.locator('#profile-image-remove').click();
+  await expect(page.locator('#profile-edit-preview')).toBeHidden();
+  await page.locator('#profile-edit-save').click();
+  await expect(page.locator('#profile-avatar')).toHaveAttribute('src', /aether\.png/);
+  expect(errors).toEqual([]);
+});
+
+test('public player profiles show social actions without exposing private progress', async ({ page }) => {
+  const errors = await setup(page);
+  await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
+  await page.locator('#profile-friends .ascend-profile-friend').click();
+  await expect(page.locator('#profile-title')).toHaveText('Aliada ASCEND');
+  await expect(page.locator('#profile-edit')).toBeHidden();
   await expect(page.locator('#profile-post-form')).toBeHidden();
+  await expect(page.locator('#profile-follow-button')).toBeVisible();
+  await expect(page.locator('#profile-follow-button')).toHaveText('Deixar de seguir');
+  await expect(page.locator('#profile-friend-button')).toBeVisible();
+  await expect(page.locator('#profile-friend-button')).toHaveText('Aceitar amizade');
+  await expect(page.locator('#profile-level')).toContainText('disponível apenas no seu perfil');
+  await page.locator('#profile-follow-button').click();
+  await expect(page.locator('#profile-follow-button')).toHaveText('Seguir jogador');
+  await page.locator('#profile-friend-button').click();
+  await expect(page.locator('#profile-friend-button')).toHaveText('Remover amizade');
+  await page.locator('#profile-tab-achievements').click();
+  await expect(page.locator('#profile-achievements')).toContainText('não são exibidas neste perfil');
+  expect(errors).toEqual([]);
 });
 
 test('new accounts choose an avatar before dashboard and can change it later', async ({ page }) => {
