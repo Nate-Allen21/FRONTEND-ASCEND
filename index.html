@@ -18,9 +18,9 @@
       document.documentElement.dataset.theme = saved?.theme || 'dark-space';
     } catch (_) {}
   </script>
-  <link href="css/style.css?v=20261109-aether-transparent" rel="stylesheet" />
+  <link href="css/style.css?v=20261113-gold-theme" rel="stylesheet" />
   <link href="css/experience.css" rel="stylesheet" />
-  <link href="css/cyber-shell.css?v=20261109-aether-transparent" rel="stylesheet" />
+  <link href="css/cyber-shell.css?v=20261113-gold-theme" rel="stylesheet" />
   <link href="css/ascend.css?v=2027-liquid-1" rel="stylesheet" />
   <link href="css/profile-dashboard.css" rel="stylesheet" />
   <link href="css/avatar-onboarding.css?v=20261109-aether-transparent" rel="stylesheet" />
@@ -206,6 +206,7 @@
           <button class="theme-preset" type="button" data-theme-preset="lime"><span class="theme-preset-preview theme-preview-lime"></span><strong>Lime</strong><small>Verde elétrico</small></button>
           <button class="theme-preset" type="button" data-theme-preset="purple"><span class="theme-preset-preview theme-preview-purple"></span><strong>Purple</strong><small>Roxo ascendente</small></button>
           <button class="theme-preset" type="button" data-theme-preset="blue"><span class="theme-preset-preview theme-preview-blue"></span><strong>Blue</strong><small>Azul profundo</small></button>
+          <button class="theme-preset" type="button" data-theme-preset="gold"><span class="theme-preset-preview theme-preview-gold"></span><strong>Gold</strong><small>Dourado premium</small></button>
         </div>
       </div>
       <div class="customization-section customization-controls">
@@ -319,7 +320,7 @@
                   <p id="profile-feedback" role="status"></p>
                 </form>
                 <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">DIÁRIO DE EVOLUÇÃO</span><h2>Publicações</h2></div></div>
-                <div id="profile-posts" class="ascend-profile-posts" aria-live="polite"><p class="feature-copy">Carregando publicações...</p></div>
+                <div id="profile-posts" class="ascend-profile-posts" aria-live="polite"><p class="feature-copy is-loading">Carregando publicações...</p></div>
               </section>
               <section class="ascend-profile-tab-panel" id="profile-panel-overview" role="tabpanel" aria-labelledby="profile-tab-overview" data-profile-panel="overview" hidden>
                 <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">JORNADA EM NÚMEROS</span><h2>Resumo da jornada</h2></div></div>
@@ -372,6 +373,8 @@
                 <small>JPG, PNG ou WebP · até 8 MB</small>
               </div>
             </div>
+            <label class="profile-edit-field" for="profile-edit-name">Nome de exibição <span>2 a 80 caracteres</span></label>
+            <input id="profile-edit-name" class="auth-input" type="text" autocomplete="name" minlength="2" maxlength="80" required>
             <label class="profile-edit-field" for="profile-edit-bio">Bio <span>Até 500 caracteres</span></label>
             <textarea id="profile-edit-bio" maxlength="500" rows="4" placeholder="Conte um pouco sobre a sua jornada..."></textarea>
             <label class="profile-edit-field" for="profile-edit-tags">Tags <span>Separe por vírgulas (até 5)</span></label>
@@ -393,7 +396,7 @@
       <section class="app-view active" id="view-status" data-view-panel="status" aria-label="Painel de status">
         <div class="evolution-hero">
           <div class="hero-copy"><span class="ascend-eyebrow" id="dashboard-date"></span>
-            <h1>Mais um dia.<br /><span>Mais um nível.</span></h1>
+            <h1>Mais um dia. <span>Mais um nível.</span></h1>
             <p>A sua evolução acontece nas escolhas de hoje.<br />Escolha uma missão e dê o próximo passo.</p>
             <div class="hero-actions"><button class="auth-submit" type="button" data-navigate="missions">Ir para minhas missões <i class="bi bi-arrow-up-right" aria-hidden="true"></i></button><button class="btn-timer" type="button" data-navigate="studies"><i class="bi bi-play-circle" aria-hidden="true"></i> Entrar em foco</button></div>
             <div class="daily-progress-wrap"><span id="daily-progress-label"></span><progress id="daily-progress" value="0" max="1" aria-label="Missões concluídas hoje"></progress></div>
@@ -909,7 +912,7 @@
   </div>
 </div>
 
-<script type="module" src="js/script.js?v=20261109-aether-transparent"></script>
+<script type="module" src="js/script.js?v=20261113-gold-theme"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
 <div class="connection-notice" id="connection-notice" role="status" hidden><i class="bi bi-wifi-off" aria-hidden="true"></i> Você está offline. Reconecte para salvar seu progresso.</div>
 <dialog id="command-dialog" class="command-dialog" aria-labelledby="command-title">

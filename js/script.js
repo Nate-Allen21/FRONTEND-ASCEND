@@ -18,7 +18,8 @@ const THEME_PRESETS = {
   crimson: { label: 'Crimson', accent: '#df2531', secondary: '#ffffff', bg: '#000000', panel: '#202020', panelRgb: '32, 32, 32', ambient: '#df2531' },
   lime: { label: 'Lime', accent: '#5dd62c', secondary: '#337418', bg: '#0f0f0f', panel: '#202020', panelRgb: '32, 32, 32', ambient: '#5dd62c' },
   purple: { label: 'Purple', accent: '#7b45f0', secondary: '#a981ff', bg: '#34117e', panel: '#491ab1', panelRgb: '73, 26, 177', ambient: '#6631db' },
-  blue: { label: 'Blue', accent: '#4a74a7', secondary: '#dceaf7', bg: '#081426', panel: '#142a44', panelRgb: '20, 42, 68', ambient: '#4a74a7' }
+  blue: { label: 'Blue', accent: '#4a74a7', secondary: '#dceaf7', bg: '#081426', panel: '#142a44', panelRgb: '20, 42, 68', ambient: '#4a74a7' },
+  gold: { label: 'Gold', accent: '#e6b84c', secondary: '#fff0bd', bg: '#100d08', panel: '#302719', panelRgb: '48, 39, 25', ambient: '#d8a638' }
 };
 const ROUTINE_PROFILE_KEY = 'ascend.routine.profile.' + STORAGE_RESET_VERSION;
 const APP_TIME_ZONE = 'America/Sao_Paulo';
@@ -838,6 +839,12 @@ function setText(id, value) {
   return element;
 }
 
+function setStatusMessage(id, value, loading = false) {
+  const element = setText(id, value);
+  element?.classList.toggle('is-loading', loading);
+  return element;
+}
+
 function setAria(id, name, value) {
   const element = getElement(id);
   if (element) {
@@ -900,7 +907,8 @@ async function apiRequest(path, options = {}) {
 }
 
 function setAuthMessage(message) {
-  setText('auth-message', message);
+  const isLoading = /(conectando|criando|validando|carregando|sincronizando|salvando|preparando)/i.test(message);
+  setStatusMessage('auth-message', message, isLoading);
 }
 
 function getFormValue(form, fieldName) {
@@ -944,14 +952,29 @@ function renderUserIdentity(user) {
   currentUser = user;
   const avatar = AVATAR_OPTIONS[user?.avatar] ? user.avatar : null;
   document.querySelectorAll('[data-user-avatar]').forEach((image) => {
-    if (avatar) {
-      image.src = AVATAR_OPTIONS[avatar].image;
-      image.alt = AVATAR_OPTIONS[avatar].label;
+    const source = user?.profileImage || (avatar ? AVATAR_OPTIONS[avatar].image : null);
+    const fallback = image.nextElementSibling;
+    if (source) {
+      let avatarFallbackApplied = false;
+      image.onerror = () => {
+        const fallbackSource = avatar ? AVATAR_OPTIONS[avatar].image : null;
+        if (fallbackSource && !avatarFallbackApplied) {
+          avatarFallbackApplied = true;
+          image.src = fallbackSource;
+          return;
+        }
+        image.hidden = true;
+        if (fallback) fallback.hidden = false;
+      };
+      image.src = source;
+      image.alt = user?.profileImage ? 'Foto de perfil de ' + (user.name || 'jogador') : AVATAR_OPTIONS[avatar].label;
       image.hidden = false;
+      if (fallback) fallback.hidden = true;
     } else {
       image.removeAttribute('src');
       image.alt = '';
       image.hidden = true;
+      if (fallback) fallback.hidden = false;
     }
   });
   setText('sidebar-user-name', user?.name || 'Sua jornada');
@@ -978,7 +1001,7 @@ function selectAvatar(avatar) {
   document.querySelectorAll('[data-avatar-choice]').forEach((button) => {
     button.setAttribute('aria-pressed', String(button.dataset.avatarChoice === avatar));
   });
-  setText('avatar-message', '');
+  setStatusMessage('avatar-message', '');
   updateAvatarConfirmButton();
 }
 
@@ -1015,21 +1038,21 @@ function openAvatarOnboarding(mode = 'onboarding') {
   document.querySelectorAll('[data-avatar-choice]').forEach((button) => {
     button.setAttribute('aria-pressed', String(button.dataset.avatarChoice === selectedAvatar));
   });
-  setText('avatar-message', '');
+  setStatusMessage('avatar-message', '');
   updateAvatarConfirmButton();
   document.querySelector(`[data-avatar-choice="${selectedAvatar || 'male'}"]`)?.focus({ preventScroll: true });
 }
 
 async function handleAvatarConfirm() {
   if (avatarSavePending || !AVATAR_OPTIONS[selectedAvatar]) {
-    setText('avatar-message', 'Selecione um dos personagens para continuar.');
+    setStatusMessage('avatar-message', 'Selecione um dos personagens para continuar.');
     return;
   }
 
   const confirmButton = getElement('avatar-confirm');
   avatarSavePending = true;
   updateAvatarConfirmButton();
-  setText('avatar-message', 'Salvando sua identidade com segurança...');
+  setStatusMessage('avatar-message', 'Salvando sua identidade com segurança...', true);
 
   try {
     const savedUser = await apiRequest('/auth/avatar', {
@@ -1051,7 +1074,7 @@ async function handleAvatarConfirm() {
       return;
     }
 
-    setText('avatar-message', 'Sua escolha foi registrada. Preparando sua jornada...');
+    setStatusMessage('avatar-message', 'Sua escolha foi registrada. Preparando sua jornada...', true);
     getElement('avatar-onboarding').classList.add('is-committing');
     await new Promise((resolve) => window.setTimeout(resolve, 2700));
     await loadRoutine();
@@ -1065,7 +1088,7 @@ async function handleAvatarConfirm() {
       setAuthMessage(error.message);
       return;
     }
-    setText('avatar-message', error.message || 'Não foi possível salvar seu avatar. Tente novamente.');
+    setStatusMessage('avatar-message', error.message || 'Não foi possível salvar seu avatar. Tente novamente.');
   } finally {
     avatarSavePending = false;
     if (confirmButton && !getElement('avatar-onboarding')?.hidden) updateAvatarConfirmButton();
@@ -1111,12 +1134,14 @@ async function loadProfileView(profileId = viewingProfileId) {
   const postsContainer = getElement('profile-posts');
   if (!postsContainer) return;
   postsContainer.textContent = 'Carregando perfil...';
+  postsContainer.classList.add('is-loading');
 
   try {
     const endpoint = profileId
       ? '/profile/players/' + encodeURIComponent(profileId)
       : '/profile';
     const profile = await apiRequest(endpoint);
+    postsContainer.classList.remove('is-loading');
     viewingProfileId = profileId || null;
     const ownProfile = !profileId || String(profile.id) === String(currentUser?.id);
     const status = ownProfile ? currentPlayerStatus : null;
@@ -1266,6 +1291,7 @@ async function loadProfileView(profileId = viewingProfileId) {
       setText('profile-friend-count', profile.friendStatus === 'ACCEPTED' ? 'Amigo' : '');
     }
   } catch (error) {
+    postsContainer.classList.remove('is-loading');
     postsContainer.textContent = 'Não foi possível carregar o perfil: ' + error.message;
   }
 }
@@ -1501,9 +1527,11 @@ async function loadProfileFriends() {
   const profileId = viewingProfileId;
   const node = getElement('profile-friends');
   node.textContent = 'Carregando amigos...';
+  node.classList.add('is-loading');
   try {
     const friends = await apiRequest('/profile/friends');
     if (profileId !== viewingProfileId) return;
+    node.classList.remove('is-loading');
     node.replaceChildren();
     setText('profile-friend-count', friends.length + (friends.length === 1 ? ' amigo' : ' amigos'));
     if (!friends.length) {
@@ -1551,6 +1579,7 @@ async function handleProfileFollow() {
     });
     await loadProfileView(viewingProfileId);
   } catch (error) {
+    node.classList.remove('is-loading');
     setText('profile-social-feedback', error.message);
   }
 }
@@ -1592,15 +1621,16 @@ async function editProfile() {
   const dialog = getElement('profile-edit-dialog');
   try {
     const current = await apiRequest('/profile');
+    getElement('profile-edit-name').value = current.name || '';
     getElement('profile-edit-bio').value = current.bio || '';
     getElement('profile-edit-tags').value = (current.tags || []).join(', ');
     getElement('profile-edit-visibility').value = current.visibility || 'PUBLIC';
     profileImageDraft = current.profileImage || null;
     profileImageChanged = false;
     setProfileEditPreview(profileImageDraft || AVATAR_OPTIONS[current.avatar]?.image || null);
-    setText('profile-edit-feedback', '');
+    setStatusMessage('profile-edit-feedback', '');
     if (!dialog.open) dialog.showModal();
-    getElement('profile-edit-bio').focus();
+    getElement('profile-edit-name').focus();
   } catch (error) {
     setText('profile-feedback', 'Não foi possível abrir a edição: ' + error.message);
   }
@@ -1663,14 +1693,14 @@ async function optimizeProfileImage(file) {
 async function handleProfileImageSelection(event) {
   const file = event.target.files?.[0];
   if (!file) return;
-  setText('profile-edit-feedback', 'Preparando sua foto...');
+  setStatusMessage('profile-edit-feedback', 'Preparando sua foto...', true);
   try {
     profileImageDraft = await optimizeProfileImage(file);
     profileImageChanged = true;
     setProfileEditPreview(profileImageDraft);
-    setText('profile-edit-feedback', '');
+    setStatusMessage('profile-edit-feedback', '');
   } catch (error) {
-    setText('profile-edit-feedback', error.message);
+    setStatusMessage('profile-edit-feedback', error.message);
   } finally {
     event.target.value = '';
   }
@@ -1680,38 +1710,47 @@ function handleProfileImageRemove() {
   profileImageDraft = null;
   profileImageChanged = true;
   setProfileEditPreview(null);
-  setText('profile-edit-feedback', '');
+  setStatusMessage('profile-edit-feedback', '');
 }
 
 async function saveProfileEdits(event) {
   event.preventDefault();
   const saveButton = getElement('profile-edit-save');
+  const name = getElement('profile-edit-name').value.trim();
   const tags = getElement('profile-edit-tags').value
     .split(',')
     .map((tag) => tag.trim())
     .filter(Boolean);
   if (tags.length > 5) {
-    setText('profile-edit-feedback', 'Você pode escolher no máximo 5 tags.');
+    setStatusMessage('profile-edit-feedback', 'Você pode escolher no máximo 5 tags.');
+    return;
+  }
+  if (name.length < 2 || name.length > 80) {
+    setStatusMessage('profile-edit-feedback', 'O nome deve ter entre 2 e 80 caracteres.');
     return;
   }
 
   saveButton.disabled = true;
-  setText('profile-edit-feedback', 'Salvando alterações...');
+  setStatusMessage('profile-edit-feedback', 'Salvando alterações...', true);
   try {
-    await apiRequest('/profile', {
+    const savedProfile = await apiRequest('/profile', {
       method: 'PUT',
       body: JSON.stringify({
+        name,
         bio: getElement('profile-edit-bio').value,
         tags,
         visibility: getElement('profile-edit-visibility').value,
         ...(profileImageChanged ? { profileImage: profileImageDraft || '' } : {})
       })
     });
+    renderUserIdentity({ ...currentUser, name: savedProfile.name, profileImage: savedProfile.profileImage });
+    if (currentPlayerStatus) currentPlayerStatus.name = savedProfile.name;
+    setText('player-name', savedProfile.name);
     getElement('profile-edit-dialog').close();
-    await loadProfileView();
+    await Promise.all([loadProfileView(), loadRanking()]);
     setText('profile-feedback', 'Perfil atualizado.');
   } catch (error) {
-    setText('profile-edit-feedback', error.message);
+    setStatusMessage('profile-edit-feedback', error.message);
   } finally {
     saveButton.disabled = false;
   }
@@ -1801,8 +1840,10 @@ async function loadFriendRequests() {
   const container = getElement('friend-requests');
   if (!container) return;
   container.textContent = 'Carregando...';
+  container.classList.add('is-loading');
   try {
     const requests = await apiRequest('/profile/friends/requests');
+    container.classList.remove('is-loading');
     container.replaceChildren();
     if (!requests.length) {
       container.textContent = 'Nenhuma solicitação pendente.';
@@ -1829,6 +1870,7 @@ async function loadFriendRequests() {
       container.appendChild(row);
     });
   } catch (error) {
+    container.classList.remove('is-loading');
     container.textContent = error.message;
   }
 }
@@ -2265,10 +2307,12 @@ function setPlannerLoadingState(isLoading, label = 'ANALISANDO') {
   if (submitButton) {
     submitButton.disabled = isLoading;
     submitButton.textContent = isLoading ? 'Gerando plano...' : 'Gerar plano inteligente';
+    submitButton.classList.toggle('is-loading', isLoading);
   }
 
   if (statusChip) {
     statusChip.textContent = label;
+    statusChip.classList.toggle('is-loading', isLoading);
     statusChip.classList.toggle('planner-status-chip--ready', !isLoading && label === 'PRONTO');
   }
 }
@@ -3407,7 +3451,7 @@ function renderMissions(missions, completedMissionIds = []) {
     reward.setAttribute(
       'aria-label',
       mission.type === 'penalidade'
-        ? 'Recompensa: ' + mission.experienceReward + ' de experiencia. Se falhar, perde 50 EXP e 200 moedas.'
+        ? 'Recompensa: ' + mission.experienceReward + ' de experiencia. Se falhar, EXP e moedas descontam conforme o rank; o saldo nao fica negativo.'
         : 'Recompensa: ' + mission.experienceReward + ' de experiencia e ' + mission.coinReward + ' moedas'
     );
     const exp = document.createElement('div');
@@ -3497,6 +3541,7 @@ async function completeMission(card) {
     if (button) {
       button.disabled = true;
       button.textContent = 'SALVANDO...';
+      button.classList.add('is-loading');
     }
 
     const isAdaptiveMission = card.dataset.source === 'adaptive';
@@ -3525,6 +3570,7 @@ async function completeMission(card) {
   } catch (error) {
     if (button) {
       button.disabled = false;
+      button.classList.remove('is-loading');
       button.textContent = card.classList.contains('penalidade') ? 'CUMPRIR' : 'CONCLUIR';
     }
     showPopup('Erro ao salvar missao', 0, 0);
@@ -4208,14 +4254,21 @@ function renderShop() {
 
 async function loadCosmeticStore() {
   const status = getElement('cosmetic-store-status');
-  if (status) status.textContent = '· carregando';
+  if (status) {
+    status.textContent = '· carregando';
+    status.classList.add('is-loading');
+  }
   try {
     cosmeticStoreState = await apiRequest('/cosmetics');
+    if (status) status.classList.remove('is-loading');
     applyEquippedCosmeticTheme(cosmeticStoreState);
     setText('store-balance', formatCurrencyValue(cosmeticStoreState.coins));
     renderCosmeticStore();
   } catch (error) {
-    if (status) status.textContent = '· catálogo indisponível';
+    if (status) {
+      status.classList.remove('is-loading');
+      status.textContent = '· catálogo indisponível';
+    }
     const grid = getElement('cosmetic-grid');
     if (grid) {
       const message = document.createElement('p');
@@ -4543,19 +4596,32 @@ function renderRanking(players) {
     const avatarImage = document.createElement('img');
     avatarImage.className = 'user-avatar-img';
     avatarImage.alt = '';
-    if (AVATAR_OPTIONS[player.avatar]) {
-      avatarImage.src = AVATAR_OPTIONS[player.avatar].image;
-    } else {
-      avatarImage.hidden = true;
-    }
     const avatarFallback = document.createElement('i');
     avatarFallback.className = 'bi bi-person-badge';
     avatarFallback.setAttribute('aria-hidden', 'true');
+    const avatarOption = AVATAR_OPTIONS[player.avatar];
+    const imageSource = player.profileImage || avatarOption?.image;
+    if (imageSource) {
+      let avatarFallbackApplied = false;
+      avatarImage.onerror = () => {
+        if (avatarOption && !avatarFallbackApplied) {
+          avatarFallbackApplied = true;
+          avatarImage.src = avatarOption.image;
+          return;
+        }
+        avatarImage.hidden = true;
+        avatarFallback.hidden = false;
+      };
+      avatarImage.src = imageSource;
+      avatarFallback.hidden = true;
+    } else {
+      avatarImage.hidden = true;
+    }
     avatar.append(avatarImage, avatarFallback);
 
     const name = document.createElement('span');
     name.className = 'ranking-name';
-    name.textContent = player.currentUser ? player.name + ' (voce)' : player.name;
+    name.textContent = player.currentUser ? player.name + ' (você)' : player.name;
 
     const level = document.createElement('span');
     level.className = 'ranking-nivel';
