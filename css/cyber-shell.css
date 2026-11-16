@@ -126,6 +126,97 @@ body[data-theme='light'] #app-shell :is(.auth-input, input:not([type='checkbox']
 }
 @media (prefers-reduced-motion: reduce) { #app-shell *, #app-shell *::before, #app-shell *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 
+/* Clear hierarchy for the mission filter and player leaderboard. */
+#app-shell #mission-filter {
+  min-height: 48px;
+  padding: 0 42px 0 16px;
+  appearance: none;
+  border: 1px solid rgba(105, 188, 255, .34) !important;
+  border-radius: 14px;
+  color: #e9f5ff !important;
+  background-color: rgba(5, 20, 44, .94) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m3.5 6 4.5 4 4.5-4' stroke='%238bdcff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 15px center !important;
+  background-size: 15px !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.08), 0 8px 24px rgba(0,0,0,.14), 0 0 20px rgba(29,132,255,.08);
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s, background-color .2s;
+}
+#app-shell #mission-filter:hover,
+#app-shell #mission-filter:focus-visible {
+  border-color: rgba(96, 203, 255, .68) !important;
+  box-shadow: 0 0 0 3px rgba(60, 157, 255, .14), 0 0 24px rgba(35, 143, 255, .16);
+}
+#app-shell #mission-filter option { color: #e9f5ff; background: #07162f; }
+
+#app-shell #view-ranking .section-title {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -.055em;
+}
+#app-shell #view-ranking .section-title::after {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, rgba(93, 203, 255, .46), rgba(91, 143, 255, .12), transparent);
+  content: '';
+}
+#app-shell .ranking-list { gap: 8px; }
+#app-shell .ranking-row {
+  position: relative;
+  min-height: 66px;
+  overflow: hidden;
+  grid-template-columns: 52px 44px minmax(0, 1fr) auto auto;
+  gap: 12px;
+  border: 1px solid rgba(116, 180, 255, .20);
+  border-radius: 14px;
+  background: linear-gradient(105deg, rgba(9, 26, 53, .90), rgba(8, 22, 45, .78));
+  box-shadow: inset 0 1px rgba(216, 239, 255, .045), 0 8px 22px rgba(0, 0, 0, .10);
+  transition: transform .2s, border-color .2s, background .2s, box-shadow .2s;
+}
+#app-shell .ranking-row:hover {
+  transform: translateX(3px);
+  border-color: rgba(85, 192, 255, .48);
+  background: linear-gradient(105deg, rgba(13, 41, 80, .94), rgba(8, 25, 52, .86));
+  box-shadow: inset 0 1px rgba(216, 239, 255, .07), 0 10px 30px rgba(7, 53, 113, .17);
+}
+#app-shell .ranking-row.current-user {
+  border-color: rgba(81, 201, 255, .65);
+  background: linear-gradient(105deg, rgba(12, 48, 84, .95), rgba(8, 27, 56, .9));
+  box-shadow: inset 3px 0 #59d4ff, 0 0 26px rgba(41, 147, 255, .10);
+}
+#app-shell .ranking-position { color: #78b8ff; font-size: .95rem; }
+#app-shell .ranking-avatar { width: 40px; height: 40px; border-color: rgba(99, 201, 255, .48); box-shadow: 0 0 0 3px rgba(44, 144, 255, .09), 0 0 18px rgba(50, 151, 255, .18); }
+#app-shell .ranking-name { color: #d8e8fb; font-size: .95rem; }
+#app-shell .ranking-nivel { color: #8ea8c9; font-size: .72rem; }
+#app-shell .ranking-exp-value { color: #74baff; font-size: .92rem; font-weight: 750; }
+#app-shell .is-loading { color: #83d9ff !important; }
+#app-shell .profile-edit-feedback.is-loading { color: #83d9ff !important; }
+#auth-screen .auth-message.is-loading { color: #83d9ff !important; }
+body[data-theme='light'] #app-shell #mission-filter { color: #edf7ff !important; background-color: rgba(7, 27, 55, .92) !important; }
+
+/* Refine the central ASCEND sigil and keep its orbiting nodes separated. */
+#app-shell .sigil-orbit { isolation: isolate; }
+#app-shell .sigil-mark {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display, 'Sora', sans-serif);
+  font-size: clamp(4.2rem, 8vw, 6.8rem);
+  font-weight: 800;
+  line-height: .86;
+  letter-spacing: -.09em;
+  transform: translateX(-.035em);
+}
+#app-shell .sigil-ring { inset: 7%; border-style: solid; animation-duration: 54s; }
+#app-shell .sigil-ring::before { top: 10%; left: 80%; width: 6px; height: 6px; }
+#app-shell .sigil-ring::after { top: auto; bottom: 9%; left: 22%; width: 6px; height: 6px; }
+#app-shell .sigil-ring-inner { inset: 17%; border-style: dashed; opacity: .64; animation-duration: 38s; }
+#app-shell .sigil-ring-inner::before { top: 30%; left: 3%; width: 4px; height: 4px; background: #77bbff; box-shadow: 0 0 10px #60aaff; }
+#app-shell .sigil-ring-inner::after { top: auto; right: 2%; bottom: 26%; left: auto; width: 5px; height: 5px; background: #bc79ff; box-shadow: 0 0 12px #a35cff; }
+
 /* ASCEND neon identity: orbit blue, intelligence violet, evolution cyan. */
 #app-shell {
   --ascend-blue: #168dff;
@@ -242,3 +333,47 @@ body[data-theme='light'] #app-shell .sidebar-footer,
 body[data-theme='light'] #app-shell .sidebar-header,
 body[data-theme='light'] #app-shell .system-popup,
 body[data-theme='light'] #app-shell .connection-notice { background: #f7f9fd !important; }
+
+#app-shell .evolution-hero .hero-copy h1 span { display: inline-block; margin-inline-start: .1em; }
+#app-shell .profile-edit-dialog {
+  border: 1px solid rgba(100, 192, 255, .34);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(11, 29, 58, .99), rgba(4, 13, 31, .99));
+  box-shadow: 0 30px 100px rgba(0,0,0,.62), 0 0 42px rgba(20,111,255,.12), inset 0 1px rgba(225,244,255,.10);
+}
+#app-shell .profile-edit-dialog::backdrop { background: rgba(1, 6, 19, .78); backdrop-filter: blur(12px); }
+#app-shell .profile-edit-form > :is(.auth-input, textarea) {
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid rgba(122, 177, 238, .25) !important;
+  border-radius: 13px;
+  color: #eaf5ff !important;
+  background: rgba(4, 14, 33, .86) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.045) !important;
+}
+#app-shell .profile-edit-form > textarea { min-height: 104px; line-height: 1.55; }
+#app-shell .profile-edit-form > :is(.auth-input, textarea):focus {
+  border-color: rgba(91, 193, 255, .78) !important;
+  box-shadow: 0 0 0 3px rgba(57, 154, 255, .15), 0 0 24px rgba(40, 137, 255, .10) !important;
+}
+#app-shell .profile-edit-photo-section { border-color: rgba(121, 185, 255, .24); background: linear-gradient(125deg, rgba(24, 55, 100, .62), rgba(5, 18, 39, .72)); }
+body[data-theme='light'] #app-shell .profile-edit-form > :is(.auth-input, textarea) {
+  color: #18314f !important;
+  background: rgba(255,255,255,.94) !important;
+  border-color: rgba(80, 122, 173, .25) !important;
+}
+
+@media (max-width: 760px) {
+  #app-shell #view-ranking .section-title { gap: 10px; font-size: 2rem; }
+  #app-shell .ranking-row { grid-template-columns: 32px 36px minmax(0,1fr) auto; gap: 8px; padding: 10px; }
+  #app-shell .ranking-avatar { width: 34px; height: 34px; }
+  #app-shell .ranking-row .ranking-nivel { grid-column: 3 / 4; grid-row: 2; }
+  #app-shell .ranking-row .ranking-exp-value { grid-column: 4 / 5; grid-row: 2; text-align: right; }
+  #app-shell .profile-edit-footer { flex-direction: column-reverse; }
+  #app-shell .profile-edit-footer button { width: 100%; }
+}
+@media (max-width: 430px) {
+  #app-shell .ranking-row { grid-template-columns: 28px 34px minmax(0,1fr); }
+  #app-shell .ranking-row .ranking-nivel { grid-column: 3; grid-row: 2; }
+  #app-shell .ranking-row .ranking-exp-value { grid-column: 3; grid-row: 3; text-align: left; }
+}
