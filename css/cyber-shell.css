@@ -377,3 +377,25 @@ body[data-theme='light'] #app-shell .profile-edit-form > :is(.auth-input, textar
   #app-shell .ranking-row .ranking-nivel { grid-column: 3; grid-row: 2; }
   #app-shell .ranking-row .ranking-exp-value { grid-column: 3; grid-row: 3; text-align: left; }
 }
+/* Blue interface polish for progress states, profile editing, and ranking. */
+#app-shell .evolution-hero .hero-copy h1 span { display: inline-block; margin-inline-start: .1em; }
+#app-shell .profile-edit-feedback.is-loading,
+#app-shell .is-loading,
+#auth-screen .auth-message.is-loading { color: #83d9ff !important; }
+#app-shell .sigil-orbit { isolation: isolate; }
+#app-shell .sigil-mark {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display, 'Sora', sans-serif);
+  font-size: clamp(4.2rem, 8vw, 6.8rem);
+  font-weight: 800;
+  line-height: .86;
+  letter-spacing: -.09em;
+  transform: translateX(-.035em);
+}
+#app-shell .sigil-ring { inset: 7%; border-style: solid; animation-duration: 54s; }
+#app-shell .sigil-ring::before { top: 10%; left: 80%; width: 6px; height: 6px; }
+#app-shell .sigil-ring::after { top: auto; bottom: 9%; left: 22%; width: 6px; height: 6px; }
+#app-shell .sigil-ring-inner { inset: 17%; border-style: dashed; opacity: .64; animation-duration: 38s; }
+#app-shell .sigil-ring-inner::before { top: 30%; left: 3%; width: 4px; height: 4px; background: #77bbff; box-shadow: 0 0 10px #60aaff; }
+#app-shell .sigil-ring-inner::after { top: auto; right: 2%; bottom: 26%; left: auto; width: 5px; height: 5px; background: #bc79ff; box-shadow: 0 0 12px #a35cff; }
