@@ -294,6 +294,10 @@ test('profile loads account details and publishes a post', async ({ page }) => {
   await page.locator('#profile-post-content').fill('Mais um passo na jornada.');
   await page.locator('#profile-post-form button[type=submit]').click();
   await expect(page.locator('#profile-posts')).toContainText('Mais um passo na jornada.');
+  await page.locator('#btn-theme-toggle').click();
+  await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
+  await expect.poll(() => page.locator('#profile-title').evaluate((element) => getComputedStyle(element).color)).toBe('rgb(23, 41, 67)');
+  await expect.poll(() => page.locator('.ascend-profile-main').evaluate((element) => getComputedStyle(element).backgroundImage)).toContain('rgb(255, 255, 255)');
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.locator('#view-profile').evaluate((view) => view.scrollWidth <= view.clientWidth + 1)).toBe(true);
   expect(errors).toEqual([]);
