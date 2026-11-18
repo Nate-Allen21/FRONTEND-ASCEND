@@ -1,0 +1,10 @@
+{
+  "appId": "br.com.ascend.mobile",
+  "appName": "ASCEND",
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

@@ -2,6 +2,27 @@
 
 Frontend for the ASCEND platform, built with Vite.
 
+## Aplicativo Android
+
+O projeto Android usa Capacitor e inclui os arquivos do frontend no APK. Ele
+precisa de internet para acessar a API e recursos externos. O endereço padrão
+da API é `https://backend-ascend.onrender.com/api`; para usar outro servidor,
+configure `VITE_API_URL` antes de gerar o build, com uma URL HTTPS acessível
+ao celular terminada em `/api`. `localhost` no celular não é o computador.
+
+Para gerar um APK de teste no Windows, instale as dependências com `npm install`,
+configure o Android SDK e um JDK compatível com o Gradle do projeto e execute:
+
+```powershell
+npm run android:apk
+```
+
+O arquivo é criado em `android/app/build/outputs/apk/debug/app-debug.apk`.
+É um APK de teste assinado com a chave de debug; para distribuição pública,
+configure uma chave própria e gere uma versão release. O login Google em uma
+WebView Android precisa de integração e configuração específicas e não foi
+validado para este APK; use o login por conta e senha.
+
 ## What is included
 
 - `index.html`

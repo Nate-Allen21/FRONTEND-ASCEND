@@ -1,0 +1,23 @@
+/* One recolorable pair of marks is shared by every ASCEND surface. */
+.brand-art {
+  display: block;
+  flex: none;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--accent, #1266ff) 32%, white), var(--accent, #1266ff) 56%, var(--accent-secondary, #8b35ff));
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.brand-art--wordmark { aspect-ratio: 570 / 84; -webkit-mask-image: url('../assets/brand-wordmark.svg'); mask-image: url('../assets/brand-wordmark.svg'); }
+.brand-art--icon { aspect-ratio: 100 / 80; -webkit-mask-image: url('../assets/brand-icon.svg'); mask-image: url('../assets/brand-icon.svg'); }
+#auth-screen .auth-logo .brand-art--wordmark { width: min(100%, 360px); background-image: linear-gradient(165deg, #b3d1ff, #1266ff 56%, #00cfff); }
+#app-shell .topbar-brand .brand-art--wordmark { width: 100%; }
+body[data-theme='light'] #app-shell .topbar-brand .brand-art--wordmark { background-image: linear-gradient(150deg, color-mix(in srgb, var(--accent, #1266ff) 75%, #10203c), color-mix(in srgb, var(--accent-secondary, #8b35ff) 70%, #10203c)); }
+.avatar-onboarding__logo { width: clamp(128px, 16vw, 190px); }
+.avatar-destiny > .avatar-destiny__logo { width: min(330px, 68vw); margin-bottom: 32px; opacity: 0; transform: translateY(12px); }
+.avatar-onboarding.is-committing .avatar-destiny > .avatar-destiny__logo { animation: avatar-logo-in .9s 1s cubic-bezier(.16,1,.3,1) forwards; }
+.preview-mock-sigil .brand-art--icon { width: 58%; }
+#app-shell #view-status .sigil-logo { width: 72px; height: auto; max-width: 80%; }
+@media (max-width: 560px) { .avatar-onboarding__logo { width: 132px; } }

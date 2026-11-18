@@ -9,3 +9,6 @@ test-results/
 playwright-report/
 .env*.local
 .env
+
+# Local design reference archive (source assets are versioned separately)
+ASCEND_Redesign_Cyberpunk.zip

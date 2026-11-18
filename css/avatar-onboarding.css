@@ -146,6 +146,8 @@
 .user-profile-trigger:hover,.sidebar-identity__edit:hover,.player-avatar-edit:hover { border-color:rgba(104,205,255,.64); box-shadow:0 0 20px rgba(46,156,255,.2); }
 .user-profile-trigger__label { white-space:nowrap; font-size:.75rem; }
 .sidebar-identity { display:flex; align-items:center; gap:10px; padding:12px 10px 15px; margin:0 0 10px; border-bottom:1px solid rgba(137,203,255,.15); }
+.sidebar-identity__profile { display:flex; align-items:center; gap:10px; flex:1; min-width:0; text-decoration:none; border-radius:10px; }
+.sidebar-identity__profile:focus-visible { outline:2px solid var(--accent, #1266ff); outline-offset:4px; }
 .user-avatar--sidebar { width:44px; height:44px; }
 .sidebar-identity__copy { display:flex; min-width:0; flex:1; flex-direction:column; gap:4px; }
 .sidebar-identity__copy strong { overflow:hidden; color:#eaf5ff; font-size:.82rem; text-overflow:ellipsis; white-space:nowrap; }

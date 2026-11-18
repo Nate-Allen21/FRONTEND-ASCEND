@@ -120,6 +120,14 @@ a { color:var(--accent); }
 #view-status .hero-actions .auth-submit { min-height: 40px; padding: 8px 14px; }
 #view-status .hero-sigil { width: 140px; min-width: 0; gap: 4px; }
 #view-status .sigil-orbit { margin-bottom: 0; }
+#app-shell #view-status .hero-sigil { width: 120px; max-width: 100%; opacity: 1; transform: none; gap: 6px; }
+#app-shell #view-status .sigil-orbit { width: 104px; max-width: 100%; flex: none; }
+#app-shell #view-status .sigil-ring { inset: 8%; border: 1px solid var(--accent-border, var(--accent)); box-shadow: 0 0 24px var(--accent-soft, transparent); opacity: .55; animation-duration: 60s; }
+#app-shell #view-status .sigil-ring::before { width: 4px; height: 4px; top: 1%; left: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+#app-shell #view-status .sigil-ring::after { display: none; }
+#app-shell #view-status .sigil-logo { position: relative; z-index: 1; display: block; width: 82px; height: 82px; max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px var(--accent-soft, transparent)); }
+#app-shell #view-status .sigil-caption { font-size: .55rem; letter-spacing: .05em; white-space: normal; line-height: 1.4; color: var(--text-2); }
+#app-shell #view-status .sigil-coordinate { font-size: .58rem; color: var(--text-3); }
 #view-status .status-overview-row {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);

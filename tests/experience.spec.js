@@ -87,6 +87,27 @@ test('gold appearance preset applies, persists and keeps ASCEND glass panels', a
   expect(errors).toEqual([]);
 });
 
+test('appearance presets and zero glow persist without losing the light theme', async ({ page }) => {
+  const errors = await setup(page);
+  await page.locator('#btn-customize').click();
+  for (const preset of ['crimson', 'lime', 'purple', 'blue', 'gold']) {
+    await page.locator(`[data-theme-preset="${preset}"]`).click();
+    await expect(page.locator('body')).toHaveAttribute('data-custom-skin', preset);
+    await expect(page.locator(`[data-theme-preset="${preset}"]`)).toHaveAttribute('aria-pressed', 'true');
+  }
+  await page.locator('[data-theme-preset="purple"]').click();
+  await page.locator('#customization-glow').fill('0');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('ascend.customization.v1')).glow)).toBe(0);
+  await page.reload();
+  await expect(page.locator('body')).toHaveAttribute('data-custom-skin', 'purple');
+  await expect(page.locator('#customization-glow')).toHaveValue('0');
+  await page.locator('#btn-theme-toggle').click();
+  await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
+  await page.reload();
+  await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
+  expect(errors).toEqual([]);
+});
+
 async function navigateOnMobile(page, view) {
   const mobileLink = page.locator(`.mobile-tabbar .mobile-nav-link[data-view=${view}]`);
   if (await mobileLink.count()) {
@@ -131,6 +152,7 @@ async function setup(page, authenticated = true, onboardingCompleted = true) {
     else if (path.endsWith('/auth/me')) data = user;
     else if (path.endsWith('/auth/avatar')) {
       user = { ...user, avatar: route.request().postDataJSON().avatar, onboardingCompleted: true };
+      profile.avatar = user.avatar;
       data = user;
     }
     else if (path.endsWith('/auth/login') || path.endsWith('/auth/register')) data = { token: 'test-token', user };
@@ -205,6 +227,21 @@ test('authentication, password visibility and login', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('login artwork and account forms remain usable on desktop and mobile', async ({ page }) => {
+  const errors = await setup(page, false);
+  await expect(page.locator('.auth-duo')).toBeVisible();
+  await expect(page.locator('#login-email')).toBeVisible();
+  await page.screenshot({ path: 'test-results/login-desktop.png', fullPage: true, animations: 'disabled' });
+  await page.locator('#tab-register').click();
+  await expect(page.locator('#register-name')).toBeVisible();
+  await page.locator('#tab-login').click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('#login-password')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/login-mobile.png', fullPage: true, animations: 'disabled' });
+  expect(errors).toEqual([]);
+});
+
 test('login waits for a sleeping API to wake before reporting a connection error', async ({ page }) => {
   test.setTimeout(60_000);
   await setup(page, false);
@@ -258,6 +295,49 @@ test('status and progress overview are visible without the extra dashboard banne
   await expect(page.locator('#status-title')).toBeInViewport();
   await expect(page.locator('#status-overview-title')).toBeInViewport();
   expect(await page.locator('.evolution-hero').evaluate((hero) => hero.offsetHeight)).toBeLessThan(260);
+});
+
+test('dashboard emblem fits inside its orbit and banner across desktop widths', async ({ page }) => {
+  await setup(page);
+  for (const width of [900, 1100, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const dimensions = await page.locator('#view-status .sigil-logo').evaluate((logo) => {
+      const rect = element => { const r = element.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height }; };
+      return { logo: rect(logo), orbit: rect(logo.closest('.sigil-orbit')), banner: rect(logo.closest('.evolution-hero')), mask: getComputedStyle(logo).maskImage };
+    });
+    expect(dimensions.mask).not.toBe('none');
+    expect(dimensions.logo.width).toBeLessThanOrEqual(82);
+    expect(dimensions.logo.left).toBeGreaterThanOrEqual(dimensions.orbit.left);
+    expect(dimensions.logo.right).toBeLessThanOrEqual(dimensions.orbit.right);
+    expect(dimensions.logo.top).toBeGreaterThanOrEqual(dimensions.banner.top);
+    expect(dimensions.logo.right).toBeLessThanOrEqual(dimensions.banner.right);
+    expect(dimensions.logo.bottom).toBeLessThanOrEqual(dimensions.banner.bottom);
+  }
+});
+
+test('ASCEND wordmark and icon follow the selected appearance', async ({ page }) => {
+  await setup(page);
+  const wordmark = page.locator('#app-shell .topbar-brand .brand-art--wordmark');
+  const icon = page.locator('#view-status .brand-art--icon');
+  const loginLogo = page.locator('#auth-screen .auth-logo .brand-art--wordmark');
+  await expect(wordmark).toBeVisible();
+  await expect(icon).toBeVisible();
+  const before = await wordmark.evaluate(el => getComputedStyle(el).backgroundImage);
+  const loginColor = await loginLogo.evaluate(el => getComputedStyle(el).backgroundImage);
+  const oldFavicon = await page.locator('#brand-favicon').getAttribute('href');
+  await page.locator('#btn-customize').click();
+  await page.locator('[data-theme-preset="gold"]').click();
+  const after = await wordmark.evaluate(el => getComputedStyle(el).backgroundImage);
+  expect(after).not.toBe(before);
+  expect(await loginLogo.evaluate(el => getComputedStyle(el).backgroundImage)).toBe(loginColor);
+  expect(await icon.evaluate(el => getComputedStyle(el).backgroundImage)).toBe(after);
+  expect(await page.locator('#brand-favicon').getAttribute('href')).not.toBe(oldFavicon);
+  await page.reload();
+  expect(await wordmark.evaluate(el => getComputedStyle(el).backgroundImage)).toBe(after);
+  expect(await loginLogo.evaluate(el => getComputedStyle(el).backgroundImage)).toBe(loginColor);
+  await page.locator('#btn-theme-toggle').click();
+  await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
+  expect(await wordmark.evaluate(el => getComputedStyle(el).backgroundImage)).not.toBe(after);
 });
 
 test('profile loads account details and publishes a post', async ({ page }) => {
@@ -314,11 +394,30 @@ test('profile discovery searches players and opens their public profile', async 
   });
 
   await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
+  await page.locator('#profile-friends-disclosure summary').click();
   await page.locator('#player-search').fill('Astra');
   await expect(page.locator('#player-search-results')).toContainText('@astra-2');
   await page.locator('#player-search-results .ascend-player-row > button').first().click();
   await expect(page.locator('#profile-title')).toHaveText('Aliada ASCEND');
   expect(errors).toEqual([]);
+});
+
+test('profile sidebar keeps achievements and friends available in compact sections', async ({ page }) => {
+  await setup(page);
+  await page.locator('#btn-edit-avatar').click();
+  const achievements = page.locator('#profile-achievements-disclosure');
+  const friends = page.locator('#profile-friends-disclosure');
+  await expect(achievements).not.toHaveAttribute('open');
+  await expect(friends).not.toHaveAttribute('open');
+  expect(await achievements.evaluate(el => el.offsetHeight)).toBeLessThan(110);
+  await expect(page.locator('#profile-friend-count')).toHaveText('1 amigo');
+  await achievements.locator('summary').click();
+  await expect(page.locator('#profile-side-achievements')).toBeVisible();
+  await achievements.getByRole('button', { name: /Ver todas as conquistas/ }).click();
+  await expect(page.locator('#profile-panel-achievements')).toBeVisible();
+  await friends.locator('summary').click();
+  await expect(page.locator('#player-search')).toBeVisible();
+  await expect(page.locator('#profile-friends .ascend-profile-friend')).toBeVisible();
 });
 
 test('profile editor updates the bio and a custom profile photo', async ({ page }) => {
@@ -360,9 +459,61 @@ test('profile editor updates the bio and a custom profile photo', async ({ page 
   expect(errors).toEqual([]);
 });
 
+test('profile editor stays centered and usable on desktop and mobile', async ({ page }) => {
+  await setup(page);
+  await page.locator('#btn-edit-avatar').click();
+  await page.locator('#profile-edit').click();
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 900, height: 500 }]) {
+    await page.setViewportSize(viewport);
+    const dialog = page.locator('#profile-edit-dialog');
+    const box = await dialog.boundingBox();
+    expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThan(2);
+    expect(Math.abs(box.y + box.height / 2 - viewport.height / 2), JSON.stringify({ viewport, box })).toBeLessThan(2);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    await expect(page.locator('#profile-edit-save')).toBeInViewport();
+    expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    if (viewport.width === 1440) await page.screenshot({ path: 'test-results/profile-edit-desktop.png', animations: 'disabled' });
+  }
+  await page.locator('#profile-edit-cancel').click();
+  await page.locator('#btn-theme-toggle').click();
+  await page.locator('#profile-edit').click();
+  await expect(page.locator('#profile-edit-dialog')).toBeVisible();
+  await expect(page.locator('#profile-edit-name')).toBeVisible();
+});
+
+test('profile shortcuts open the profile and character selection preserves unsaved edits', async ({ page }) => {
+  const errors = await setup(page);
+  for (const selector of ['#btn-edit-avatar', '#btn-edit-avatar-sidebar', '.sidebar-identity__profile']) {
+    await page.locator('#app-sidebar [data-view=status]').click();
+    await page.locator(selector).click();
+    await expect(page.locator('#view-profile')).toBeVisible();
+    await expect(page.locator('#profile-title')).toHaveText('Hunter Teste');
+    await expect(page.locator('#avatar-onboarding')).toBeHidden();
+  }
+  await page.locator('#profile-edit').click();
+  await page.locator('#profile-edit-bio').fill('Uma edição ainda não salva.');
+  await page.locator('#profile-change-character').click();
+  await expect(page.locator('#profile-edit-dialog')).toBeHidden();
+  await expect(page.locator('#avatar-onboarding')).toBeVisible();
+  await page.locator('#avatar-cancel').click();
+  await expect(page.locator('#profile-edit-dialog')).toBeVisible();
+  await expect(page.locator('#profile-edit-bio')).toHaveValue('Uma edição ainda não salva.');
+  await expect(page.locator('#profile-change-character')).toBeFocused();
+  await page.locator('#profile-change-character').click();
+  await page.locator('[data-avatar-choice=female]').click();
+  await page.locator('#avatar-confirm').click();
+  await expect(page.locator('#profile-edit-dialog')).toBeVisible();
+  await expect(page.locator('#profile-edit-bio')).toHaveValue('Uma edição ainda não salva.');
+  await page.locator('#profile-edit-cancel').click();
+  await expect(page.locator('#profile-avatar')).toHaveAttribute('src', /astra/);
+  expect(errors).toEqual([]);
+});
+
 test('public player profiles show social actions without exposing private progress', async ({ page }) => {
   const errors = await setup(page);
   await page.locator('#app-sidebar .sidebar-link[data-view=profile]').click();
+  await page.locator('#profile-friends-disclosure summary').click();
   await page.locator('#profile-friends .ascend-profile-friend').click();
   await expect(page.locator('#profile-title')).toHaveText('Aliada ASCEND');
   await expect(page.locator('#profile-edit')).toBeHidden();
@@ -422,6 +573,10 @@ test('new accounts choose an avatar before dashboard and can change it later', a
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#btn-edit-avatar').click();
+  await expect(page.locator('#view-profile')).toBeVisible();
+  await expect(page.locator('#avatar-onboarding')).toBeHidden();
+  await page.locator('#profile-edit').click();
+  await page.locator('#profile-change-character').click();
   await expect(page.locator('#avatar-onboarding')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const femaleChoiceBounds = await page.locator('[data-avatar-choice="female"]').boundingBox();
@@ -433,6 +588,8 @@ test('new accounts choose an avatar before dashboard and can change it later', a
   await page.locator('#avatar-confirm').click();
   expect((await secondSave).postDataJSON()).toEqual({ avatar: 'female' });
   await expect(page.locator('#avatar-onboarding')).toBeHidden();
+  await expect(page.locator('#profile-edit-dialog')).toBeVisible();
+  await page.locator('#profile-edit-cancel').click();
   await expect(page.locator('.player-avatar img')).toHaveAttribute('src', /\/assets\/astra(?:-[\w-]+)?\.png(?:\?.*)?$/);
   await expect(page.locator('.user-avatar--topbar img')).toHaveAttribute('src', /\/assets\/astra(?:-[\w-]+)?\.png(?:\?.*)?$/);
   await page.reload();
@@ -459,6 +616,38 @@ test('mission filters, empty state and confirmed completion', async ({ page }) =
   expect(errors).toEqual([]);
 });
 
+test('notification sound plays for system and message alerts and respects message preferences', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.notificationSounds = [];
+    HTMLMediaElement.prototype.play = function () {
+      window.notificationSounds.push(this.src);
+      return Promise.resolve();
+    };
+  });
+  const errors = await setup(page);
+  let rows = [];
+  await page.route('**/api/connect/conversations', route => route.fulfill({ json: rows }));
+  await page.locator('#btn-toggle-popup').click();
+  expect(await page.evaluate(() => window.notificationSounds.length)).toBe(0);
+  await page.locator('#popup-close').click();
+  await page.locator('[data-navigate=missions]').click();
+  await page.locator('#mission-filter').selectOption('pending');
+  await page.locator('#missions-list .mission-card:visible button').click();
+  await expect.poll(() => page.evaluate(() => window.notificationSounds.length)).toBe(1);
+  expect(await page.evaluate(() => window.notificationSounds[0])).toContain('notificacao-ascend');
+
+  await page.locator('#app-sidebar [data-view=connect]').click();
+  await expect(page.locator('#connect-list')).toContainText('Nenhuma conversa');
+  rows = [{ id: 8, userId: 2, name: 'Amiga', username: 'amiga', unread: 1, updatedAt: new Date().toISOString(), lastMessage: { id: 10, senderId: 2, content: 'Olá!' } }];
+  await expect(page.locator('#connect-toast')).toBeVisible({ timeout: 12000 });
+  await expect.poll(() => page.evaluate(() => window.notificationSounds.length)).toBe(2);
+  await page.locator('#connect-notifications').uncheck();
+  rows = [{ ...rows[0], unread: 2, lastMessage: { id: 11, senderId: 2, content: 'Nova mensagem' } }];
+  await expect(page.locator('#connect-list')).toContainText('Nova mensagem', { timeout: 12000 });
+  expect(await page.evaluate(() => window.notificationSounds.length)).toBe(2);
+  expect(errors).toEqual([]);
+});
+
 test('command palette, history and all screens', async ({ page }) => {
   const errors = await setup(page);
   await page.keyboard.press('Control+k');
@@ -474,6 +663,9 @@ test('command palette, history and all screens', async ({ page }) => {
     await page.locator(`#app-sidebar .sidebar-link[data-view=${view}]`).click();
     await expect(page.locator(`#view-${view}`)).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    if (['missions', 'training', 'studies', 'calendar', 'shop'].includes(view)) {
+      await page.screenshot({ path: `test-results/reference-${view}.png`, fullPage: true, animations: 'disabled' });
+    }
   }
   await page.locator('#btn-theme-toggle').click();
   await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');

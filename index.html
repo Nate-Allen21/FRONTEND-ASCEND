@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASCEND · Sua próxima evolução</title>
   <meta name="theme-color" content="#05070d" />
-  <link rel="icon" type="image/png" href="assets/ascend-symbol.png" />
+  <link id="brand-favicon" rel="icon" type="image/svg+xml" href="assets/brand-icon.svg" />
   <meta name="description" content="Transforme sua rotina em evolução. Organize missões, treinos, estudos e recompensas no ASCEND." />
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -23,7 +23,11 @@
   <link href="css/cyber-shell.css?v=20261113-gold-theme" rel="stylesheet" />
   <link href="css/ascend.css?v=2027-liquid-1" rel="stylesheet" />
   <link href="css/profile-dashboard.css" rel="stylesheet" />
+  <link href="css/connect.css" rel="stylesheet" />
   <link href="css/avatar-onboarding.css?v=20261109-aether-transparent" rel="stylesheet" />
+  <link href="css/cyber-premium.css" rel="stylesheet" />
+  <link href="css/login-cyberpunk.css" rel="stylesheet" />
+  <link href="css/brand.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -34,10 +38,9 @@
   <div class="auth-hud auth-hud-top" aria-hidden="true"><span class="hud-dot"></span> ASCEND // SYSTEM ONLINE <span class="hud-coordinates">SYS_07 · 03 NOV 2026</span></div>
   <div class="auth-hud auth-hud-bottom" aria-hidden="true">EVOLVE <span>◆</span> CONQUER <span>◆</span> ASCEND</div>
   <div class="auth-showcase">
-    <div class="showcase-sigil" aria-hidden="true"><span>A</span></div>
+    <div class="showcase-sigil" aria-hidden="true"><span class="brand-art brand-art--icon"></span></div>
     <div class="auth-character-energy" aria-hidden="true"></div>
-    <img class="auth-character auth-character-summoner" src="assets/aether.png" alt="AETHER, o guardião da evolução" fetchpriority="high" />
-    <img class="auth-character auth-character-witch" src="assets/astra.png" alt="ASTRA, símbolo de ambição, força, inteligência e evolução constante" fetchpriority="high" />
+    <img class="auth-duo" src="assets/dupla-cyberpunk.png" alt="AETHER e ASTRA, personagens ASCEND" fetchpriority="high" />
     <div class="auth-showcase-caption"><span>AETHER + ASTRA // ASCEND</span><strong>Duas forças. Uma evolução constante.</strong></div>
     <span class="auth-showcase-kicker">SEU PRÓXIMO NÍVEL</span>
     <h2>Sua rotina.<br /><em>Sua evolução.</em></h2>
@@ -45,7 +48,8 @@
   </div>
   <div class="auth-panel">
     <div class="auth-panel-topline"><span>IDENTITY GATEWAY</span><span class="auth-status"><i></i> SECURE</span></div>
-    <div class="ascend-logo auth-logo" aria-label="ASCEND, sistema de evolucao pessoal"><img class="brand-logo-image" src="assets/ascend-logo-horizontal.png" alt="ASCEND" fetchpriority="high" /></div>
+    <div class="ascend-logo auth-logo" role="img" aria-label="ASCEND, sistema de evolução pessoal"><span class="brand-art brand-art--wordmark" aria-hidden="true"></span></div>
+    <p class="auth-brand-tagline">Sua rotina. <strong>Sua evolução.</strong></p>
 
     <div class="auth-tabs" role="tablist" aria-label="Acesso ao sistema">
       <button class="auth-tab active" id="tab-login" type="button" role="tab" aria-selected="true" aria-controls="login-form" tabindex="0">Login</button>
@@ -94,7 +98,7 @@
     <div class="avatar-energy-wave"></div>
   </div>
   <header class="avatar-onboarding__header">
-    <img src="assets/ascend-logo-horizontal.png" alt="ASCEND" />
+    <span class="brand-art brand-art--wordmark avatar-onboarding__logo" role="img" aria-label="ASCEND"></span>
     <span class="avatar-onboarding__system"><i></i> IDENTITY PROTOCOL · ONLINE</span>
     <button class="avatar-onboarding__cancel" id="avatar-cancel" type="button" hidden>Voltar ao perfil</button>
   </header>
@@ -134,7 +138,7 @@
     </div>
   </main>
   <div class="avatar-destiny" id="avatar-destiny" aria-hidden="true">
-    <img src="assets/ascend-logo-horizontal.png" alt="" />
+    <span class="brand-art brand-art--wordmark avatar-destiny__logo" aria-hidden="true"></span>
     <span>SEU DESTINO FOI DEFINIDO.</span>
     <p>Sua jornada começa agora.</p>
   </div>
@@ -146,7 +150,7 @@
       <button class="sidebar-toggle" id="btn-sidebar-toggle" type="button" aria-label="Abrir menu" aria-controls="app-sidebar" aria-expanded="false">
         <i class="bi bi-list" aria-hidden="true"></i>
       </button>
-      <div class="ascend-logo" aria-label="ASCEND, sistema de evolucao pessoal"><img class="brand-logo-image" src="assets/ascend-logo-horizontal.png" alt="ASCEND" /></div>
+      <div class="ascend-logo" role="img" aria-label="ASCEND, sistema de evolução pessoal"><span class="brand-art brand-art--wordmark" aria-hidden="true"></span></div>
       <p class="topbar-copy">Pequenas vitórias. Evolução constante.</p>
     </div>
 
@@ -170,10 +174,11 @@
       <button class="btn-timer active" id="btn-toggle-popup" type="button" aria-label="Abrir notificacoes do sistema" aria-controls="system-popup" aria-expanded="false">
         <i class="bi bi-bell" aria-hidden="true"></i>
       </button>
+      <button class="btn-timer" id="connect-navbar" type="button" aria-label="Abrir mensagens"><i class="bi bi-chat-dots" aria-hidden="true"></i> <span id="connect-navbar-unread" class="connect-badge" hidden></span></button>
       <button class="btn-timer" id="btn-logout" type="button">
         <i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sair
       </button>
-      <button class="user-profile-trigger" id="btn-edit-avatar" type="button" aria-label="Alterar meu avatar">
+      <button class="user-profile-trigger" id="btn-edit-avatar" type="button" aria-label="Abrir meu perfil">
         <span class="user-avatar user-avatar--topbar">
           <img class="user-avatar-img" data-user-avatar alt="" hidden />
           <i class="bi bi-person-badge" aria-hidden="true"></i>
@@ -194,7 +199,7 @@
         <div class="preview-stage">
           <div class="preview-orb preview-orb-one"></div><div class="preview-orb preview-orb-two"></div>
           <div class="preview-mock-top"><strong>ASCEND</strong><span>● 12 DIAS</span><i class="bi bi-sliders2"></i></div>
-          <div class="preview-mock-content"><div class="preview-mock-copy"><small>SEU PRÓXIMO NÍVEL</small><h3>Sua rotina.<br><em>Sua evolução.</em></h3><div class="preview-mock-button">Continuar jornada <i class="bi bi-arrow-up-right"></i></div></div><div class="preview-mock-sigil">A</div></div>
+          <div class="preview-mock-content"><div class="preview-mock-copy"><small>SEU PRÓXIMO NÍVEL</small><h3>Sua rotina.<br><em>Sua evolução.</em></h3><div class="preview-mock-button">Continuar jornada <i class="bi bi-arrow-up-right"></i></div></div><div class="preview-mock-sigil" aria-hidden="true"><span class="brand-art brand-art--icon"></span></div></div>
           <div class="preview-mock-cards"><span></span><span></span><span></span></div>
         </div>
         <div class="customization-preview-caption"><div><small>TEMA SELECIONADO</small><strong id="customization-preview-theme">Ember</strong></div><div class="preview-swatches"><i></i><i></i><i></i></div></div>
@@ -223,12 +228,14 @@
   <div class="d-flex">
     <aside class="sidebar" id="app-sidebar" aria-label="Menu principal">
       <div class="sidebar-identity">
+        <a class="sidebar-identity__profile" href="#view-profile" aria-label="Abrir meu perfil">
         <span class="user-avatar user-avatar--sidebar">
           <img class="user-avatar-img" data-user-avatar alt="" hidden />
           <i class="bi bi-person-badge" aria-hidden="true"></i>
         </span>
         <span class="sidebar-identity__copy"><strong id="sidebar-user-name">Sua jornada</strong><small>Identidade ASCEND</small></span>
-        <button class="sidebar-identity__edit" id="btn-edit-avatar-sidebar" type="button" aria-label="Alterar avatar" title="Alterar avatar"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>
+        </a>
+        <button class="sidebar-identity__edit" id="btn-edit-avatar-sidebar" type="button" aria-label="Abrir meu perfil" title="Abrir meu perfil"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>
       </div>
       <nav>
         <div class="nav-section-label">NAVEGACAO</div>
@@ -236,6 +243,7 @@
         <a href="#view-status" class="sidebar-link active" aria-current="page" data-view="status">
           <i class="bi bi-person-badge" aria-hidden="true"></i> Status
         </a>
+        <a href="#view-connect" class="sidebar-link" data-view="connect"><i class="bi bi-chat-dots" aria-hidden="true"></i> Mensagens <span id="connect-unread" class="connect-badge" hidden></span></a>
         <a href="#view-profile" class="sidebar-link" data-view="profile"><i class="bi bi-person-vcard" aria-hidden="true"></i> Meu perfil</a>
         <a href="#view-missions" class="sidebar-link" data-view="missions">
           <i class="bi bi-list-check" aria-hidden="true"></i> Missoes
@@ -280,6 +288,14 @@
     </aside>
 
     <main class="main-content" id="conteudo-principal" tabindex="-1">
+      <section class="app-view" id="view-connect" data-view-panel="connect" aria-labelledby="connect-title" hidden>
+        <header class="connect-heading"><span class="ascend-eyebrow">ASCEND CONNECT</span><h1 id="connect-title">Mensagens</h1><p>Converse com outros membros do ASCEND.</p></header>
+        <div class="connect-layout" id="connect-layout">
+          <aside class="feature-panel connect-list-panel"><h2>Conversas</h2><label for="connect-search">Nova conversa</label><input class="auth-input" id="connect-search" type="search" placeholder="Buscar nome ou @identificador..." autocomplete="off"><label class="connect-notifications"><input type="checkbox" id="connect-notifications"> Avisar sobre novas mensagens</label><div id="connect-search-results"></div><div id="connect-list" aria-label="Conversas recentes"></div></aside>
+          <section class="feature-panel connect-chat" aria-label="Conversa"><header class="connect-chat-header"><button id="connect-back" class="btn-timer" type="button" aria-label="Voltar às conversas"><i class="bi bi-arrow-left"></i></button><strong id="connect-recipient">Selecione uma conversa</strong><button id="connect-profile" class="btn-timer" type="button" hidden>Ver perfil</button></header><p id="connect-status" role="status"></p><button id="connect-older" class="btn-timer" type="button" hidden>Carregar mensagens anteriores</button><div id="connect-messages" class="connect-messages" aria-live="polite"><p>Escolha uma conversa ou encontre alguém para começar.</p></div><form id="connect-form" class="connect-compose" hidden><label class="visually-hidden" for="connect-input">Mensagem</label><textarea id="connect-input" class="auth-input" rows="1" maxlength="2000" placeholder="Digite uma mensagem..." required></textarea><button class="auth-submit" type="submit" aria-label="Enviar mensagem"><i class="bi bi-send"></i></button></form></section>
+          <aside class="feature-panel connect-details" id="connect-details"><i class="bi bi-chat-square-heart" aria-hidden="true"></i><h2>Conecte-se</h2><p>Compartilhe sua jornada com outros membros.</p><p>Suas conversas são privadas.</p></aside>
+        </div>
+      </section>
       <section class="app-view" id="view-profile" data-view-panel="profile" aria-labelledby="profile-title" hidden>
         <div class="ascend-profile-banner">
           <span class="ascend-eyebrow">ASCEND // IDENTIDADE DO JOGADOR</span>
@@ -291,6 +307,7 @@
               <span class="ascend-profile-avatar"><img id="profile-avatar" data-profile-avatar alt="" hidden><i class="bi bi-person-badge" aria-hidden="true"></i></span>
               <div class="ascend-profile-heading-copy"><span class="ascend-eyebrow">SEU LEGADO</span><h1 id="profile-title">Meu perfil</h1><p id="profile-handle"></p></div>
               <div class="ascend-profile-heading-actions">
+                <button id="profile-message-button" class="btn-timer" type="button" hidden><i class="bi bi-chat-dots"></i> Enviar mensagem</button>
                 <button id="profile-follow-button" class="btn-timer" type="button" hidden></button>
                 <button id="profile-friend-button" class="btn-timer" type="button" hidden></button>
                 <button id="profile-edit" class="btn-timer" type="button"><i class="bi bi-pencil" aria-hidden="true"></i> Editar perfil</button>
@@ -299,12 +316,6 @@
             <div id="profile-progression" class="ascend-profile-metrics" aria-label="Resumo do perfil"></div>
           </section>
           <div class="ascend-profile-content">
-            <aside class="feature-panel ascend-profile-about">
-              <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">SUA JORNADA</span><h2>Sobre mim</h2></div></div>
-              <p id="profile-bio" class="ascend-profile-bio">Adicione uma bio para contar sua jornada.</p>
-              <div id="profile-tags" class="ascend-profile-tags"></div>
-              <div id="profile-cosmetics" class="ascend-profile-cosmetics" aria-label="Cosméticos equipados"></div>
-            </aside>
             <section class="ascend-profile-main" aria-label="Atividade do perfil">
               <nav class="ascend-profile-tabs" role="tablist" aria-label="Seções do perfil">
                 <button class="is-active" id="profile-tab-posts" type="button" role="tab" aria-selected="true" aria-controls="profile-panel-posts" data-profile-tab="posts">Publicações</button>
@@ -336,13 +347,20 @@
               </section>
             </section>
             <aside class="ascend-profile-side">
-              <section class="feature-panel ascend-profile-level-card"><span class="ascend-eyebrow">PROGRESSÃO REAL</span><div class="ascend-profile-level-mark" aria-hidden="true"><i class="bi bi-stars"></i></div><div id="profile-level" class="ascend-profile-level"></div><p id="profile-joined" class="ascend-profile-joined"></p></section>
-              <section class="feature-panel ascend-profile-side-card">
-                <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">MARCOS</span><h2>Conquistas</h2></div><button class="ascend-profile-text-button" type="button" data-profile-tab-link="achievements">Ver todas <i class="bi bi-arrow-right" aria-hidden="true"></i></button></div>
-                <div id="profile-side-achievements" class="ascend-profile-side-achievements"></div>
+              <section class="feature-panel ascend-profile-about">
+                <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">SUA JORNADA</span><h2>Sobre mim</h2></div></div>
+                <p id="profile-bio" class="ascend-profile-bio">Adicione uma bio para contar sua jornada.</p>
+                <div id="profile-tags" class="ascend-profile-tags"></div>
+                <div id="profile-cosmetics" class="ascend-profile-cosmetics" aria-label="Cosméticos equipados"></div>
               </section>
-              <section class="feature-panel ascend-profile-side-card">
-                <div class="ascend-profile-section-heading"><div><span class="ascend-eyebrow">SUA REDE</span><h2>Amigos</h2></div><span id="profile-friend-count" class="ascend-profile-count"></span></div>
+              <section class="feature-panel ascend-profile-level-card"><span class="ascend-eyebrow">PROGRESSÃO REAL</span><div class="ascend-profile-level-mark" aria-hidden="true"><i class="bi bi-stars"></i></div><div id="profile-level" class="ascend-profile-level"></div><p id="profile-joined" class="ascend-profile-joined"></p></section>
+              <details class="feature-panel ascend-profile-side-card ascend-profile-disclosure" id="profile-achievements-disclosure">
+                <summary><span><span class="ascend-eyebrow">MARCOS</span><strong>Conquistas</strong></span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                <div id="profile-side-achievements" class="ascend-profile-side-achievements"></div>
+                <button class="ascend-profile-text-button ascend-profile-disclosure-link" type="button" data-profile-tab-link="achievements">Ver todas as conquistas <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+              </details>
+              <details class="feature-panel ascend-profile-side-card ascend-profile-disclosure" id="profile-friends-disclosure">
+                <summary><span><span class="ascend-eyebrow">SUA REDE</span><strong>Amigos</strong></span><span class="ascend-profile-disclosure-meta"><span id="profile-friend-count" class="ascend-profile-count"></span><i class="bi bi-chevron-down" aria-hidden="true"></i></span></summary>
                 <div id="profile-friends" class="ascend-profile-friends"></div>
                 <label class="ascend-profile-search-label" for="player-search">Descobrir jogadores</label>
                 <input id="player-search" class="auth-input" type="search" minlength="2" placeholder="Busque pelo nome">
@@ -350,14 +368,14 @@
                 <button id="friend-requests-open" class="btn-timer ascend-profile-requests" type="button"><i class="bi bi-person-plus" aria-hidden="true"></i> Solicitações</button>
                 <div id="friend-requests" class="ascend-player-results"></div>
                 <p id="profile-social-feedback" class="ascend-profile-social-feedback" role="status"></p>
-              </section>
+              </details>
             </aside>
           </div>
         </div>
         <dialog id="profile-edit-dialog" class="profile-edit-dialog" aria-labelledby="profile-edit-title">
           <form id="profile-edit-form" class="profile-edit-form">
             <header class="profile-edit-header">
-              <div><span class="ascend-eyebrow">IDENTIDADE DO JOGADOR</span><h2 id="profile-edit-title">Editar perfil</h2></div>
+              <div><span class="ascend-eyebrow">IDENTIDADE DO JOGADOR</span><h2 id="profile-edit-title">Editar perfil</h2><p>Personalize sua identidade no ASCEND.</p></div>
               <button id="profile-edit-close" class="glass-btn glass-btn--icon" type="button" aria-label="Fechar edição do perfil"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
             </header>
             <div class="profile-edit-photo-section">
@@ -372,6 +390,10 @@
                 <input id="profile-image-input" class="profile-edit-file-input" type="file" accept="image/jpeg,image/png,image/webp">
                 <small>JPG, PNG ou WebP · até 8 MB</small>
               </div>
+            </div>
+            <div class="profile-edit-character">
+              <i class="bi bi-person-bounding-box profile-edit-character__icon" aria-hidden="true"></i><div><strong>Personagem</strong><span>Escolha AETHER ou ASTRA. Sua foto de perfil, quando definida, aparece primeiro.</span></div>
+              <button id="profile-change-character" class="btn-timer" type="button"><i class="bi bi-person-gear" aria-hidden="true"></i> Mudar personagem</button>
             </div>
             <label class="profile-edit-field" for="profile-edit-name">Nome de exibição <span>2 a 80 caracteres</span></label>
             <input id="profile-edit-name" class="auth-input" type="text" autocomplete="name" minlength="2" maxlength="80" required>
@@ -401,8 +423,9 @@
             <div class="hero-actions"><button class="auth-submit" type="button" data-navigate="missions">Ir para minhas missões <i class="bi bi-arrow-up-right" aria-hidden="true"></i></button><button class="btn-timer" type="button" data-navigate="studies"><i class="bi bi-play-circle" aria-hidden="true"></i> Entrar em foco</button></div>
             <div class="daily-progress-wrap"><span id="daily-progress-label"></span><progress id="daily-progress" value="0" max="1" aria-label="Missões concluídas hoje"></progress></div>
           </div>
+          <div class="hero-characters" aria-hidden="true"><img src="assets/astra.png" alt="" /><img src="assets/aether.png" alt="" /></div>
           <div class="hero-sigil" aria-hidden="true">
-            <div class="sigil-orbit"><div class="sigil-ring"></div><div class="sigil-ring sigil-ring-inner"></div><span class="sigil-mark">A</span></div>
+            <div class="sigil-orbit"><div class="sigil-ring"></div><span class="brand-art brand-art--icon sigil-logo"></span></div>
             <span class="sigil-caption">AWAKEN YOUR POTENTIAL</span>
             <span class="sigil-coordinate">SYS / ASCEND</span>
           </div>
@@ -496,7 +519,7 @@
       <section class="app-view" id="view-studies" data-view-panel="studies" aria-labelledby="studies-title" hidden>
         <div class="row g-3 mb-4">
           <section class="study-session" aria-labelledby="studies-title">
-            <h1 class="section-title" id="studies-title">Estudos</h1>
+            <div class="module-heading"><span class="ascend-eyebrow">ASCEND ACADEMY</span><h1 class="section-title" id="studies-title">Estudos</h1></div>
             <p class="page-intro">Escolha a duração, concentre-se em uma tarefa e faça uma pausa.</p>
 
             <div class="stat-panel mb-3">
@@ -574,7 +597,7 @@
 
       <section class="app-view" id="view-missions" data-view-panel="missions" aria-labelledby="missoes-diarias" hidden>
         <section aria-labelledby="missoes-diarias">
-          <h1 class="section-title" id="missoes-diarias">Missoes</h1>
+          <div class="module-heading"><span class="ascend-eyebrow">ASCEND QUESTS</span><h1 class="section-title" id="missoes-diarias">Missões</h1></div>
           <p class="feature-copy mb-3">Uma ação de cada vez. Cada missão conta para sua evolução.</p>
           <div class="mission-toolbar"><div class="mission-search-wrap"><label class="visually-hidden" for="mission-search">Pesquisar missões</label><i class="bi bi-search" aria-hidden="true"></i><input id="mission-search" class="auth-input" type="search" placeholder="Encontre sua próxima missão…" /></div><label class="visually-hidden" for="mission-filter">Filtrar por progresso</label><select class="auth-input" id="mission-filter"><option value="all">Todas as missões</option><option value="pending">Pendentes</option><option value="done">Concluídas</option></select></div>
           <p class="mission-results" id="mission-results" role="status"></p>
@@ -606,7 +629,7 @@
       </section>
 
       <section class="app-view" id="view-training" data-view-panel="training" aria-labelledby="training-title" hidden>
-        <h1 class="section-title" id="training-title">Treino</h1>
+        <div class="module-heading"><span class="ascend-eyebrow">ASCEND / TREINO</span><h1 class="section-title" id="training-title">Treino</h1></div>
         <p class="page-intro">Sua semana de treino, organizada por dia.</p><div id="training-routine-config"><details class="routine-settings" id="routine-planner-section"><summary id="planner-title"><span><i class="bi bi-sliders2" aria-hidden="true"></i> Ajustar treino e rotina</span><span class="settings-hint">Dias, objetivo e disponibilidade</span></summary><div class="routine-settings-content"><form id="planner-form" class="planner-form">
                   <label class="form-label" for="planner-goals">Metas principais</label>
                   <textarea class="auth-input planner-input" id="planner-goals" name="primaryGoals" rows="2" placeholder="Ex.: passar em calculo, entregar projeto do trabalho, voltar a treinar 4x na semana"></textarea>
@@ -912,6 +935,7 @@
   </div>
 </div>
 
+<button id="connect-toast" class="connect-toast" type="button" role="status" hidden></button>
 <script type="module" src="js/script.js?v=20261113-gold-theme"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
 <div class="connection-notice" id="connection-notice" role="status" hidden><i class="bi bi-wifi-off" aria-hidden="true"></i> Você está offline. Reconecte para salvar seu progresso.</div>

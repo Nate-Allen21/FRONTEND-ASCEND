@@ -2,6 +2,7 @@ import { initExperience } from './experience.js';
 import { renderAssistantMessage } from './chat-format.js';
 import aetherImage from '../assets/aether.png';
 import astraImage from '../assets/astra.png';
+import notificationSoundUrl from '../assets/notificacao-ascend.mp3';
 
 const STORAGE_RESET_VERSION = '2026-04-27-reset-1';
 const API_BASE_URL_STORAGE_KEY = 'ascend.api.baseUrl';
@@ -17,8 +18,8 @@ const ACCENT_STORAGE_KEY = 'ascend.accent';
 const THEME_PRESETS = {
   crimson: { label: 'Crimson', accent: '#df2531', secondary: '#ffffff', bg: '#000000', panel: '#202020', panelRgb: '32, 32, 32', ambient: '#df2531' },
   lime: { label: 'Lime', accent: '#5dd62c', secondary: '#337418', bg: '#0f0f0f', panel: '#202020', panelRgb: '32, 32, 32', ambient: '#5dd62c' },
-  purple: { label: 'Purple', accent: '#7b45f0', secondary: '#a981ff', bg: '#34117e', panel: '#491ab1', panelRgb: '73, 26, 177', ambient: '#6631db' },
-  blue: { label: 'Blue', accent: '#4a74a7', secondary: '#dceaf7', bg: '#081426', panel: '#142a44', panelRgb: '20, 42, 68', ambient: '#4a74a7' },
+  purple: { label: 'Purple', accent: '#b900ff', secondary: '#00d9ff', bg: '#07030f', panel: '#160d2c', panelRgb: '22, 13, 44', ambient: '#7400c8' },
+  blue: { label: 'Blue', accent: '#1266ff', secondary: '#00ceff', bg: '#080d19', panel: '#111e27', panelRgb: '17, 30, 39', ambient: '#1266ff' },
   gold: { label: 'Gold', accent: '#e6b84c', secondary: '#fff0bd', bg: '#100d08', panel: '#302719', panelRgb: '48, 39, 25', ambient: '#d8a638' }
 };
 const ROUTINE_PROFILE_KEY = 'ascend.routine.profile.' + STORAGE_RESET_VERSION;
@@ -502,10 +503,12 @@ function getAuthToken() {
 }
 
 function setAuthToken(token) {
+  resetConnect();
   localStorage.setItem(AUTH_TOKEN_KEY, token);
 }
 
 function clearAuthToken() {
+  resetConnect();
   localStorage.removeItem(AUTH_TOKEN_KEY);
 }
 
@@ -729,6 +732,11 @@ function applyAccent(value, options = {}) {
   root.style.setProperty('--mobile-blue-glow', accent);
   root.style.setProperty('--border-glow', `rgba(${accentRgb}, .46)`);
   root.style.setProperty('--surface-tint', `rgba(${accentRgb}, .10)`);
+  const favicon = getElement('brand-favicon');
+  if (favicon) {
+    const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80"><path fill="${accent}" d="M2 72 43 8h15l40 64H80L50 25 20 72H2ZM39 55h22l8 12H31z"/></svg>`;
+    favicon.href = `data:image/svg+xml,${encodeURIComponent(icon)}`;
+  }
   const picker = getElement('accent-color');
   if (picker) picker.value = accent;
   const trigger = getElement('btn-accent-picker');
@@ -738,7 +746,7 @@ function applyAccent(value, options = {}) {
 function getStoredCustomization() {
   try {
     const stored = JSON.parse(localStorage.getItem(CUSTOMIZATION_STORAGE_KEY));
-    if (stored && THEME_PRESETS[stored.preset]) return { preset: stored.preset, glow: Number(stored.glow) || 72, glass: Number(stored.glass) || 58, ambient: stored.ambient !== false };
+    if (stored && THEME_PRESETS[stored.preset]) return { preset: stored.preset, glow: Number(stored.glow ?? 72), glass: Number(stored.glass) || 58, ambient: stored.ambient !== false };
   } catch (error) { /* Usa o padrão abaixo. */ }
   const legacyAccent = localStorage.getItem(ACCENT_STORAGE_KEY);
   return { preset: 'blue', glow: 72, glass: 58, ambient: true, legacyAccent: legacyAccent || '' };
@@ -749,9 +757,9 @@ function saveCustomization(customization) {
 }
 
 function applyCustomization(customization) {
-  const presetKey = THEME_PRESETS[customization.preset] ? customization.preset : 'ember';
+  const presetKey = THEME_PRESETS[customization.preset] ? customization.preset : 'blue';
   const preset = THEME_PRESETS[presetKey];
-  const glow = Math.max(0, Math.min(100, Number(customization.glow) || 72));
+  const glow = Math.max(0, Math.min(100, Number(customization.glow ?? 72)));
   const glass = Math.max(25, Math.min(85, Number(customization.glass) || 58));
   const ambient = customization.ambient !== false;
   const root = document.documentElement;
@@ -791,7 +799,7 @@ function updateCustomization() {
   const current = getStoredCustomization();
   const next = {
     preset: document.querySelector('[data-theme-preset].is-selected')?.dataset.themePreset || current.preset,
-    glow: Number(getElement('customization-glow')?.value || current.glow),
+    glow: Number(getElement('customization-glow')?.value ?? current.glow),
     glass: Number(getElement('customization-glass')?.value || current.glass),
     ambient: Boolean(getElement('customization-ambient')?.checked)
   };
@@ -1005,6 +1013,8 @@ function selectAvatar(avatar) {
   updateAvatarConfirmButton();
 }
 
+let avatarReturnToProfileEditor = false;
+
 function openAvatarOnboarding(mode = 'onboarding') {
   const avatarScreen = getElement('avatar-onboarding');
   if (!avatarScreen) return;
@@ -1043,6 +1053,21 @@ function openAvatarOnboarding(mode = 'onboarding') {
   document.querySelector(`[data-avatar-choice="${selectedAvatar || 'male'}"]`)?.focus({ preventScroll: true });
 }
 
+function closeAvatarEditor() {
+  const screen = getElement('avatar-onboarding');
+  screen.hidden = true;
+  screen.setAttribute('aria-hidden', 'true');
+  screen.classList.remove('is-editing');
+  if (avatarReturnToProfileEditor) {
+    avatarReturnToProfileEditor = false;
+    const dialog = getElement('profile-edit-dialog');
+    if (!dialog.open) dialog.showModal();
+    getElement('profile-change-character')?.focus({ preventScroll: true });
+  } else {
+    getElement('btn-edit-avatar-dashboard')?.focus({ preventScroll: true });
+  }
+}
+
 async function handleAvatarConfirm() {
   if (avatarSavePending || !AVATAR_OPTIONS[selectedAvatar]) {
     setStatusMessage('avatar-message', 'Selecione um dos personagens para continuar.');
@@ -1065,12 +1090,11 @@ async function handleAvatarConfirm() {
 
     renderUserIdentity(savedUser);
     if (avatarSelectionMode === 'profile') {
-      getElement('avatar-onboarding').hidden = true;
-      getElement('avatar-onboarding').setAttribute('aria-hidden', 'true');
-      getElement('avatar-onboarding').classList.remove('is-editing');
+      if (avatarReturnToProfileEditor) setProfileEditPreview(profileImageDraft || AVATAR_OPTIONS[savedUser.avatar]?.image || null);
+      closeAvatarEditor();
+      if (!getElement('view-profile').hidden && !viewingProfileId) loadProfileView();
       showPopup('Avatar atualizado', 0, 0);
       setText('popup-body', 'Sua identidade ASCEND foi atualizada em toda a plataforma.');
-      getElement('btn-edit-avatar')?.focus({ preventScroll: true });
       return;
     }
 
@@ -1098,6 +1122,7 @@ async function handleAvatarConfirm() {
 function showView(viewName, activeLink = null, updateHistory = true) {
   const target = document.getElementById('view-' + viewName);
   if (!target?.matches('[data-view-panel]')) return;
+  if (viewName === 'connect') { connectEl('connect-notifications').checked = localStorage.getItem(connectPreferenceKey()) !== 'off'; connectRefresh(); }
   if (viewName === 'profile') {
     viewingProfileId = null;
     loadProfileView();
@@ -1151,6 +1176,7 @@ async function loadProfileView(profileId = viewingProfileId) {
 
     getElement('profile-edit').hidden = !ownProfile;
     getElement('profile-post-form').hidden = !ownProfile;
+    getElement('profile-message-button').hidden = ownProfile;
     getElement('profile-follow-button').hidden = ownProfile;
     getElement('profile-friend-button').hidden = ownProfile;
     setText('profile-title', profile.name || 'Meu perfil');
@@ -4634,7 +4660,19 @@ function renderRanking(players) {
   });
 }
 
-function showPopup(title, exp, coins) {
+let notificationAudio;
+function playNotificationSound() {
+  try {
+    notificationAudio ||= new Audio(notificationSoundUrl);
+    notificationAudio.currentTime = 0;
+    const playback = notificationAudio.play();
+    if (playback) playback.catch(() => {});
+  } catch (error) {
+    // A notificação visual continua funcionando se o navegador bloquear o áudio.
+  }
+}
+
+function showPopup(title, exp, coins, playSound = true) {
   if (popupShowTimeout) {
     clearTimeout(popupShowTimeout);
     popupShowTimeout = null;
@@ -4662,6 +4700,7 @@ function showPopup(title, exp, coins) {
   const toggleButton = getElement('btn-toggle-popup');
   if (!popup) return;
 
+  if (playSound) playNotificationSound();
   popup.hidden = false;
   popup.style.display = 'block';
   if (toggleButton) toggleButton.setAttribute('aria-expanded', 'true');
@@ -4699,7 +4738,7 @@ function togglePopup() {
   if (!popup) return;
 
   if (popup.style.display === 'none' || !popup.style.display) {
-    showPopup('Sistema ASCEND', 0, 0);
+    showPopup('Sistema ASCEND', 0, 0, false);
     return;
   }
 
@@ -4981,13 +5020,23 @@ function bindEvents() {
   if (avatarCancelButton) avatarCancelButton.addEventListener('click', () => {
     const avatarScreen = getElement('avatar-onboarding');
     if (avatarSelectionMode !== 'profile' || !avatarScreen) return;
-    avatarScreen.hidden = true;
-    avatarScreen.setAttribute('aria-hidden', 'true');
-    avatarScreen.classList.remove('is-editing');
-    getElement('btn-edit-avatar')?.focus({ preventScroll: true });
+    closeAvatarEditor();
   });
-  ['btn-edit-avatar', 'btn-edit-avatar-sidebar', 'btn-edit-avatar-dashboard'].forEach((id) => {
-    getElement(id)?.addEventListener('click', () => openAvatarOnboarding('profile'));
+  ['btn-edit-avatar', 'btn-edit-avatar-sidebar'].forEach((id) => {
+    getElement(id)?.addEventListener('click', () => showView('profile'));
+  });
+  document.querySelector('.sidebar-identity__profile')?.addEventListener('click', event => {
+    event.preventDefault();
+    showView('profile');
+  });
+  getElement('btn-edit-avatar-dashboard')?.addEventListener('click', () => {
+    avatarReturnToProfileEditor = false;
+    openAvatarOnboarding('profile');
+  });
+  getElement('profile-change-character')?.addEventListener('click', () => {
+    avatarReturnToProfileEditor = true;
+    getElement('profile-edit-dialog').close();
+    openAvatarOnboarding('profile');
   });
 
   document.querySelectorAll('.password-toggle').forEach((toggle) => toggle.addEventListener('click', () => {
@@ -5140,3 +5189,61 @@ document.addEventListener('DOMContentLoaded', () => {
     showAuthScreen();
   }
 });
+
+
+// ASCEND Connect uses authenticated HTTP polling so a reconnect reloads persisted state.
+let connectSelected = null, connectRows = [], connectHistory = [], connectBusy = false, connectSearchTimer, connectPending = null, connectSeen = null, connectToastTimer;
+const connectEl = id => document.getElementById(id);
+function resetConnect(){connectSelected=null;connectRows=[];connectHistory=[];connectPending=null;connectSeen=null;connectEl('connect-layout')?.classList.remove('has-selection');connectEl('connect-messages')?.replaceChildren();for(const id of ['connect-unread','connect-navbar-unread','connect-toast']){const el=connectEl(id);if(el)el.hidden=true;}}
+function connectPreferenceKey(){return 'ascend.connect.notifications.' + currentUser?.id;}
+function connectNotify(row){
+ if(!currentUser || localStorage.getItem(connectPreferenceKey())==='off')return;
+ playNotificationSound();
+ const toast=connectEl('connect-toast');toast.textContent='Nova mensagem de '+row.name;toast.hidden=false;toast.onclick=()=>{toast.hidden=true;showView('connect');connectOpen(row.id);};clearTimeout(connectToastTimer);connectToastTimer=setTimeout(()=>{toast.hidden=true;},6000);
+}
+async function connectLoadDetails(row){
+ const panel=connectEl('connect-details');panel.replaceChildren();
+ try{const profile=await apiRequest('/profile/players/'+row.userId);if(connectSelected!==row.id)return;
+  const image=document.createElement('img');image.className='connect-detail-avatar';image.alt='';image.src=profile.profileImage||AVATAR_OPTIONS[profile.avatar]?.image||aetherImage;
+  const title=document.createElement('h2');title.textContent=profile.name;const handle=document.createElement('p');handle.textContent='@'+profile.username;
+  const level=document.createElement('p');level.textContent='Nível '+profile.level+' · Rank '+profile.rank;
+  const bio=document.createElement('p');bio.textContent=profile.bio || 'Este jogador ainda não adicionou uma bio.';
+  const tags=document.createElement('p');tags.textContent=(profile.tags||[]).join(' · ');
+  const button=document.createElement('button');button.type='button';button.className='btn-timer';button.textContent='Ver perfil';button.onclick=()=>{showView('profile');loadProfileView(row.userId);};panel.append(image,title,handle,level,bio,tags,button);
+ }catch(error){if(connectSelected===row.id)panel.textContent='Perfil indisponível.';}
+}
+function connectTime(value) { return value ? new Date(value).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : ''; }
+function connectRenderList() {
+  const list = connectEl('connect-list'); list.replaceChildren();
+  if (!connectRows.length) { list.textContent = 'Nenhuma conversa ainda. Busque um jogador para começar.'; return; }
+  connectRows.forEach(row => {
+    const button = document.createElement('button'); button.type='button'; button.className='connect-row' + (row.id === connectSelected ? ' selected' : '');
+    const avatar=document.createElement('span'); avatar.className='connect-avatar';
+    const img=document.createElement('img'); img.alt=''; img.src=row.profileImage || AVATAR_OPTIONS[row.avatar]?.image || aetherImage; avatar.append(img);
+    const text=document.createElement('span'); text.className='connect-row-text'; const name=document.createElement('strong'); name.textContent=row.name; const preview=document.createElement('small'); preview.textContent=row.lastMessage?.content || 'Comece a conversa'; text.append(name,preview);
+    const meta=document.createElement('span'); meta.className='connect-meta'; meta.textContent=connectTime(row.updatedAt); if(row.unread){const badge=document.createElement('b');badge.textContent=row.unread;meta.append(badge);} button.append(avatar,text,meta); button.addEventListener('click',()=>connectOpen(row.id)); list.append(button);
+  });
+}
+function connectRenderMessages(scroll=false) {
+ const box=connectEl('connect-messages'); const nearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<100; box.replaceChildren();
+ if(!connectHistory.length){box.textContent='Nenhuma mensagem ainda. Diga olá!';return;}
+ connectHistory.forEach(m=>{const bubble=document.createElement('div');bubble.className='connect-bubble'+(String(m.senderId)===String(currentUser?.id)?' own':''); const content=document.createElement('span');content.textContent=m.content; const meta=document.createElement('small');meta.textContent=connectTime(m.createdAt)+(String(m.senderId)===String(currentUser?.id)?(m.read?' · Lida':' · Enviada'):'');bubble.append(content,meta);box.append(bubble);});
+ if(scroll||nearBottom)box.scrollTop=box.scrollHeight;
+}
+async function connectRefresh() {
+ if(!getAuthToken()||connectBusy)return; connectBusy=true; const token=getAuthToken();
+ try {const rows=await apiRequest('/connect/conversations'); if(token!==getAuthToken())return; if(connectSeen){for(const row of rows){const last=row.lastMessage;if(last && row.unread && String(last.senderId)!==String(currentUser?.id) && last.id>(connectSeen.get(row.id)||0) && !(connectSelected===row.id && !connectEl('view-connect').hidden && !document.hidden))connectNotify(row);}}connectSeen=new Map(rows.map(row=>[row.id,row.lastMessage?.id||0]));connectRows=rows; const total=connectRows.reduce((sum,r)=>sum+r.unread,0);for(const id of ['connect-unread','connect-navbar-unread']){const badge=connectEl(id);badge.hidden=!total;badge.textContent=total;}connectRenderList();
+ if(connectSelected && !connectEl('view-connect').hidden){const selectedId=connectSelected;let latest=await apiRequest('/connect/conversations/'+selectedId+'/messages');if(selectedId!==connectSelected||token!==getAuthToken())return; const previous=connectHistory.length ? connectHistory[connectHistory.length-1].id : null; let batch=latest; while(previous && batch.length===50 && batch[0].id>previous){batch=await apiRequest('/connect/conversations/'+selectedId+'/messages?before='+batch[0].id); if(selectedId!==connectSelected||token!==getAuthToken())return; latest=[...batch,...latest];} const map=new Map(connectHistory.map(m=>[m.id,m]));latest.forEach(m=>map.set(m.id,m));connectHistory=[...map.values()].sort((a,b)=>a.id-b.id);connectRenderMessages(); if(latest.length)await apiRequest('/connect/conversations/'+selectedId+'/read',{method:'POST',body:JSON.stringify({messageId:latest[latest.length-1].id})});}connectEl('connect-status').textContent='';
+ } catch(error){connectEl('connect-status').textContent='Conexão indisponível. Tentando reconectar...';} finally{connectBusy=false;}
+}
+async function connectOpen(id){connectSelected=id;connectHistory=[];connectEl('connect-layout').classList.add('has-selection');connectEl('connect-form').hidden=false;connectEl('connect-profile').hidden=false;const row=connectRows.find(r=>r.id===id);if(row)connectLoadDetails(row);connectEl('connect-recipient').textContent=row?.name || 'Conversa';connectEl('connect-messages').textContent='Carregando histórico...';connectRenderList();try{const data=await apiRequest('/connect/conversations/'+id+'/messages');if(connectSelected!==id)return;connectHistory=data;connectEl('connect-older').hidden=data.length<50;connectRenderMessages(true);if(data.length)await apiRequest('/connect/conversations/'+id+'/read',{method:'POST',body:JSON.stringify({messageId:data[data.length-1].id})});connectRefresh();}catch(e){connectEl('connect-status').textContent=e.message;}}
+async function connectStart(userId){try{const row=await apiRequest('/connect/conversations/'+userId,{method:'POST'});connectRows=[row,...connectRows.filter(r=>r.id!==row.id)];showView('connect');connectOpen(row.id);}catch(e){connectEl('profile-social-feedback').textContent=e.message;connectEl('connect-status').textContent=e.message;}}
+connectEl('profile-message-button').addEventListener('click',()=>{if(viewingProfileId)connectStart(viewingProfileId);});
+connectEl('connect-profile').addEventListener('click',()=>{const row=connectRows.find(r=>r.id===connectSelected);if(row){showView('profile');loadProfileView(row.userId);}});
+connectEl('connect-back').addEventListener('click',()=>{connectSelected=null;connectEl('connect-layout').classList.remove('has-selection');connectRefresh();});
+connectEl('connect-search').addEventListener('input',e=>{clearTimeout(connectSearchTimer);const q=e.target.value.trim(), results=connectEl('connect-search-results');results.replaceChildren();if(q.length<2)return;connectSearchTimer=setTimeout(async()=>{try{const rows=await apiRequest('/connect/users?q='+encodeURIComponent(q));if(connectEl('connect-search').value.trim()!==q)return;results.replaceChildren();if(!rows.length)results.textContent='Nenhum jogador encontrado.';rows.forEach(row=>{const b=document.createElement('button');b.type='button';b.className='connect-search-result';b.textContent=row.name+' · @'+row.username;b.addEventListener('click',()=>{results.replaceChildren();connectEl('connect-search').value='';connectStart(row.id);});results.append(b);});}catch(error){results.textContent=error.message;}},300);});
+connectEl('connect-navbar').addEventListener('click',()=>showView('connect'));
+connectEl('connect-notifications').addEventListener('change',e=>localStorage.setItem(connectPreferenceKey(),e.target.checked?'on':'off'));
+connectEl('connect-older').addEventListener('click',async()=>{if(!connectSelected||!connectHistory.length)return;try{const older=await apiRequest('/connect/conversations/'+connectSelected+'/messages?before='+connectHistory[0].id);connectHistory=[...older,...connectHistory];connectEl('connect-older').hidden=older.length<50;connectRenderMessages();}catch(e){connectEl('connect-status').textContent=e.message;}});
+connectEl('connect-form').addEventListener('submit',async e=>{e.preventDefault();const input=connectEl('connect-input'), content=input.value.trim(), id=connectSelected;if(!content||!id)return;const button=e.currentTarget.querySelector('button');button.disabled=true;connectEl('connect-status').textContent='Enviando...';const clientId=connectPending?.id===id && connectPending.content===content ? connectPending.clientId : crypto.randomUUID();connectPending={id,content,clientId};try{await apiRequest('/connect/conversations/'+id+'/messages',{method:'POST',body:JSON.stringify({content,clientId})});if(input.value.trim()===content)input.value='';connectPending=null;connectEl('connect-status').textContent='';await connectRefresh();connectEl('connect-messages').scrollTop=connectEl('connect-messages').scrollHeight;}catch(error){connectEl('connect-status').textContent='Falha ao enviar: '+error.message;}finally{button.disabled=false;}});
+setInterval(()=>{if(!document.hidden)connectRefresh();},5000);
