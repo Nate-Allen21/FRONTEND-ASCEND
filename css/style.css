@@ -4192,7 +4192,49 @@ body { background: radial-gradient(760px 520px at 88% -8%, color-mix(in srgb, va
 .customization-control, .customization-switch { display: grid; grid-template-columns: 1fr 128px; align-items: center; gap: 16px; cursor: pointer; }
 .customization-control strong, .customization-switch strong { display: block; font-size: .78rem; }
 .customization-control small, .customization-switch small { display: block; margin-top: 3px; color: var(--text-muted); font-size: .66rem; }
-.customization-control input[type='range'] { width: 100%; accent-color: var(--accent); }
+.customization-control input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.customization-control input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), .35);
+}
+.customization-control input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border: 2px solid #effaff;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), .55);
+}
+.customization-control input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), .35);
+}
+.customization-control input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #effaff;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), .55);
+}
+.customization-control input[type='range']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
 .customization-switch { position: relative; grid-template-columns: 1fr 44px; }
 .customization-switch input { position: absolute; opacity: 0; pointer-events: none; }
 .switch-track { position: relative; display: block; width: 42px; height: 24px; border-radius: 999px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.14); transition: .2s; }
