@@ -3450,9 +3450,7 @@ function renderMissions(missions, completedMissionIds = []) {
     reward.className = 'mission-reward';
     reward.setAttribute(
       'aria-label',
-      mission.type === 'penalidade'
-        ? 'Recompensa: ' + mission.experienceReward + ' de experiencia. Se falhar, EXP e moedas descontam conforme o rank; o saldo nao fica negativo.'
-        : 'Recompensa: ' + mission.experienceReward + ' de experiencia e ' + mission.coinReward + ' moedas'
+      'Recompensa: ' + mission.experienceReward + ' de experiencia e ' + mission.coinReward + ' moedas'
     );
     const exp = document.createElement('div');
     exp.className = 'mission-exp';
@@ -3460,7 +3458,7 @@ function renderMissions(missions, completedMissionIds = []) {
     const coins = document.createElement('div');
     coins.className = 'mission-coins';
     coins.textContent = mission.type === 'penalidade'
-      ? 'EVITA -200'
+      ? 'RECUPERACAO'
       : mission.coinReward > 0 ? '+' + mission.coinReward + ' moedas' : 'RESGATE';
     if (mission.type === 'penalidade') {
       exp.classList.add('reward-danger');
