@@ -4478,3 +4478,19 @@ body { background: radial-gradient(760px 520px at 88% -8%, color-mix(in srgb, va
     border-radius: 12px;
   }
 }
+
+/* Keep the desktop navigation in view while the main page scrolls. */
+@media (min-width: 769px) {
+  .sidebar {
+    position: sticky !important;
+    top: 12px;
+    align-self: flex-start;
+    height: calc(100vh - 24px);
+    height: calc(100dvh - 24px);
+    min-height: 0;
+    max-height: calc(100dvh - 24px);
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+}
