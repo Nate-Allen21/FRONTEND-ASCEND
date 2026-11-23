@@ -4456,3 +4456,25 @@ body { background: radial-gradient(760px 520px at 88% -8%, color-mix(in srgb, va
 .calendar-view-switch { margin: 12px 0; }
 .calendar-view-switch button, .calendar-item-actions button { background: transparent; color: inherit; border: 1px solid #1266ff; border-radius: 8px; padding: 7px 12px; cursor: pointer; }
 .calendar-item-actions { margin-top: 8px; }
+
+/* Compact mobile quick actions: ten controls fit in two balanced rows. */
+@media (max-width: 600px) {
+  .ascend-topbar {
+    padding: 8px 10px;
+    gap: 7px;
+    border-radius: 18px;
+  }
+
+  .topbar-actions {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .topbar-actions .btn-timer,
+  .topbar-actions .streak-badge,
+  .topbar-actions .coins-badge {
+    min-height: 36px;
+    padding: 6px 4px;
+    border-radius: 12px;
+  }
+}
