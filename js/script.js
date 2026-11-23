@@ -27,7 +27,7 @@ const THEME_PRESETS = {
 };
 const ROUTINE_PROFILE_KEY = 'ascend.routine.profile.' + STORAGE_RESET_VERSION;
 const APP_TIME_ZONE = 'America/Sao_Paulo';
-function appendFounderBadge(host){const b=document.createElement('span');b.className='founder-badge';b.title='Fundador do ASCEND Ã¢â‚¬â€ Reconhecimento exclusivo aos responsÃƒÂ¡veis pela criaÃƒÂ§ÃƒÂ£o e evoluÃƒÂ§ÃƒÂ£o do ASCEND.';b.setAttribute('role','img');b.setAttribute('aria-label','Fundador do ASCEND');const i=document.createElement('img');i.src='/founder/ascend-fundador-20.svg';i.alt='';i.width=20;i.height=20;b.append(i);host.append(b)}
+function appendFounderBadge(host){const b=document.createElement('span');b.className='founder-badge';b.title='Fundador do ASCEND — Reconhecimento exclusivo aos responsáveis pela criação e evolução do ASCEND.';b.setAttribute('role','img');b.setAttribute('aria-label','Fundador do ASCEND');const i=document.createElement('img');i.src='/founder/ascend-fundador-20.svg';i.alt='';i.width=20;i.height=20;b.append(i);host.append(b)}
 function setFounderName(id,name,founder){const h=getElement(id);if(!h)return;h.textContent=name;if(founder)appendFounderBadge(h)}
 const AVATAR_OPTIONS = {
   male: { image: aetherImage, label: 'AETHER Ã¢â‚¬â€ GuardiÃƒÂ£o da evoluÃƒÂ§ÃƒÂ£o' },
