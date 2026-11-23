@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<style>
+.pulse{transform-origin:16px 16px;animation:ascend-pulse 4.8s ease-in-out infinite}
+@keyframes ascend-pulse{0%,100%{opacity:0;transform:scale(.96)}48%{opacity:.64;transform:scale(1.03)}}
+@media (prefers-reduced-motion:reduce){.pulse{display:none;animation:none}}
+</style>
+<defs>
+<linearGradient id="rim" x2="1" y2="1"><stop stop-color="#c4f6ff"/><stop offset=".42" stop-color="#4fbdff"/><stop offset="1" stop-color="#ac7bff"/></linearGradient>
+<linearGradient id="face" x2=".9" y2="1"><stop stop-color="#063786"/><stop offset=".52" stop-color="#154bc8"/><stop offset="1" stop-color="#291956"/></linearGradient>
+<linearGradient id="silver" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#abdfff"/></linearGradient>
+</defs>
+<path d="M16 1.5 28.5 8.5v12L16 30.5 3.5 20.5v-12Z" fill="#091b45" stroke="#091b45" stroke-width="1" stroke-linejoin="round"/>
+<path d="M16 3.1 27 9.35v10.4L16 28.7 5 19.75V9.35Z" fill="url(#rim)"/>
+<path d="M16 4.1 26 9.8v9.4L16 27.4 6 19.2V9.8Z" fill="url(#face)"/>
+<path d="m6.4 10.4 9.6-5.5 9.6 5.5L16 8.5Zm0 1.2 3.3 7.1 6.3 7.2-9.6-7.4Z" fill="#92dcff" opacity=".21"/><path d="m25.6 11.6-3.3 7.1-6.3 7.2 9.6-7.4Z" fill="#bd78fd" opacity=".35"/>
+<path d="M8.5 18 16 8.5 23.5 18h-4.8L16 14.5 13.3 18Z" fill="url(#silver)"/>
+<path d="M12 20.3h8L16 24.2Z" fill="#b99fff"/>
+<path class="pulse" opacity="0" d="M5 9.35 16 3.1 27 9.35M8.5 18 16 8.5 23.5 18" fill="none" stroke="#d9fcff" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

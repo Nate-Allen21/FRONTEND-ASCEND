@@ -27,6 +27,8 @@ const THEME_PRESETS = {
 };
 const ROUTINE_PROFILE_KEY = 'ascend.routine.profile.' + STORAGE_RESET_VERSION;
 const APP_TIME_ZONE = 'America/Sao_Paulo';
+function appendFounderBadge(host){const b=document.createElement('span');b.className='founder-badge';b.title='Fundador do ASCEND — Reconhecimento exclusivo aos responsáveis pela criação e evolução do ASCEND.';b.setAttribute('role','img');b.setAttribute('aria-label','Fundador do ASCEND');const i=document.createElement('img');i.src='/founder/ascend-fundador-20.svg';i.alt='';i.width=20;i.height=20;b.append(i);host.append(b)}
+function setFounderName(id,name,founder){const h=getElement(id);if(!h)return;h.textContent=name;if(founder)appendFounderBadge(h)}
 const AVATAR_OPTIONS = {
   male: { image: aetherImage, label: 'AETHER — Guardião da evolução' },
   female: { image: astraImage, label: 'ASTRA — Ambição, força e inteligência' }
@@ -1005,7 +1007,7 @@ function renderUserIdentity(user) {
       if (fallback) fallback.hidden = false;
     }
   });
-  setText('sidebar-user-name', user?.name || 'Sua jornada');
+  setFounderName('sidebar-user-name', user?.name || 'Sua jornada',user?.isAscendFounder);
 }
 
 function updateAvatarConfirmButton() {
@@ -2260,7 +2262,7 @@ function renderPlayerStatus(status) {
   if (cosmeticStoreState) cosmeticStoreState.coins = status.coins;
   currentStorageScope = status.handle || getAuthToken() || 'guest';
   if (currentUser) renderUserIdentity(currentUser);
-  setText('player-name', status.name);
+  setFounderName('player-name', status.name,currentUser?.isAscendFounder);
 
   const playerHandle = getElement('player-handle');
   if (playerHandle) {
@@ -4800,7 +4802,7 @@ function renderRanking(players) {
 
     const name = document.createElement('span');
     name.className = 'ranking-name';
-    name.textContent = player.currentUser ? player.name + ' (você)' : player.name;
+    name.textContent = player.currentUser ? player.name + ' (você)' : player.name;if(player.isAscendFounder)appendFounderBadge(name);
 
     const level = document.createElement('span');
     level.className = 'ranking-nivel';
@@ -5376,7 +5378,7 @@ function connectRenderList() {
     const button = document.createElement('button'); button.type='button'; button.className='connect-row' + (row.id === connectSelected ? ' selected' : '');
     const avatar=document.createElement('span'); avatar.className='connect-avatar';
     const img=document.createElement('img'); img.alt=''; img.src=row.profileImage || AVATAR_OPTIONS[row.avatar]?.image || aetherImage; avatar.append(img);applyFrame(avatar,row.frame,false);
-    const text=document.createElement('span'); text.className='connect-row-text'; const name=document.createElement('strong'); name.textContent=row.name; const preview=document.createElement('small'); preview.textContent=row.lastMessage?.content || 'Comece a conversa'; text.append(name,preview);
+    const text=document.createElement('span'); text.className='connect-row-text'; const name=document.createElement('strong'); name.textContent=row.name;if(row.isAscendFounder)appendFounderBadge(name); const preview=document.createElement('small'); preview.textContent=row.lastMessage?.content || 'Comece a conversa'; text.append(name,preview);
     const meta=document.createElement('span'); meta.className='connect-meta'; meta.textContent=connectTime(row.updatedAt); if(row.unread){const badge=document.createElement('b');badge.textContent=row.unread;meta.append(badge);} button.append(avatar,text,meta); button.addEventListener('click',()=>connectOpen(row.id)); list.append(button);
   });
 }
