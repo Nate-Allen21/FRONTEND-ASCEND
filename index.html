@@ -28,6 +28,7 @@
   <link href="css/cyber-premium.css" rel="stylesheet" />
   <link href="css/login-cyberpunk.css" rel="stylesheet" />
   <link href="css/brand.css" rel="stylesheet" />
+  <link rel="stylesheet" href="css/genesis.css">
 </head>
 
 <body>
@@ -244,6 +245,8 @@
           <i class="bi bi-person-badge" aria-hidden="true"></i> Status
         </a>
         <a href="#view-connect" class="sidebar-link" data-view="connect"><i class="bi bi-chat-dots" aria-hidden="true"></i> Mensagens <span id="connect-unread" class="connect-badge" hidden></span></a>
+        <a href="#view-market" class="sidebar-link" data-view="market"><i class="bi bi-shop"></i> ASCEND Market</a>
+        <a href="#view-studio" class="sidebar-link" data-view="studio"><i class="bi bi-palette"></i> ASCEND Studio</a>
         <a href="#view-profile" class="sidebar-link" data-view="profile"><i class="bi bi-person-vcard" aria-hidden="true"></i> Meu perfil</a>
         <a href="#view-missions" class="sidebar-link" data-view="missions">
           <i class="bi bi-list-check" aria-hidden="true"></i> Missoes
@@ -288,6 +291,10 @@
     </aside>
 
     <main class="main-content" id="conteudo-principal" tabindex="-1">
+      <dialog class="genesis-dialog" id="genesis-dialog"></dialog>
+      <section class="genesis-page app-view" id="view-market" data-view-panel="market" hidden></section>
+      <section class="genesis-page app-view" id="view-studio" data-view-panel="studio" hidden></section>
+      <section class="genesis-page app-view" id="view-cosmetics-admin" data-view-panel="cosmetics-admin" hidden></section>
       <section class="app-view" id="view-connect" data-view-panel="connect" aria-labelledby="connect-title" hidden>
         <header class="connect-heading"><span class="ascend-eyebrow">ASCEND CONNECT</span><h1 id="connect-title">Mensagens</h1><p>Converse com outros membros do ASCEND.</p></header>
         <div class="connect-layout" id="connect-layout">
@@ -799,6 +806,7 @@
         </div>
         <section id="cosmetic-shop-panel" hidden aria-labelledby="cosmetic-shop-title">
           <div class="store-section-heading"><div><span class="ascend-eyebrow">COLEÇÃO ASCEND</span><h2 id="cosmetic-shop-title">Cosméticos e itens de perfil</h2></div><span class="store-rotation">Itens permanentes · AC <span id="cosmetic-store-status"></span></span></div>
+          <button type="button" class="store-mode" data-navigate="market">Abrir Genesis no ASCEND Market</button>
           <div class="store-categories" id="cosmetic-categories" aria-label="Filtrar cosméticos"></div>
           <div class="dashboard-grid store-grid" id="cosmetic-grid" aria-live="polite"></div>
         </section>

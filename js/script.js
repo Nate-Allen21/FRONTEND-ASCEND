@@ -1,3 +1,5 @@
+import { genesisViews } from './genesis.js';
+import { applyFrame, cosmeticAvatar } from './cosmetic-avatar.js';
 import { initExperience } from './experience.js';
 import { renderAssistantMessage } from './chat-format.js';
 import { supportsCalendarReminders, syncCalendarReminders, clearCalendarReminders, requestCalendarReminderPermission, listenForCalendarReminder } from './calendar-reminders.js';
@@ -77,6 +79,16 @@ let shopPurchasePending = false;
 let activeStoreCategory = 'TODAS';
 let inspectedStoreItem = null;
 let cosmeticStoreState = null;
+function ownFrames(item){
+  document.querySelectorAll('[data-user-avatar], #profile-edit-preview').forEach(img=>applyFrame(img.parentElement,item,img.closest('.player-avatar') !== null));
+}
+function acceptGenesis(state){
+  cosmeticStoreState=state;
+  if(currentPlayerStatus)currentPlayerStatus.coins=state.coins;
+  for(const id of ['store-balance','vault-balance','status-coins-overview','coins-val'])setText(id,formatCurrencyValue(state.coins));
+  applyEquippedCosmeticTheme(state);
+}
+const genesis=genesisViews({api:apiRequest,token:getAuthToken,portrait:()=>currentUser?.profileImage || AVATAR_OPTIONS[currentUser?.avatar]?.image || aetherImage,commit:acceptGenesis,navigate:showView});
 let activeCosmeticCategory = 'TODAS';
 let cosmeticActionPending = false;
 let aiChatPending = false;
@@ -931,6 +943,7 @@ function getFormValue(form, fieldName) {
 }
 
 function showAuthScreen() {
+  genesis.reset(); ownFrames(null); cosmeticStoreState=null;
   closeSidebar();
   const avatarScreen = getElement('avatar-onboarding');
   if (avatarScreen) {
@@ -1129,6 +1142,8 @@ async function handleAvatarConfirm() {
 function showView(viewName, activeLink = null, updateHistory = true) {
   const target = document.getElementById('view-' + viewName);
   if (!target?.matches('[data-view-panel]')) return;
+  if (['market','studio','cosmetics-admin'].includes(viewName)) genesis.open(viewName);
+  else genesis.leave();
   if (viewName === 'calendar' && getAuthToken()) calendarLoadPromise = loadCalendarEvents();
   if (viewName === 'connect') { connectEl('connect-notifications').checked = localStorage.getItem(connectPreferenceKey()) !== 'off'; connectRefresh(); }
   if (viewName === 'profile') {
@@ -1592,6 +1607,7 @@ async function loadProfileFriends() {
         avatar.appendChild(icon);
       }
       const name = document.createElement('small');
+      applyFrame(avatar,friend.frame,false);
       name.textContent = friend.name;
       button.append(avatar, name);
       button.addEventListener('click', () => loadProfileView(friend.id));
@@ -2192,6 +2208,12 @@ async function loadRoutine() {
     // A sessao e o status ja foram validados; a loja e o plano podem carregar
     // sem manter a interface autenticada bloqueada em conexoes lentas.
     showAppShell();
+    const session=getAuthToken();
+    if (!['#view-market','#view-studio'].includes(location.hash)) {
+      apiRequest('/cosmetics/equipped').then(items=>{
+        if(session===getAuthToken() && Array.isArray(items) && !cosmeticStoreState) ownFrames(items.find(i=>i.staticAsset && i.category==='PROFILE_FRAME'));
+      }).catch(()=>{});
+    }
     setAuthMessage('Sincronizando sua rotina...');
     try {
       await syncShopFromServer();
@@ -4438,7 +4460,7 @@ function renderCosmeticStore() {
   const grid = getElement('cosmetic-grid');
   if (!grid || !cosmeticStoreState) return;
   setText('cosmetic-store-status', '· ' + formatCurrencyValue(cosmeticStoreState.coins) + ' AC disponíveis');
-  const allItems = cosmeticStoreState.items || [];
+  const allItems = (cosmeticStoreState.items || []).filter(item=>!item.staticAsset);
   const categories = ['TODAS', 'MINHA COLEÇÃO', ...new Set(allItems.map((item) => item.category))];
   const nav = getElement('cosmetic-categories');
   if (nav) {
@@ -4585,6 +4607,7 @@ function setStoreMode(mode) {
 }
 
 function applyEquippedCosmeticTheme(state) {
+  ownFrames(state?.items?.find(i=>i.staticAsset && i.category==='PROFILE_FRAME' && i.equipped!==false));
   const theme = (state?.items || []).find((item) => item.category === 'THEME' && item.equipped);
   document.body.classList.toggle('cosmetic-theme-aurora', theme?.id === 'theme-aurora');
 }
@@ -4644,6 +4667,7 @@ function renderEquippedProfileCosmetics(items) {
   if (!container) return;
   container.replaceChildren();
   const equipped = items || [];
+  applyFrame(avatar?.parentElement,equipped.find(i=>i.category==='PROFILE_FRAME'));
   const avatarFrame = equipped.find((item) => item.category === 'AVATAR_FRAME');
   avatar?.parentElement?.classList.toggle('has-cosmetic-frame', Boolean(avatarFrame));
   if (avatar?.parentElement) {
@@ -4772,6 +4796,7 @@ function renderRanking(players) {
       avatarImage.hidden = true;
     }
     avatar.append(avatarImage, avatarFallback);
+    applyFrame(avatar,player.frame,false);
 
     const name = document.createElement('span');
     name.className = 'ranking-name';
@@ -5340,7 +5365,7 @@ async function connectLoadDetails(row){
   const level=document.createElement('p');level.textContent='Nível '+profile.level+' · Rank '+profile.rank;
   const bio=document.createElement('p');bio.textContent=profile.bio || 'Este jogador ainda não adicionou uma bio.';
   const tags=document.createElement('p');tags.textContent=(profile.tags||[]).join(' · ');
-  const button=document.createElement('button');button.type='button';button.className='btn-timer';button.textContent='Ver perfil';button.onclick=()=>{showView('profile');loadProfileView(row.userId);};panel.append(image,title,handle,level,bio,tags,button);
+  const button=document.createElement('button');button.type='button';button.className='btn-timer';button.textContent='Ver perfil';button.onclick=()=>{showView('profile');loadProfileView(row.userId);};panel.append(cosmeticAvatar(image.src,profile.equippedCosmetics?.find(i=>i.category==="PROFILE_FRAME"),{size:76,animated:false}),title,handle,level,bio,tags,button);
  }catch(error){if(connectSelected===row.id)panel.textContent='Perfil indisponível.';}
 }
 function connectTime(value) { return value ? new Date(value).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : ''; }
@@ -5350,7 +5375,7 @@ function connectRenderList() {
   connectRows.forEach(row => {
     const button = document.createElement('button'); button.type='button'; button.className='connect-row' + (row.id === connectSelected ? ' selected' : '');
     const avatar=document.createElement('span'); avatar.className='connect-avatar';
-    const img=document.createElement('img'); img.alt=''; img.src=row.profileImage || AVATAR_OPTIONS[row.avatar]?.image || aetherImage; avatar.append(img);
+    const img=document.createElement('img'); img.alt=''; img.src=row.profileImage || AVATAR_OPTIONS[row.avatar]?.image || aetherImage; avatar.append(img);applyFrame(avatar,row.frame,false);
     const text=document.createElement('span'); text.className='connect-row-text'; const name=document.createElement('strong'); name.textContent=row.name; const preview=document.createElement('small'); preview.textContent=row.lastMessage?.content || 'Comece a conversa'; text.append(name,preview);
     const meta=document.createElement('span'); meta.className='connect-meta'; meta.textContent=connectTime(row.updatedAt); if(row.unread){const badge=document.createElement('b');badge.textContent=row.unread;meta.append(badge);} button.append(avatar,text,meta); button.addEventListener('click',()=>connectOpen(row.id)); list.append(button);
   });

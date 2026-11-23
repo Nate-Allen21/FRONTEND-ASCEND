@@ -128,6 +128,49 @@ async function navigateOnMobile(page, view) {
   await page.locator('.command-result').first().click();
 }
 
+test('Genesis previews original artwork, filters ownership and equips one frame across views', async ({page})=>{
+  const errors=await setup(page);
+  let coins=500;
+  const items=['RARE','EPIC','LEGENDARY'].map((rarity,index)=>{
+    const id='genesis-frame-0'+(index+1),root='/cosmetics/genesis/';
+    return {id,category:'PROFILE_FRAME',slot:'AVATAR_FRAME',collection:'GENESIS',name:['Genesis Core','Genesis Circuit Crown','Genesis Quantum Halo'][index],rarity,cost:[500,1000,1800][index],description:'Moldura Genesis',owned:false,equipped:false,staticAsset:root+'frames/'+id+'-static.png',animatedAsset:root+'frames/'+id+'-animated.webp',previewUrl:root+'thumbnails/'+id+'.webp'};
+  });
+  await page.route('**/api/cosmetics**',async route=>{
+    const path=new URL(route.request().url()).pathname, method=route.request().method();
+    if(path.endsWith('capabilities'))return route.fulfill({json:{admin:false}});
+    if(path.endsWith('purchase')){items[0].owned=true;coins=0;}
+    if(path.endsWith('/equipped') && method==='PUT')items[0].equipped=true;
+    if(method==='DELETE')items[0].equipped=false;
+    await route.fulfill({json:{items,coins}});
+  });
+  await page.locator('#app-sidebar [data-view=market]').click();
+  const market=page.locator('#view-market'), cards=market.locator('.genesis-card');
+  await expect(cards).toHaveCount(3);
+  await market.getByRole('button',{name:'Lendários'}).click();
+  await expect(cards).toHaveCount(1);await expect(cards).toContainText('Quantum');
+  await market.getByRole('button',{name:'Todos',exact:true}).click();
+  await cards.first().getByText('Visualizar').click();
+  const dialog=page.getByRole('dialog');
+  const overlay=dialog.locator('picture img');
+  await expect.poll(()=>overlay.evaluate(img=>img.complete && img.currentSrc.endsWith('-animated.webp'))).toBe(true);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await expect.poll(()=>overlay.evaluate(img=>img.complete && img.currentSrc.endsWith('-static.png'))).toBe(true);
+  await dialog.getByRole('button',{name:'Comprar'}).click();
+  await market.getByRole('button',{name:'Meu inventário'}).click();
+  const studio=page.locator('#view-studio'),stage=studio.locator('.genesis-stage');
+  await studio.getByRole('button',{name:'Experimentar'}).last().click();
+  await expect(stage).toContainText('Quantum');
+  await expect(page.locator('.user-avatar--topbar picture')).toHaveCount(0);
+  await studio.getByRole('button',{name:'Experimentar'}).first().click();
+  await stage.getByRole('button',{name:'Equipar',exact:true}).click();
+  await expect(page.locator('.user-avatar--topbar picture img')).toHaveAttribute('src',items[0].staticAsset);
+  await stage.getByRole('button',{name:'Desequipar'}).click();
+  await expect(page.locator('.user-avatar--topbar picture')).toHaveCount(0);
+  await page.setViewportSize({width:390,height:844});
+  expect(await studio.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
 async function setup(page, authenticated = true, onboardingCompleted = true) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
