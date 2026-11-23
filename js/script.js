@@ -30,8 +30,8 @@ const APP_TIME_ZONE = 'America/Sao_Paulo';
 function appendFounderBadge(host){const b=document.createElement('span');b.className='founder-badge';b.title='Fundador do ASCEND — Reconhecimento exclusivo aos responsáveis pela criação e evolução do ASCEND.';b.setAttribute('role','img');b.setAttribute('aria-label','Fundador do ASCEND');const i=document.createElement('img');i.src='/founder/ascend-fundador-20.svg';i.alt='';i.width=20;i.height=20;b.append(i);host.append(b)}
 function setFounderName(id,name,founder){const h=getElement(id);if(!h)return;h.textContent=name;if(founder)appendFounderBadge(h)}
 const AVATAR_OPTIONS = {
-  male: { image: aetherImage, label: 'AETHER Ã¢â‚¬â€ GuardiÃƒÂ£o da evoluÃƒÂ§ÃƒÂ£o' },
-  female: { image: astraImage, label: 'ASTRA Ã¢â‚¬â€ AmbiÃƒÂ§ÃƒÂ£o, forÃƒÂ§a e inteligÃƒÂªncia' }
+  male: { image: aetherImage, label: 'AETHER — Guardião da evolução' },
+  female: { image: astraImage, label: 'ASTRA — Ambição, força e inteligência' }
 };
 const DEFAULT_WORKOUT_DAYS = ['segunda', 'quarta', 'sexta'];
 const WORKOUT_DAY_ORDER = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
@@ -500,7 +500,7 @@ async function discoverApiBaseUrl() {
   }
 
   throw new Error(
-    'NÃƒÂ£o foi possÃƒÂ­vel conectar ao servidor ASCEND. Verifique sua conexÃƒÂ£o e se o backend estÃƒÂ¡ em execuÃƒÂ§ÃƒÂ£o; depois tente novamente.'
+    'Não foi possível conectar ao servidor ASCEND. Verifique sua conexão e se o backend está em execução; depois tente novamente.'
   );
 }
 
@@ -768,7 +768,7 @@ function getStoredCustomization() {
   try {
     const stored = JSON.parse(localStorage.getItem(CUSTOMIZATION_STORAGE_KEY));
     if (stored && THEME_PRESETS[stored.preset]) return { preset: stored.preset, glow: Number(stored.glow ?? 72), glass: Number(stored.glass) || 58, ambient: stored.ambient !== false };
-  } catch (error) { /* Usa o padrÃƒÂ£o abaixo. */ }
+  } catch (error) { /* Usa o padrão abaixo. */ }
   const legacyAccent = localStorage.getItem(ACCENT_STORAGE_KEY);
   return { preset: 'blue', glow: 72, glass: 58, ambient: true, legacyAccent: legacyAccent || '' };
 }
@@ -1021,7 +1021,7 @@ function updateAvatarConfirmButton() {
   if (label) {
     label.textContent = avatarSavePending
       ? 'SALVANDO...'
-      : avatarSelectionMode === 'profile' ? 'CONFIRMAR ALTERAÃƒâ€¡ÃƒÆ’O' : 'CONFIRMAR ESCOLHA';
+      : avatarSelectionMode === 'profile' ? 'CONFIRMAR ALTERAÇÃO' : 'CONFIRMAR ESCOLHA';
   }
 }
 
@@ -1060,11 +1060,11 @@ function openAvatarOnboarding(mode = 'onboarding') {
     }
   }
 
-  setText('avatar-eyebrow', mode === 'profile' ? 'CONFIGURAÃƒâ€¡ÃƒÆ’O DE PERFIL' : 'SEU PRIMEIRO PASSO');
-  setText('avatar-title', mode === 'profile' ? 'MUDE SUA ESSÃƒÅ NCIA' : 'ESCOLHA SUA ESSÃƒÅ NCIA');
+  setText('avatar-eyebrow', mode === 'profile' ? 'CONFIGURAÇÃO DE PERFIL' : 'SEU PRIMEIRO PASSO');
+  setText('avatar-title', mode === 'profile' ? 'MUDE SUA ESSÊNCIA' : 'ESCOLHA SUA ESSÊNCIA');
   setText('avatar-subtitle', mode === 'profile'
-    ? 'Sua jornada pode mudar. Escolha o personagem que representa vocÃƒÂª agora.'
-    : 'Todo grande progresso comeÃƒÂ§a com uma escolha. Selecione o personagem que representarÃƒÂ¡ sua jornada.');
+    ? 'Sua jornada pode mudar. Escolha o personagem que representa você agora.'
+    : 'Todo grande progresso começa com uma escolha. Selecione o personagem que representará sua jornada.');
   const cancelButton = getElement('avatar-cancel');
   if (cancelButton) cancelButton.hidden = mode !== 'profile';
   document.querySelectorAll('[data-avatar-choice]').forEach((button) => {
@@ -1099,7 +1099,7 @@ async function handleAvatarConfirm() {
   const confirmButton = getElement('avatar-confirm');
   avatarSavePending = true;
   updateAvatarConfirmButton();
-  setStatusMessage('avatar-message', 'Salvando sua identidade com seguranÃƒÂ§a...', true);
+  setStatusMessage('avatar-message', 'Salvando sua identidade com segurança...', true);
 
   try {
     const savedUser = await apiRequest('/auth/avatar', {
@@ -1107,7 +1107,7 @@ async function handleAvatarConfirm() {
       body: JSON.stringify({ avatar: selectedAvatar })
     });
     if (savedUser?.avatar !== selectedAvatar || savedUser?.onboardingCompleted !== true) {
-      throw new Error('NÃƒÂ£o foi possÃƒÂ­vel confirmar o salvamento do avatar. Tente novamente.');
+      throw new Error('Não foi possível confirmar o salvamento do avatar. Tente novamente.');
     }
 
     renderUserIdentity(savedUser);
@@ -1134,7 +1134,7 @@ async function handleAvatarConfirm() {
       setAuthMessage(error.message);
       return;
     }
-    setStatusMessage('avatar-message', error.message || 'NÃƒÂ£o foi possÃƒÂ­vel salvar seu avatar. Tente novamente.');
+    setStatusMessage('avatar-message', error.message || 'Não foi possível salvar seu avatar. Tente novamente.');
   } finally {
     avatarSavePending = false;
     if (confirmButton && !getElement('avatar-onboarding')?.hidden) updateAvatarConfirmButton();
@@ -1154,7 +1154,7 @@ function showView(viewName, activeLink = null, updateHistory = true) {
   }
   if (updateHistory && location.hash !== '#view-' + viewName) history.pushState(null, '', '#view-' + viewName);
   const label = document.querySelector('.sidebar-link[data-view="' + viewName + '"]')?.textContent.trim();
-  document.title = 'ASCEND Ã‚Â· ' + (label || 'Sua evoluÃƒÂ§ÃƒÂ£o');
+  document.title = 'ASCEND · ' + (label || 'Sua evolução');
   closeSidebar();
   document.querySelectorAll('[data-view-panel]').forEach((panel) => {
     const isActive = panel.dataset.viewPanel === viewName;
@@ -1250,7 +1250,7 @@ async function loadProfileView(profileId = viewingProfileId) {
     if (!posts.length) {
       const empty = document.createElement('p');
       empty.className = 'feature-copy';
-      empty.textContent = 'Suas publicaÃƒÂ§ÃƒÂµes aparecerÃƒÂ£o aqui.';
+      empty.textContent = 'Suas publicações aparecerão aqui.';
       postsContainer.appendChild(empty);
     }
     posts.forEach((post) => {
@@ -1259,7 +1259,7 @@ async function loadProfileView(profileId = viewingProfileId) {
       const header = document.createElement('div');
       header.className = 'ascend-profile-post-meta';
       const author = document.createElement('strong');
-      author.textContent = profile.name + ' Ã‚Â· @' + profile.username;
+      author.textContent = profile.name + ' · @' + profile.username;
       const date = document.createElement('time');
       date.dateTime = post.createdAt;
       date.textContent = new Date(post.createdAt).toLocaleString('pt-BR');
@@ -1272,8 +1272,8 @@ async function loadProfileView(profileId = viewingProfileId) {
       const like = document.createElement('button');
       like.type = 'button';
       like.className = 'btn-timer';
-      like.textContent = (post.liked ? 'Ã¢â„¢Â¥ ' : 'Ã¢â„¢Â¡ ') + post.likes;
-      like.setAttribute('aria-label', 'Curtir publicaÃƒÂ§ÃƒÂ£o');
+      like.textContent = (post.liked ? '♥ ' : '♡ ') + post.likes;
+      like.setAttribute('aria-label', 'Curtir publicação');
       like.addEventListener('click', async () => {
         try {
           await apiRequest('/profile/posts/' + encodeURIComponent(post.id) + '/like', { method: 'POST' });
@@ -1286,23 +1286,23 @@ async function loadProfileView(profileId = viewingProfileId) {
       const comments = document.createElement('button');
       comments.type = 'button';
       comments.className = 'btn-timer';
-      comments.textContent = 'ComentÃƒÂ¡rios (' + post.comments + ')';
+      comments.textContent = 'Comentários (' + post.comments + ')';
       comments.addEventListener('click', async () => {
         try {
           const rows = await apiRequest('/profile/posts/' + encodeURIComponent(post.id) + '/comments');
           const current = rows.map((comment) =>
-            '#' + comment.id + (comment.parentId ? ' Ã¢â€ Â³ #' + comment.parentId : '') +
+            '#' + comment.id + (comment.parentId ? ' ↳ #' + comment.parentId : '') +
             ' ' + comment.name + ': ' + comment.content
           ).join('\n');
           const parentText = rows.length
-            ? window.prompt((current || '') + '\n\nID para responder (vazio cria comentÃƒÂ¡rio):', '')
+            ? window.prompt((current || '') + '\n\nID para responder (vazio cria comentário):', '')
             : '';
           if (parentText === null) return;
-          const content = window.prompt('Escreva seu comentÃƒÂ¡rio ou resposta:');
+          const content = window.prompt('Escreva seu comentário ou resposta:');
           if (content === null || !content.trim()) return;
           const parentId = parentText?.trim() ? Number(parentText.replace(/^#/, '')) : null;
           if (parentId && !rows.some((comment) => comment.id === parentId)) {
-            setText('profile-feedback', 'Esse comentÃƒÂ¡rio nÃƒÂ£o foi encontrado.');
+            setText('profile-feedback', 'Esse comentário não foi encontrado.');
             return;
           }
           await apiRequest('/profile/posts/' + encodeURIComponent(post.id) + '/comments', {
@@ -1338,12 +1338,12 @@ async function loadProfileView(profileId = viewingProfileId) {
     if (ownProfile) {
       loadProfileFriends();
     } else {
-      getElement('profile-friends').textContent = 'A lista de amigos nÃƒÂ£o ÃƒÂ© exibida neste perfil.';
+      getElement('profile-friends').textContent = 'A lista de amigos não é exibida neste perfil.';
       setText('profile-friend-count', profile.friendStatus === 'ACCEPTED' ? 'Amigo' : '');
     }
   } catch (error) {
     postsContainer.classList.remove('is-loading');
-    postsContainer.textContent = 'NÃƒÂ£o foi possÃƒÂ­vel carregar o perfil: ' + error.message;
+    postsContainer.textContent = 'Não foi possível carregar o perfil: ' + error.message;
   }
 }
 
@@ -1353,8 +1353,8 @@ function renderProfileMetrics(profile, ownProfile) {
   const posts = Array.isArray(profile.posts) ? profile.posts.length : 0;
   const following = ownProfile ? profile.following : profile.followingCount;
   [
-    ['NÃƒÂVEL', profile.level, 'bi-bar-chart-line'],
-    ['PUBLICAÃƒâ€¡Ãƒâ€¢ES', posts, 'bi-chat-square-text'],
+    ['NÍVEL', profile.level, 'bi-bar-chart-line'],
+    ['PUBLICAÇÕES', posts, 'bi-chat-square-text'],
     ['SEGUIDORES', profile.followers ?? 0, 'bi-people'],
     ['SEGUINDO', following ?? 0, 'bi-person-plus']
   ].forEach(([label, value, icon]) => {
@@ -1379,11 +1379,11 @@ function renderProfileLevel(profile, ownProfile) {
   const level = getElement('profile-level');
   level.replaceChildren();
   const badge = document.createElement('strong');
-  badge.textContent = 'NÃƒÂVEL ' + (profile.level ?? 1) + ' Ã‚Â· ' + (profile.rank || 'E');
+  badge.textContent = 'NÍVEL ' + (profile.level ?? 1) + ' · ' + (profile.rank || 'E');
   level.appendChild(badge);
   if (!ownProfile) {
     const note = document.createElement('small');
-    note.textContent = 'Progresso detalhado disponÃƒÂ­vel apenas no seu perfil.';
+    note.textContent = 'Progresso detalhado disponível apenas no seu perfil.';
     level.appendChild(note);
     return;
   }
@@ -1404,15 +1404,15 @@ function renderProfileOverview(profile, ownProfile, status) {
   node.replaceChildren();
   const entries = ownProfile
     ? [
-        ['MISSÃƒâ€¢ES CONCLUÃƒÂDAS', getStatValue(status, 'missions'), 'bi-check2-circle'],
+        ['MISSÕES CONCLUÍDAS', getStatValue(status, 'missions'), 'bi-check2-circle'],
         ['XP ACUMULADO', Number(profile.xp || 0).toLocaleString('pt-BR'), 'bi-stars'],
         ['DIAS DE ATIVIDADE', Number(profile.streakDays || 0), 'bi-fire'],
         ['ATRIBUTO MAIS FORTE', getStrongestAttribute(status), 'bi-lightning-charge']
       ]
     : [
-        ['NÃƒÂVEL', profile.level, 'bi-bar-chart-line'],
+        ['NÍVEL', profile.level, 'bi-bar-chart-line'],
         ['PATENTE', profile.rank, 'bi-shield-check'],
-        ['PUBLICAÃƒâ€¡Ãƒâ€¢ES', Array.isArray(profile.posts) ? profile.posts.length : 0, 'bi-chat-square-text'],
+        ['PUBLICAÇÕES', Array.isArray(profile.posts) ? profile.posts.length : 0, 'bi-chat-square-text'],
         ['SEGUIDORES', profile.followers ?? 0, 'bi-people']
       ];
 
@@ -1425,7 +1425,7 @@ function renderProfileOverview(profile, ownProfile, status) {
     const caption = document.createElement('small');
     caption.textContent = label;
     const amount = document.createElement('strong');
-    amount.textContent = String(value ?? 'Ã¢â‚¬â€');
+    amount.textContent = String(value ?? '—');
     card.append(mark, caption, amount);
     node.appendChild(card);
   });
@@ -1436,11 +1436,11 @@ function renderProfileAchievements(ownProfile, unlocked) {
     const node = getElement(id);
     node.replaceChildren();
     if (!ownProfile) {
-      node.textContent = 'As conquistas nÃƒÂ£o sÃƒÂ£o exibidas neste perfil.';
+      node.textContent = 'As conquistas não são exibidas neste perfil.';
       return;
     }
     if (!unlocked.length) {
-      node.textContent = 'Complete missÃƒÂµes para desbloquear conquistas.';
+      node.textContent = 'Complete missões para desbloquear conquistas.';
       return;
     }
     const achievements = id === 'profile-side-achievements'
@@ -1477,7 +1477,7 @@ function getStrongestAttribute(status) {
     .filter((entry) => entry.key !== 'missions' && Number.isFinite(Number(entry.value)))
     .sort((left, right) => Number(right.value) - Number(left.value));
   return attributes.length
-    ? attributes[0].name + ' Ã‚Â· ' + attributes[0].value
+    ? attributes[0].name + ' · ' + attributes[0].value
     : 'Sem dados';
 }
 
@@ -1489,17 +1489,17 @@ function renderProfileDetails(profile, ownProfile, status) {
     : [];
   const entries = ownProfile
     ? [
-        ['MissÃƒÂµes concluÃƒÂ­das', getStatValue(status, 'missions')],
+        ['Missões concluídas', getStatValue(status, 'missions')],
         ['XP acumulado', Number(profile.xp || 0).toLocaleString('pt-BR')],
-        ['NÃƒÂ­vel atual', profile.level],
+        ['Nível atual', profile.level],
         ['Patente', profile.rank],
         ['Dias consecutivos', Number(profile.streakDays || 0)],
         ...stats.map((entry) => [entry.name, entry.value])
       ]
     : [
-        ['NÃƒÂ­vel atual', profile.level],
+        ['Nível atual', profile.level],
         ['Patente', profile.rank],
-        ['PublicaÃƒÂ§ÃƒÂµes', Array.isArray(profile.posts) ? profile.posts.length : 0],
+        ['Publicações', Array.isArray(profile.posts) ? profile.posts.length : 0],
         ['Seguidores', profile.followers ?? 0]
       ];
   entries.forEach(([name, value]) => {
@@ -1508,7 +1508,7 @@ function renderProfileDetails(profile, ownProfile, status) {
     const label = document.createElement('span');
     label.textContent = name;
     const amount = document.createElement('strong');
-    amount.textContent = String(value ?? 'Ã¢â‚¬â€');
+    amount.textContent = String(value ?? '—');
     row.append(label, amount);
     node.appendChild(row);
   });
@@ -1524,7 +1524,7 @@ function configureProfileActions(profile, ownProfile) {
   const friendStatus = profile.friendStatus || 'NONE';
   const labels = {
     ACCEPTED: 'Remover amizade',
-    OUTGOING: 'Cancelar solicitaÃƒÂ§ÃƒÂ£o',
+    OUTGOING: 'Cancelar solicitação',
     INCOMING: 'Aceitar amizade',
     NONE: 'Adicionar amigo'
   };
@@ -1586,7 +1586,7 @@ async function loadProfileFriends() {
     node.replaceChildren();
     setText('profile-friend-count', friends.length + (friends.length === 1 ? ' amigo' : ' amigos'));
     if (!friends.length) {
-      node.textContent = 'Sua lista de amigos aparecerÃƒÂ¡ aqui.';
+      node.textContent = 'Sua lista de amigos aparecerá aqui.';
       return;
     }
     friends.slice(0, 8).forEach((friend) => {
@@ -1617,7 +1617,7 @@ async function loadProfileFriends() {
     });
   } catch (error) {
     if (profileId !== viewingProfileId) return;
-    node.textContent = 'NÃƒÂ£o foi possÃƒÂ­vel carregar os amigos: ' + error.message;
+    node.textContent = 'Não foi possível carregar os amigos: ' + error.message;
   }
 }
 
@@ -1662,7 +1662,7 @@ async function saveProfilePost(event) {
       body: JSON.stringify({ content: input.value })
     });
     input.value = '';
-    feedback.textContent = 'PublicaÃƒÂ§ÃƒÂ£o salva.';
+    feedback.textContent = 'Publicação salva.';
     await loadProfileView();
   } catch (error) {
     feedback.textContent = error.message;
@@ -1684,7 +1684,7 @@ async function editProfile() {
     if (!dialog.open) dialog.showModal();
     getElement('profile-edit-name').focus();
   } catch (error) {
-    setText('profile-feedback', 'NÃƒÂ£o foi possÃƒÂ­vel abrir a ediÃƒÂ§ÃƒÂ£o: ' + error.message);
+    setText('profile-feedback', 'Não foi possível abrir a edição: ' + error.message);
   }
 }
 
@@ -1708,7 +1708,7 @@ async function optimizeProfileImage(file) {
     throw new Error('Escolha uma imagem JPG, PNG ou WebP.');
   }
   if (file.size > 8 * 1024 * 1024) {
-    throw new Error('A imagem deve ter no mÃƒÂ¡ximo 8 MB.');
+    throw new Error('A imagem deve ter no máximo 8 MB.');
   }
 
   const bitmap = await createImageBitmap(file);
@@ -1719,7 +1719,7 @@ async function optimizeProfileImage(file) {
       canvas.width = Math.max(1, Math.round(bitmap.width * scale));
       canvas.height = Math.max(1, Math.round(bitmap.height * scale));
       const context = canvas.getContext('2d');
-      if (!context) throw new Error('NÃƒÂ£o foi possÃƒÂ­vel preparar a imagem neste navegador.');
+      if (!context) throw new Error('Não foi possível preparar a imagem neste navegador.');
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
@@ -1730,13 +1730,13 @@ async function optimizeProfileImage(file) {
           return await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.addEventListener('load', () => resolve(reader.result), { once: true });
-            reader.addEventListener('error', () => reject(new Error('NÃƒÂ£o foi possÃƒÂ­vel ler a imagem preparada.')), { once: true });
+            reader.addEventListener('error', () => reject(new Error('Não foi possível ler a imagem preparada.')), { once: true });
             reader.readAsDataURL(blob);
           });
         }
       }
     }
-    throw new Error('NÃƒÂ£o foi possÃƒÂ­vel reduzir a imagem abaixo de 96 KB. Escolha uma imagem menor.');
+    throw new Error('Não foi possível reduzir a imagem abaixo de 96 KB. Escolha uma imagem menor.');
   } finally {
     bitmap.close();
   }
@@ -1774,7 +1774,7 @@ async function saveProfileEdits(event) {
     .map((tag) => tag.trim())
     .filter(Boolean);
   if (tags.length > 5) {
-    setStatusMessage('profile-edit-feedback', 'VocÃƒÂª pode escolher no mÃƒÂ¡ximo 5 tags.');
+    setStatusMessage('profile-edit-feedback', 'Você pode escolher no máximo 5 tags.');
     return;
   }
   if (name.length < 2 || name.length > 80) {
@@ -1783,7 +1783,7 @@ async function saveProfileEdits(event) {
   }
 
   saveButton.disabled = true;
-  setStatusMessage('profile-edit-feedback', 'Salvando alteraÃƒÂ§ÃƒÂµes...', true);
+  setStatusMessage('profile-edit-feedback', 'Salvando alterações...', true);
   try {
     const savedProfile = await apiRequest('/profile', {
       method: 'PUT',
@@ -1832,7 +1832,7 @@ async function searchPlayers() {
       const name = document.createElement('button');
       name.type = 'button';
       name.className = 'btn-timer';
-      name.textContent = player.name + ' Ã‚Â· @' + player.username;
+      name.textContent = player.name + ' · @' + player.username;
       name.addEventListener('click', () => loadProfileView(player.id));
 
       const action = (label, callback) => {
@@ -1856,7 +1856,7 @@ async function searchPlayers() {
       const friendAction = player.friendStatus === 'ACCEPTED'
         ? 'Remover amizade'
         : player.friendStatus === 'OUTGOING'
-          ? 'Cancelar solicitaÃƒÂ§ÃƒÂ£o'
+          ? 'Cancelar solicitação'
           : player.friendStatus === 'INCOMING'
             ? 'Aceitar amizade'
             : 'Adicionar amigo';
@@ -1898,14 +1898,14 @@ async function loadFriendRequests() {
     container.classList.remove('is-loading');
     container.replaceChildren();
     if (!requests.length) {
-      container.textContent = 'Nenhuma solicitaÃƒÂ§ÃƒÂ£o pendente.';
+      container.textContent = 'Nenhuma solicitação pendente.';
       return;
     }
     requests.forEach((request) => {
       const row = document.createElement('div');
       row.className = 'ascend-player-row';
       const name = document.createElement('strong');
-      name.textContent = request.name + ' Ã‚Â· @' + request.username;
+      name.textContent = request.name + ' · @' + request.username;
       const accept = document.createElement('button');
       accept.type = 'button';
       accept.className = 'btn-timer';
@@ -2024,7 +2024,7 @@ async function handleLogin(event) {
   const submitButton = form.querySelector('button[type="submit"]');
 
   submitButton.disabled = true;
-  setAuthMessage('Conectando ao servidor... Se for a primeira tentativa em algum tempo, aguarde; nÃƒÂ£o precisa clicar novamente.');
+  setAuthMessage('Conectando ao servidor... Se for a primeira tentativa em algum tempo, aguarde; não precisa clicar novamente.');
 
   try {
     const data = await apiRequest('/auth/login', {
@@ -2074,7 +2074,7 @@ async function handleRegister(event) {
 
 async function handleGoogleCredential(response) {
   if (!response?.credential) {
-    setAuthMessage('O Google nÃƒÂ£o retornou uma credencial vÃƒÂ¡lida.');
+    setAuthMessage('O Google não retornou uma credencial válida.');
     return;
   }
   const button = getElement('btn-google-login');
@@ -2107,7 +2107,7 @@ function initGoogleSignIn() {
   }
   button.addEventListener('click', () => {
     if (!wrapper?.classList.contains('is-configured')) {
-      setAuthMessage('O Google ainda estÃƒÂ¡ carregando. Tente novamente em instantes.');
+      setAuthMessage('O Google ainda está carregando. Tente novamente em instantes.');
     }
   });
   const waitForGoogle = () => {
@@ -2220,7 +2220,7 @@ async function loadRoutine() {
     try {
       await syncShopFromServer();
     } catch (shopError) {
-      setShopMessage('A loja estÃƒÂ¡ temporariamente indisponÃƒÂ­vel: ' + shopError.message);
+      setShopMessage('A loja está temporariamente indisponível: ' + shopError.message);
     }
     const profile = getRoutineProfile();
     hydratePlannerForm(profile);
@@ -2238,7 +2238,7 @@ async function loadRoutine() {
       if (pendingCalendarNotification) openCalendarNotification(pendingCalendarNotification);
     }
   } catch (error) {
-    // NÃƒÂ£o apaga a sessÃƒÂ£o por um erro temporÃƒÂ¡rio de rede/hosting.
+    // Não apaga a sessão por um erro temporário de rede/hosting.
     if (error.status === 401 || error.status === 403) {
       clearAuthToken();
       clearCalendarReminders().catch(() => {});
@@ -2248,7 +2248,7 @@ async function loadRoutine() {
       setAuthMessage(error.message);
     } else {
       showAuthScreen();
-      setAuthMessage('Servidor indisponÃƒÂ­vel: ' + error.message + ' Seus dados de login foram preservados; recarregue para tentar novamente.');
+      setAuthMessage('Servidor indisponível: ' + error.message + ' Seus dados de login foram preservados; recarregue para tentar novamente.');
     }
   }
 }
@@ -2449,7 +2449,7 @@ function renderCalendar(plan, profile) {
   if (summary) {
     const missionCount = dailyMissions.length;
     summary.textContent = missionCount
-      ? 'Linha do tempo montada com ' + missionCount + ' missÃƒÂµes diÃƒÂ¡rias, treino em ' + normalizedProfile.workoutDays.length + ' dias e foco em ' + priorityText + '.'
+      ? 'Linha do tempo montada com ' + missionCount + ' missões diárias, treino em ' + normalizedProfile.workoutDays.length + ' dias e foco em ' + priorityText + '.'
       : 'Aguardando o plano inteligente para montar sua linha do tempo.';
   }
 
@@ -2641,8 +2641,8 @@ function renderAgendaForDate(dateKey, events, agendaList, agendaDate) {
     meta.className = 'agenda-item-meta';
     meta.textContent = event.meta;
     const conflict = event.startTime && event.endTime && events.some(other => other !== event && other.dateKey === event.dateKey && other.startTime && other.endTime && event.startTime < other.endTime && other.startTime < event.endTime);
-    if (conflict) meta.textContent += ' Ã‚Â· Conflito de horÃƒÂ¡rio';
-    if (calendarView !== 'day') meta.textContent = event.dateKey + ' Ã‚Â· ' + meta.textContent;
+    if (conflict) meta.textContent += ' · Conflito de horário';
+    if (calendarView !== 'day') meta.textContent = event.dateKey + ' · ' + meta.textContent;
     const actions = document.createElement('div'); actions.className = 'calendar-item-actions';
     const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = 'Editar'; edit.addEventListener('click', () => openCalendarEvent(event));
     const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Excluir'; remove.addEventListener('click', () => deleteCalendarEvent(event));
@@ -2705,19 +2705,19 @@ async function loadCalendarEvents() {
   try {
     const data = await apiRequest('/calendar/events');
     if (sequence !== calendarLoadSequence) return;
-    if (!Array.isArray(data)) throw new Error('Resposta invÃƒÂ¡lida do calendÃƒÂ¡rio.');
+    if (!Array.isArray(data)) throw new Error('Resposta inválida do calendário.');
     savedCalendarEvents = data; getElement('calendar-sync-status').textContent = ''; refreshEditableCalendar();
     if (supportsCalendarReminders() && currentUser?.id) {
       try {
         const result = await syncCalendarReminders(data, currentUser.id);
-        if (sequence === calendarLoadSequence && result?.truncated) getElement('calendar-sync-status').textContent = 'Alguns lembretes nÃƒÂ£o foram agendados: limite de 256 atingido.';
+        if (sequence === calendarLoadSequence && result?.truncated) getElement('calendar-sync-status').textContent = 'Alguns lembretes não foram agendados: limite de 256 atingido.';
       } catch (reminderError) {
-        if (sequence === calendarLoadSequence) getElement('calendar-sync-status').textContent = 'NÃƒÂ£o foi possÃƒÂ­vel atualizar os lembretes neste aparelho.';
+        if (sequence === calendarLoadSequence) getElement('calendar-sync-status').textContent = 'Não foi possível atualizar os lembretes neste aparelho.';
       }
     }
   } catch (error) {
-    if (sequence === calendarLoadSequence) { getElement('calendar-sync-status').textContent = 'NÃƒÂ£o foi possÃƒÂ­vel carregar as atividades salvas. Verifique a conexÃƒÂ£o e tente novamente.'; }
-    console.warn('NÃƒÂ£o foi possÃƒÂ­vel carregar atividades:', error.message);
+    if (sequence === calendarLoadSequence) { getElement('calendar-sync-status').textContent = 'Não foi possível carregar as atividades salvas. Verifique a conexão e tente novamente.'; }
+    console.warn('Não foi possível carregar atividades:', error.message);
   }
 }
 function mergeCalendarEvents(generated, year, month) {
@@ -2731,7 +2731,7 @@ function mergeCalendarEvents(generated, year, month) {
       if (dateKey < event.date) continue;
       const delta = Math.round((Date.UTC(year, month, day) - Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000);
       if (!(dateKey === event.date || event.recurrence === 'daily' || event.recurrence === 'weekly' && delta % 7 === 0 || event.recurrence === 'monthly' && day === start.getDate())) continue;
-      result.push({...event, dateKey, kind: 'mission', meta: [event.startTime && (event.startTime + (event.endTime ? 'Ã¢â‚¬â€œ' + event.endTime : '')), event.category, event.completed ? 'ConcluÃƒÂ­da' : '', event.protectedEvent ? 'Protegida' : '', event.description].filter(Boolean).join(' Ã‚Â· ')});
+      result.push({...event, dateKey, kind: 'mission', meta: [event.startTime && (event.startTime + (event.endTime ? '–' + event.endTime : '')), event.category, event.completed ? 'Concluída' : '', event.protectedEvent ? 'Protegida' : '', event.description].filter(Boolean).join(' · ')});
     }
   }
   return result;
@@ -2747,24 +2747,24 @@ function openCalendarEvent(event = null) {
   getElement('calendar-event-dialog').showModal();
 }
 async function deleteCalendarEvent(event) {
-  if (!window.confirm('Excluir esta atividade? Em atividades recorrentes, toda a sÃƒÂ©rie serÃƒÂ¡ excluÃƒÂ­da.')) return;
+  if (!window.confirm('Excluir esta atividade? Em atividades recorrentes, toda a série será excluída.')) return;
   try {
     if (event.id) await apiRequest('/calendar/events/' + event.id, {method:'DELETE'});
     else { const created = await apiRequest('/calendar/events', {method:'POST', body:JSON.stringify({title:event.title, description:event.meta, date:event.dateKey, recurrence:'none', sourceKey:event.sourceKey})}); await apiRequest('/calendar/events/' + created.id, {method:'DELETE'}); }
     await loadCalendarEvents();
-  } catch (error) { window.alert('NÃƒÂ£o foi possÃƒÂ­vel excluir: ' + error.message); }
+  } catch (error) { window.alert('Não foi possível excluir: ' + error.message); }
 }
 function setupEditableCalendar() {
   getElement('calendar-add').addEventListener('click', () => openCalendarEvent());
   const reminderButton = getElement('calendar-enable-reminders');
   if (supportsCalendarReminders()) {
     reminderButton.hidden = false;
-    getElement('calendar-reminder-help').textContent = 'No Android, os prÃƒÂ³ximos 60 dias sÃƒÂ£o atualizados ao abrir o aplicativo; o sistema pode atrasar o aviso.';
+    getElement('calendar-reminder-help').textContent = 'No Android, os próximos 60 dias são atualizados ao abrir o aplicativo; o sistema pode atrasar o aviso.';
     reminderButton.addEventListener('click', async () => {
       try {
         if (await requestCalendarReminderPermission()) await loadCalendarEvents();
-        else getElement('calendar-sync-status').textContent = 'PermissÃƒÂ£o de notificaÃƒÂ§ÃƒÂµes nÃƒÂ£o concedida.';
-      } catch (error) { getElement('calendar-sync-status').textContent = 'NÃƒÂ£o foi possÃƒÂ­vel ativar os lembretes.'; }
+        else getElement('calendar-sync-status').textContent = 'Permissão de notificações não concedida.';
+      } catch (error) { getElement('calendar-sync-status').textContent = 'Não foi possível ativar os lembretes.'; }
     });
     listenForCalendarReminder(openCalendarNotification);
   }
@@ -2819,7 +2819,7 @@ function renderAiChat() {
   if (aiConversation.length === 0) {
     aiConversation.push({
       role: 'assistant',
-      content: 'Sou o assistente de rotina. Pergunte sobre seu calendÃƒÂ¡rio, rotina, estudo, treino ou prÃƒÂ³ximas aÃƒÂ§ÃƒÂµes.'
+      content: 'Sou o assistente de rotina. Pergunte sobre seu calendário, rotina, estudo, treino ou próximas ações.'
     });
   }
 
@@ -2828,7 +2828,7 @@ function renderAiChat() {
     bubble.className = 'chat-bubble chat-bubble--' + (message.role === 'user' ? 'user' : 'assistant');
     const title = document.createElement('div');
     title.className = 'chat-bubble-title';
-    title.textContent = message.role === 'user' ? 'VocÃƒÂª' : 'Assistente';
+    title.textContent = message.role === 'user' ? 'Você' : 'Assistente';
     const meta = document.createElement('div');
     meta.className = 'chat-bubble-meta';
     if (message.role === 'user') meta.textContent = message.content;
@@ -3168,7 +3168,7 @@ function renderTrainingPlan(profile) {
       const guidance = document.createElement('details');
       guidance.className = 'training-guidance';
       const guidanceTitle = document.createElement('summary');
-      guidanceTitle.textContent = 'OrientaÃƒÂ§ÃƒÂµes';
+      guidanceTitle.textContent = 'Orientações';
       guidance.append(guidanceTitle, notes);
       card.append(dayHeader, focus, prescription, exerciseList, guidance);
       container.appendChild(card);
@@ -3195,7 +3195,7 @@ function buildTrainingPlan(profile) {
 
   return {
     days: days.map((dayKey, index) => buildTrainingDayPlan(dayKey, template[index], bodyTypeMeta, goalMeta, profile.trainingLevel)),
-    summary: 'DivisÃƒÂ£o montada para ' + days.map((day) => WORKOUT_DAY_LABELS[day]).join(', ') + '.',
+    summary: 'Divisão montada para ' + days.map((day) => WORKOUT_DAY_LABELS[day]).join(', ') + '.',
     bodyTypeLabel: bodyTypeMeta.label,
     bodyTypeCopy: bodyTypeMeta.copy,
     goalLabel: goalMeta.label,
@@ -3221,7 +3221,7 @@ function buildTrainingDayPlan(dayKey, template, bodyTypeMeta, goalMeta, training
 function buildTrainingSplitTemplate(dayCount, goalKey) {
   if (dayCount <= 1) {
     return [
-      createTrainingTemplate('Full Body', 'Corpo inteiro com base nos padrÃƒÂµes fundamentais.', [
+      createTrainingTemplate('Full Body', 'Corpo inteiro com base nos padrões fundamentais.', [
         'Agachamento livre ou guiado',
         'Supino reto com halteres',
         'Remada curvada ou baixa',
@@ -3234,20 +3234,20 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
 
   if (dayCount === 2) {
     return [
-      createTrainingTemplate('Upper', 'Peito, costas, ombros e braÃƒÂ§os com foco em base forte.', [
+      createTrainingTemplate('Upper', 'Peito, costas, ombros e braços com foco em base forte.', [
         'Supino reto',
         'Remada fechada',
         'Desenvolvimento militar',
         'Puxada alta',
         'Rosca direta',
-        'TrÃƒÂ­ceps pulley'
+        'Tríceps pulley'
       ]),
       createTrainingTemplate('Lower', 'Pernas completas e core para sustentar progresso global.', [
         'Agachamento',
         'Leg press',
         'Cadeira extensora',
         'Mesa flexora',
-        'Panturrilha em pÃƒÂ©',
+        'Panturrilha em pé',
         'Abdominal infra'
       ])
     ];
@@ -3255,14 +3255,14 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
 
   if (dayCount === 3) {
     return [
-      createTrainingTemplate('Push', 'Empurrar: peito, ombros e trÃƒÂ­ceps.', [
+      createTrainingTemplate('Push', 'Empurrar: peito, ombros e tríceps.', [
         'Supino inclinado',
-        'Crucifixo mÃƒÂ¡quina',
+        'Crucifixo máquina',
         'Desenvolvimento halteres',
-        'ElevaÃƒÂ§ÃƒÂ£o lateral',
-        'TrÃƒÂ­ceps corda'
+        'Elevação lateral',
+        'Tríceps corda'
       ]),
-      createTrainingTemplate('Pull', 'Puxar: costas, deltoide posterior e bÃƒÂ­ceps.', [
+      createTrainingTemplate('Pull', 'Puxar: costas, deltoide posterior e bíceps.', [
         'Puxada frontal',
         'Remada baixa',
         'Remada unilateral',
@@ -3272,7 +3272,7 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
       createTrainingTemplate('Legs', 'Pernas e core com prioridade em base e estabilidade.', [
         'Agachamento hack',
         'Stiff',
-        'AvanÃƒÂ§o',
+        'Avanço',
         'Mesa flexora',
         'Panturrilha sentada',
         'Prancha com carga'
@@ -3296,12 +3296,12 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
         'Cadeira extensora',
         'Abdominal cable'
       ]),
-      createTrainingTemplate('Upper B', 'Ombros, dorsais e braÃƒÂ§os em volume complementar.', [
-        'Desenvolvimento mÃƒÂ¡quina',
+      createTrainingTemplate('Upper B', 'Ombros, dorsais e braços em volume complementar.', [
+        'Desenvolvimento máquina',
         'Remada articulada',
         'Puxada aberta',
-        'ElevaÃƒÂ§ÃƒÂ£o lateral',
-        'TrÃƒÂ­ceps frances'
+        'Elevação lateral',
+        'Tríceps frances'
       ]),
       createTrainingTemplate('Lower B', 'Posterior, gluteos e panturrilhas.', [
         'Terra romeno',
@@ -3315,21 +3315,21 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
 
   if (dayCount === 5) {
     return [
-      createTrainingTemplate('Push', 'Peito, ombros e trÃƒÂ­ceps com bloco principal.', [
+      createTrainingTemplate('Push', 'Peito, ombros e tríceps com bloco principal.', [
         'Supino reto',
         'Supino inclinado',
         'Desenvolvimento halteres',
-        'ElevaÃƒÂ§ÃƒÂ£o lateral',
-        'TrÃƒÂ­ceps testa'
+        'Elevação lateral',
+        'Tríceps testa'
       ]),
-      createTrainingTemplate('Pull', 'Costas e bÃƒÂ­ceps com enfase em espessura.', [
+      createTrainingTemplate('Pull', 'Costas e bíceps com enfase em espessura.', [
         'Barra guiada ou puxada',
         'Remada cavalinho',
         'Remada unilateral',
         'Pulldown',
         'Rosca martelo'
       ]),
-      createTrainingTemplate('Legs', 'Pernas completas com foco em progressÃƒÂ£o.', [
+      createTrainingTemplate('Legs', 'Pernas completas com foco em progressão.', [
         'Agachamento livre',
         'Stiff',
         'Leg press',
@@ -3354,13 +3354,13 @@ function buildTrainingSplitTemplate(dayCount, goalKey) {
   }
 
   return [
-    createTrainingTemplate('Push A', 'Primeiro bloco de empurrar com foco tecnico.', ['Supino reto', 'Desenvolvimento', 'Crucifixo', 'ElevaÃƒÂ§ÃƒÂ£o lateral', 'TrÃƒÂ­ceps corda']),
-    createTrainingTemplate('Pull A', 'Primeiro bloco de puxar com dorsais e bÃƒÂ­ceps.', ['Puxada frontal', 'Remada curvada', 'Pulldown', 'Face pull', 'Rosca direta']),
+    createTrainingTemplate('Push A', 'Primeiro bloco de empurrar com foco tecnico.', ['Supino reto', 'Desenvolvimento', 'Crucifixo', 'Elevação lateral', 'Tríceps corda']),
+    createTrainingTemplate('Pull A', 'Primeiro bloco de puxar com dorsais e bíceps.', ['Puxada frontal', 'Remada curvada', 'Pulldown', 'Face pull', 'Rosca direta']),
     createTrainingTemplate('Legs A', 'Pernas base com quadriceps e core.', ['Agachamento', 'Leg press', 'Extensora', 'Panturrilha', 'Prancha']),
-    createTrainingTemplate('Push B', 'Variacao de peito e ombros para repetir estimulo sem saturar.', ['Supino inclinado', 'Desenvolvimento halteres', 'Cross over', 'ElevaÃƒÂ§ÃƒÂ£o frontal', 'TrÃƒÂ­ceps frances']),
-    createTrainingTemplate('Pull B', 'Variacao de costas e braÃƒÂ§os com volume complementar.', ['Remada baixa', 'Puxada neutra', 'Remada unilateral', 'Encolhimento', 'Rosca martelo']),
+    createTrainingTemplate('Push B', 'Variacao de peito e ombros para repetir estimulo sem saturar.', ['Supino inclinado', 'Desenvolvimento halteres', 'Cross over', 'Elevação frontal', 'Tríceps frances']),
+    createTrainingTemplate('Pull B', 'Variacao de costas e braços com volume complementar.', ['Remada baixa', 'Puxada neutra', 'Remada unilateral', 'Encolhimento', 'Rosca martelo']),
     createTrainingTemplate('Legs B', 'Posterior, gluteos e panturrilhas em segundo estimulo.', ['Terra romeno', 'Mesa flexora', 'Hip thrust', 'Passada', 'Panturrilha sentada']),
-    createTrainingTemplate('RecuperaÃƒÂ§ÃƒÂ£o Ativa', 'Dia leve para mobilidade, caminhada e restauraÃƒÂ§ÃƒÂ£o.', ['Mobilidade quadril', 'Mobilidade torÃƒÂ¡cica', 'Caminhada inclinada', 'Alongamento posterior', 'RespiraÃƒÂ§ÃƒÂ£o diafragmatica'])
+    createTrainingTemplate('Recuperação Ativa', 'Dia leve para mobilidade, caminhada e restauração.', ['Mobilidade quadril', 'Mobilidade torácica', 'Caminhada inclinada', 'Alongamento posterior', 'Respiração diafragmatica'])
   ];
 }
 
@@ -3373,40 +3373,40 @@ function getBodyTypeMeta(bodyType) {
     case 'ectomorfo':
       return {
         label: 'Ectomorfo',
-        copy: 'Estrutura mais fina, metabolismo acelerado e melhor resposta com progressÃƒÂ£o de carga, compostos e cardio controlado.',
+        copy: 'Estrutura mais fina, metabolismo acelerado e melhor resposta com progressão de carga, compostos e cardio controlado.',
         rest: '75-90s',
         finishers: ['Mobilidade escapular'],
-        notePrefix: 'Priorize exercÃƒÂ­cios compostos, pouco cardio extra e alimentaÃƒÂ§ÃƒÂ£o suficiente para recuperar.',
+        notePrefix: 'Priorize exercícios compostos, pouco cardio extra e alimentação suficiente para recuperar.',
         guideNotes: [
           'Ectomorfo: punhos e ombros mais estreitos, dificuldade maior para ganhar peso e massa.',
-          'Se vocÃƒÂª seca fÃƒÂ¡cil e demora para encher a musculatura, esse perfil pode fazer sentido.',
-          'A referÃƒÂªncia visual ajuda, mas avaliaÃƒÂ§ÃƒÂ£o profissional e composiÃƒÂ§ÃƒÂ£o corporal sÃƒÂ£o mais confiÃƒÂ¡veis.'
+          'Se você seca fácil e demora para encher a musculatura, esse perfil pode fazer sentido.',
+          'A referência visual ajuda, mas avaliação profissional e composição corporal são mais confiáveis.'
         ]
       };
     case 'endomorfo':
       return {
         label: 'Endomorfo',
-        copy: 'Estrutura mais larga, maior facilidade para ganhar peso e boa resposta com musculaÃƒÂ§ÃƒÂ£o consistente mais blocos metabÃƒÂ³licos.',
+        copy: 'Estrutura mais larga, maior facilidade para ganhar peso e boa resposta com musculação consistente mais blocos metabólicos.',
         rest: '45-60s',
         finishers: ['Finalizador cardio 10-15 min'],
-        notePrefix: 'Mantenha ritmo entre sÃƒÂ©ries, use boa amplitude e adicione gasto energÃƒÂ©tico controlado ao final.',
+        notePrefix: 'Mantenha ritmo entre séries, use boa amplitude e adicione gasto energético controlado ao final.',
         guideNotes: [
           'Endomorfo: tronco e quadril mais largos, facilidade maior para acumular peso.',
-          'Se vocÃƒÂª ganha massa e gordura com facilidade, tende a se aproximar desse perfil.',
-          'Treino, sono e alimentaÃƒÂ§ÃƒÂ£o contam mais que o rÃƒÂ³tulo isolado do biotipo.'
+          'Se você ganha massa e gordura com facilidade, tende a se aproximar desse perfil.',
+          'Treino, sono e alimentação contam mais que o rótulo isolado do biotipo.'
         ]
       };
     default:
       return {
         label: 'Mesomorfo',
-        copy: 'Estrutura atlÃƒÂ©tica e resposta equilibrada ao treino, permitindo combinar carga, volume e progresso semanal.',
+        copy: 'Estrutura atlética e resposta equilibrada ao treino, permitindo combinar carga, volume e progresso semanal.',
         rest: '60-75s',
-        finishers: ['Core anti-rotaÃƒÂ§ÃƒÂ£o'],
-        notePrefix: 'Trabalhe progressÃƒÂ£o de carga sem sacrificar tÃƒÂ©cnica e mantenha volume moderado para evoluir com consistÃƒÂªncia.',
+        finishers: ['Core anti-rotação'],
+        notePrefix: 'Trabalhe progressão de carga sem sacrificar técnica e mantenha volume moderado para evoluir com consistência.',
         guideNotes: [
-          'Mesomorfo: estrutura naturalmente mais atlÃƒÂ©tica, com facilidade moderada para ganhar massa.',
+          'Mesomorfo: estrutura naturalmente mais atlética, com facilidade moderada para ganhar massa.',
           'Se seu corpo responde relativamente bem a treino e dieta, esse perfil costuma se encaixar.',
-          'Biotipo serve como orientaÃƒÂ§ÃƒÂ£o inicial, nÃƒÂ£o como regra fixa de treino.'
+          'Biotipo serve como orientação inicial, não como regra fixa de treino.'
         ]
       };
   }
@@ -3418,33 +3418,33 @@ function getTrainingGoalMeta(goal) {
       return {
         key: 'emagrecimento',
         label: 'Emagrecimento',
-        copy: 'SessÃƒÂµes com musculaÃƒÂ§ÃƒÂ£o base, menor descanso e finalizadores para aumentar gasto energÃƒÂ©tico sem perder massa.',
+        copy: 'Sessões com musculação base, menor descanso e finalizadores para aumentar gasto energético sem perder massa.',
         repRange: '10-15 reps',
-        note: 'Feche cada treino com intensidade sustentÃƒÂ¡vel e regularidade semanal.'
+        note: 'Feche cada treino com intensidade sustentável e regularidade semanal.'
       };
     case 'condicionamento':
       return {
         key: 'condicionamento',
         label: 'Condicionamento',
-        copy: 'Estrutura focada em resistÃƒÂªncia muscular, tÃƒÂ©cnica e capacidade de manter rendimento ao longo da semana.',
+        copy: 'Estrutura focada em resistência muscular, técnica e capacidade de manter rendimento ao longo da semana.',
         repRange: '12-15 reps',
         note: 'Controle pausas e mantenha boa densidade de treino.'
       };
     case 'forca':
       return {
         key: 'forca',
-        label: 'ForÃƒÂ§a',
-        copy: 'Mais prioridade para multiarticulares, descansos um pouco maiores e foco em progressÃƒÂ£o objetiva.',
+        label: 'Força',
+        copy: 'Mais prioridade para multiarticulares, descansos um pouco maiores e foco em progressão objetiva.',
         repRange: '4-8 reps',
-        note: 'Busque carga progressiva com execuÃƒÂ§ÃƒÂ£o limpa nos movimentos base.'
+        note: 'Busque carga progressiva com execução limpa nos movimentos base.'
       };
     default:
       return {
         key: 'hipertrofia',
         label: 'Hipertrofia',
-        copy: 'Volume bem distribuÃƒÂ­do para estimular crescimento muscular com recuperaÃƒÂ§ÃƒÂ£o coerente entre os grupos.',
+        copy: 'Volume bem distribuído para estimular crescimento muscular com recuperação coerente entre os grupos.',
         repRange: '8-12 reps',
-        note: 'Aproxime-se da falha com tÃƒÂ©cnica boa nas ÃƒÂºltimas sÃƒÂ©ries.'
+        note: 'Aproxime-se da falha com técnica boa nas últimas séries.'
       };
   }
 }
@@ -3453,18 +3453,18 @@ function getTrainingLevelMeta(level) {
   switch (level) {
     case 'avancado':
       return {
-        series: '4-5 sÃƒÂ©ries por exercÃƒÂ­cio',
-        note: 'Use progressÃƒÂ£o de carga ou repetiÃƒÂ§ÃƒÂµes semanalmente e acompanhe fadiga.'
+        series: '4-5 séries por exercício',
+        note: 'Use progressão de carga ou repetições semanalmente e acompanhe fadiga.'
       };
     case 'intermediario':
       return {
-        series: '3-4 sÃƒÂ©ries por exercÃƒÂ­cio',
-        note: 'Mantenha 1 a 2 repetiÃƒÂ§ÃƒÂµes em reserva na maior parte do treino.'
+        series: '3-4 séries por exercício',
+        note: 'Mantenha 1 a 2 repetições em reserva na maior parte do treino.'
       };
     default:
       return {
-        series: '2-3 sÃƒÂ©ries por exercÃƒÂ­cio',
-        note: 'Comece consolidando tÃƒÂ©cnica, amplitude e regularidade antes de escalar carga.'
+        series: '2-3 séries por exercício',
+        note: 'Comece consolidando técnica, amplitude e regularidade antes de escalar carga.'
       };
   }
 }
@@ -4283,7 +4283,7 @@ function setShopMessage(message) {
 function applyShopServerState(state) {
   if (!state || !Array.isArray(state.purchases)) throw new Error('Resposta invalida da loja.');
   saveShopPurchases(state.purchases.map((p) => ({ itemId: p.dailyId, createdAt: p.createdAt })));
-  // ReconstrÃƒÂ³i recibos de compras de outros dispositivos no inventÃƒÂ¡rio local.
+  // Reconstrói recibos de compras de outros dispositivos no inventário local.
   const inventory = getInventoryItems();
   const knownDailyIds = new Set(inventory.map((entry) => entry.dailyId));
   for (const purchase of state.purchases) {
@@ -4311,7 +4311,7 @@ async function handleShopPurchase(itemId) {
   if (!item || !currentPlayerStatus || shopPurchasePending) return;
   const purchasedIds = new Set(getShopPurchases().map((entry) => entry.itemId));
   if (purchasedIds.has(item.dailyId)) {
-    setShopMessage('Esse item jÃƒÂ¡ foi resgatado hoje.');
+    setShopMessage('Esse item já foi resgatado hoje.');
     return;
   }
   if (getCurrentCoins() < item.custo) {
@@ -4327,7 +4327,7 @@ async function handleShopPurchase(itemId) {
       method: 'POST',
       body: JSON.stringify({ itemId: item.id })
     });
-    // Registra inventÃƒÂ¡rio somente depois da confirmaÃƒÂ§ÃƒÂ£o do backend.
+    // Registra inventário somente depois da confirmação do backend.
     applyShopServerState(state);
     registerVaultTransaction('saida', 'Loja: ' + item.nome, item.custo);
     renderVault(getCurrentCoins());
@@ -4336,14 +4336,14 @@ async function handleShopPurchase(itemId) {
     if (savedItem && savedItem.rewardType === 'timer' && confirmItemActivation(savedItem)) {
       activatedNow = activateInventoryItem(savedItem.instanceId);
     }
-    setShopMessage(item.nome + ' resgatado. ' + (activatedNow ? 'Recompensa ativada.' : 'DisponÃƒÂ­vel no inventÃƒÂ¡rio.'));
+    setShopMessage(item.nome + ' resgatado. ' + (activatedNow ? 'Recompensa ativada.' : 'Disponível no inventário.'));
     showPopup('Compra realizada!', 0, item.custo);
     setText('popup-body', 'Compra registrada no banco de dados.');
     setText('popup-exp', activatedNow ? 'ATIVO' : 'INVENTARIO');
     setText('popup-coins', '-' + formatCurrencyValue(item.custo) + ' moedas');
   } catch (error) {
-    setShopMessage('NÃƒÂ£o foi possÃƒÂ­vel comprar: ' + error.message);
-    // Em respostas perdidas, consulta servidor: a compra pode ter sido concluÃƒÂ­da.
+    setShopMessage('Não foi possível comprar: ' + error.message);
+    // Em respostas perdidas, consulta servidor: a compra pode ter sido concluída.
     try { await syncShopFromServer(); } catch (ignored) { /* preserva o erro original */ }
   } finally {
     shopPurchasePending = false;
@@ -4389,7 +4389,7 @@ function renderShop() {
     icon.className = 'bi ' + storeIconForCategory(item.categoria);
     icon.setAttribute('aria-hidden', 'true');
     const artLabel = document.createElement('span');
-    artLabel.textContent = item.raridade === 'LENDARIO' ? 'EDIÃƒâ€¡ÃƒÆ’O ESPECIAL' : 'ASCEND / DAILY';
+    artLabel.textContent = item.raridade === 'LENDARIO' ? 'EDIÇÃO ESPECIAL' : 'ASCEND / DAILY';
     artwork.append(icon, artLabel);
     artwork.addEventListener('click', () => openStoreInspection(item));
     const kicker = document.createElement('div');
@@ -4406,7 +4406,7 @@ function renderShop() {
     if (definition && definition.rewardType === 'timer') {
       const duration = document.createElement('p');
       duration.className = 'shop-duration';
-      duration.textContent = formatDurationLabel(definition.durationMinutes * 60) + ' de duraÃƒÂ§ÃƒÂ£o';
+      duration.textContent = formatDurationLabel(definition.durationMinutes * 60) + ' de duração';
       content.append(kicker, title, description, duration);
     } else {
       content.append(kicker, title, description);
@@ -4433,7 +4433,7 @@ function renderShop() {
 async function loadCosmeticStore() {
   const status = getElement('cosmetic-store-status');
   if (status) {
-    status.textContent = 'Ã‚Â· carregando';
+    status.textContent = '· carregando';
     status.classList.add('is-loading');
   }
   try {
@@ -4445,25 +4445,25 @@ async function loadCosmeticStore() {
   } catch (error) {
     if (status) {
       status.classList.remove('is-loading');
-      status.textContent = 'Ã‚Â· catÃƒÂ¡logo indisponÃƒÂ­vel';
+      status.textContent = '· catálogo indisponível';
     }
     const grid = getElement('cosmetic-grid');
     if (grid) {
       const message = document.createElement('p');
       message.className = 'feature-copy';
-      message.textContent = 'NÃƒÂ£o foi possÃƒÂ­vel carregar os cosmÃƒÂ©ticos. Tente novamente em instantes.';
+      message.textContent = 'Não foi possível carregar os cosméticos. Tente novamente em instantes.';
       grid.replaceChildren(message);
     }
-    setShopMessage('NÃƒÂ£o foi possÃƒÂ­vel carregar a loja de cosmÃƒÂ©ticos: ' + error.message);
+    setShopMessage('Não foi possível carregar a loja de cosméticos: ' + error.message);
   }
 }
 
 function renderCosmeticStore() {
   const grid = getElement('cosmetic-grid');
   if (!grid || !cosmeticStoreState) return;
-  setText('cosmetic-store-status', 'Ã‚Â· ' + formatCurrencyValue(cosmeticStoreState.coins) + ' AC disponÃƒÂ­veis');
+  setText('cosmetic-store-status', '· ' + formatCurrencyValue(cosmeticStoreState.coins) + ' AC disponíveis');
   const allItems = (cosmeticStoreState.items || []).filter(item=>!item.staticAsset);
-  const categories = ['TODAS', 'MINHA COLEÃƒâ€¡ÃƒÆ’O', ...new Set(allItems.map((item) => item.category))];
+  const categories = ['TODAS', 'MINHA COLEÇÃO', ...new Set(allItems.map((item) => item.category))];
   const nav = getElement('cosmetic-categories');
   if (nav) {
     nav.replaceChildren();
@@ -4477,12 +4477,12 @@ function renderCosmeticStore() {
       nav.appendChild(control);
     });
   }
-  const visible = allItems.filter((item) => activeCosmeticCategory === 'TODAS' || (activeCosmeticCategory === 'MINHA COLEÃƒâ€¡ÃƒÆ’O' ? item.owned : item.category === activeCosmeticCategory));
+  const visible = allItems.filter((item) => activeCosmeticCategory === 'TODAS' || (activeCosmeticCategory === 'MINHA COLEÇÃO' ? item.owned : item.category === activeCosmeticCategory));
   grid.replaceChildren();
   if (!visible.length) {
     const empty = document.createElement('p');
     empty.className = 'feature-copy';
-    empty.textContent = activeCosmeticCategory === 'MINHA COLEÃƒâ€¡ÃƒÆ’O' ? 'Sua coleÃƒÂ§ÃƒÂ£o ainda estÃƒÂ¡ vazia. Resgate um item para comeÃƒÂ§ar.' : 'NÃƒÂ£o hÃƒÂ¡ itens nesta categoria.';
+    empty.textContent = activeCosmeticCategory === 'MINHA COLEÇÃO' ? 'Sua coleção ainda está vazia. Resgate um item para começar.' : 'Não há itens nesta categoria.';
     grid.appendChild(empty);
     return;
   }
@@ -4506,7 +4506,7 @@ function renderCosmeticStore() {
     content.className = 'store-card-copy';
     const kicker = document.createElement('div');
     kicker.className = 'feature-kicker';
-    kicker.textContent = item.category.replaceAll('_', ' ') + ' Ã‚Â· ' + item.rarity;
+    kicker.textContent = item.category.replaceAll('_', ' ') + ' · ' + item.rarity;
     const title = document.createElement('h3');
     title.className = 'feature-title';
     title.textContent = item.name;
@@ -4519,7 +4519,7 @@ function renderCosmeticStore() {
     action.className = 'btn-complete';
     action.disabled = cosmeticActionPending;
     if (item.equipped) {
-      action.textContent = 'Equipado Ã‚Â· remover';
+      action.textContent = 'Equipado · remover';
       action.addEventListener('click', () => removeCosmetic(item.slot));
     } else if (item.owned) {
       action.textContent = 'Equipar';
@@ -4549,10 +4549,10 @@ async function buyCosmetic(itemId) {
       currentPlayerStatus = { ...currentPlayerStatus, coins: cosmeticStoreState.coins };
       renderPlayerStatus(currentPlayerStatus);
     }
-    setShopMessage('CosmÃƒÂ©tico resgatado e adicionado permanentemente ÃƒÂ  sua coleÃƒÂ§ÃƒÂ£o.');
+    setShopMessage('Cosmético resgatado e adicionado permanentemente à sua coleção.');
     closeStoreInspection();
   } catch (error) {
-    setShopMessage('Compra nÃƒÂ£o concluÃƒÂ­da: ' + error.message);
+    setShopMessage('Compra não concluída: ' + error.message);
   } finally {
     cosmeticActionPending = false;
     renderCosmeticStore();
@@ -4566,10 +4566,10 @@ async function equipCosmetic(itemId) {
   try {
     cosmeticStoreState = await apiRequest('/cosmetics/equipped', { method: 'PUT', body: JSON.stringify({ itemId }) });
     applyEquippedCosmeticTheme(cosmeticStoreState);
-    setShopMessage('CosmÃƒÂ©tico equipado.');
+    setShopMessage('Cosmético equipado.');
     closeStoreInspection();
   } catch (error) {
-    setShopMessage('NÃƒÂ£o foi possÃƒÂ­vel equipar: ' + error.message);
+    setShopMessage('Não foi possível equipar: ' + error.message);
   } finally {
     cosmeticActionPending = false;
     renderCosmeticStore();
@@ -4583,10 +4583,10 @@ async function removeCosmetic(slot) {
   try {
     cosmeticStoreState = await apiRequest('/cosmetics/equipped/' + encodeURIComponent(slot), { method: 'DELETE' });
     applyEquippedCosmeticTheme(cosmeticStoreState);
-    setShopMessage('CosmÃƒÂ©tico removido do slot.');
+    setShopMessage('Cosmético removido do slot.');
     closeStoreInspection();
   } catch (error) {
-    setShopMessage('NÃƒÂ£o foi possÃƒÂ­vel remover: ' + error.message);
+    setShopMessage('Não foi possível remover: ' + error.message);
   } finally {
     cosmeticActionPending = false;
     renderCosmeticStore();
@@ -4623,11 +4623,11 @@ function openStoreInspection(item) {
   inspectedStoreItem = item;
   const modal = getElement('store-inspection');
   if (!modal) return;
-  setText('inspection-category', item.raridade === 'LENDARIO' ? 'EDIÃƒâ€¡ÃƒÆ’O LENDÃƒÂRIA' : item.categoria.replaceAll('_', ' '));
+  setText('inspection-category', item.raridade === 'LENDARIO' ? 'EDIÇÃO LENDÁRIA' : item.categoria.replaceAll('_', ' '));
   setText('inspection-title', item.nome);
   setText('inspection-description', item.descricao);
   const cost = item.cosmetic ? item.cost : item.custo;
-  setText('inspection-value', item.owned ? (item.equipped ? 'Equipado no slot ' + item.slot : 'Na sua coleÃƒÂ§ÃƒÂ£o') : formatCurrencyValue(cost) + ' AC');
+  setText('inspection-value', item.owned ? (item.equipped ? 'Equipado no slot ' + item.slot : 'Na sua coleção') : formatCurrencyValue(cost) + ' AC');
   const art = getElement('inspection-art');
   if (art) {
     art.className = 'inspection-art' + (item.raridade === 'LENDARIO' ? ' inspection-art--legendary' : '');
@@ -4802,7 +4802,7 @@ function renderRanking(players) {
 
     const name = document.createElement('span');
     name.className = 'ranking-name';
-    name.textContent = player.currentUser ? player.name + ' (vocÃƒÂª)' : player.name;if(player.isAscendFounder)appendFounderBadge(name);
+    name.textContent = player.currentUser ? player.name + ' (você)' : player.name;if(player.isAscendFounder)appendFounderBadge(name);
 
     const level = document.createElement('span');
     level.className = 'ranking-nivel';
@@ -4825,7 +4825,7 @@ function playNotificationSound() {
     const playback = notificationAudio.play();
     if (playback) playback.catch(() => {});
   } catch (error) {
-    // A notificaÃƒÂ§ÃƒÂ£o visual continua funcionando se o navegador bloquear o ÃƒÂ¡udio.
+    // A notificação visual continua funcionando se o navegador bloquear o áudio.
   }
 }
 
@@ -4928,7 +4928,7 @@ async function handleAiChatSubmit(event) {
   const message = input ? input.value.trim() : '';
   if (!message || aiChatPending) return;
   if (message.length > 2000) {
-    input.setCustomValidity('MÃƒÂ¡ximo de 2.000 caracteres.');
+    input.setCustomValidity('Máximo de 2.000 caracteres.');
     input.reportValidity();
     return;
   }
@@ -4962,7 +4962,7 @@ async function handleAiChatSubmit(event) {
     aiConversation.pop();
     aiConversation.push({
       role: 'assistant',
-      content: 'NÃƒÂ£o consegui falar com a IA agora. ' + error.message
+      content: 'Não consegui falar com a IA agora. ' + error.message
     });
   }
 
@@ -5022,11 +5022,11 @@ function tickTimer() {
   running = false;
   timerDeadline = null;
   if (!isBreak) setText('cycle-count', ++cycles);
-  setText('focus-feedback', isBreak ? 'Pausa concluÃƒÂ­da. Pronto para o prÃƒÂ³ximo desafio?' : 'Ciclo concluÃƒÂ­do! FaÃƒÂ§a uma pausa e recupere a energia.');
+  setText('focus-feedback', isBreak ? 'Pausa concluída. Pronto para o próximo desafio?' : 'Ciclo concluído! Faça uma pausa e recupere a energia.');
   setText('btn-start', 'INICIAR');
   setAria('btn-start', 'aria-pressed', 'false');
-  showPopup(isBreak ? 'Pausa concluÃƒÂ­da!' : 'Foco concluÃƒÂ­do!', 0, 0);
-  setText('popup-body', isBreak ? 'Hora de escolher sua prÃƒÂ³xima missÃƒÂ£o.' : 'Mais um passo na sua evoluÃƒÂ§ÃƒÂ£o. Seu ciclo de foco foi concluÃƒÂ­do.');
+  showPopup(isBreak ? 'Pausa concluída!' : 'Foco concluído!', 0, 0);
+  setText('popup-body', isBreak ? 'Hora de escolher sua próxima missão.' : 'Mais um passo na sua evolução. Seu ciclo de foco foi concluído.');
   remaining = totalSeconds;
   updateTimerUI();
 }
@@ -5040,14 +5040,14 @@ function startTimer() {
     timerDeadline = null;
     setText('btn-start', 'CONTINUAR');
     setAria('btn-start', 'aria-pressed', 'false');
-    setText('focus-feedback', 'SessÃƒÂ£o pausada. Continue quando estiver pronto.');
+    setText('focus-feedback', 'Sessão pausada. Continue quando estiver pronto.');
     return;
   }
   running = true;
   timerDeadline = Date.now() + remaining * 1000;
   setText('btn-start', 'PAUSAR');
   setAria('btn-start', 'aria-pressed', 'true');
-  setText('focus-feedback', totalSeconds === 300 ? 'Respire. Este tempo ÃƒÂ© seu.' : 'Uma tarefa. Toda a sua atenÃƒÂ§ÃƒÂ£o.');
+  setText('focus-feedback', totalSeconds === 300 ? 'Respire. Este tempo é seu.' : 'Uma tarefa. Toda a sua atenção.');
   timerInterval = setInterval(tickTimer, 250);
 }
 
@@ -5069,12 +5069,12 @@ function setFocusDuration(minutes) {
 
 
 const ASCEND_FAQ = [
-  { question: 'Como ganho moedas?', answer: 'Conclua missÃƒÂµes do dia. O backend credita experiÃƒÂªncia e moedas ao confirmar cada missÃƒÂ£o.' },
-  { question: 'Como funciona a loja?', answer: 'Cada compra custa moedas virtuais da sua conta. O preÃƒÂ§o ÃƒÂ© validado no backend e o item vai para seu inventÃƒÂ¡rio. Os itens diÃƒÂ¡rios podem ser resgatados uma vez por dia.' },
-  { question: 'Minha compra sumiu?', answer: 'Atualize a pÃƒÂ¡gina para sincronizar compras e moedas. Temporizadores ativados continuam armazenados neste dispositivo.' },
-  { question: 'Como monto minha rotina?', answer: 'Abra Treino, configure horÃƒÂ¡rios, prioridades e dias disponÃƒÂ­veis no planejador. Depois, gere o plano adaptativo.' },
-  { question: 'A IA ÃƒÂ© gratuita?', answer: 'O ASCEND funciona sem chave, mas nesse caso o assistente oferece dicas locais. O administrador pode configurar a API Groq, com cota gratuita sujeita a limites.' },
-  { question: 'Posso usar no celular?', answer: 'Sim. O site ÃƒÂ© responsivo e existe tambÃƒÂ©m um aplicativo Expo/React Native separado, conectado ao mesmo backend.' }
+  { question: 'Como ganho moedas?', answer: 'Conclua missões do dia. O backend credita experiência e moedas ao confirmar cada missão.' },
+  { question: 'Como funciona a loja?', answer: 'Cada compra custa moedas virtuais da sua conta. O preço é validado no backend e o item vai para seu inventário. Os itens diários podem ser resgatados uma vez por dia.' },
+  { question: 'Minha compra sumiu?', answer: 'Atualize a página para sincronizar compras e moedas. Temporizadores ativados continuam armazenados neste dispositivo.' },
+  { question: 'Como monto minha rotina?', answer: 'Abra Treino, configure horários, prioridades e dias disponíveis no planejador. Depois, gere o plano adaptativo.' },
+  { question: 'A IA é gratuita?', answer: 'O ASCEND funciona sem chave, mas nesse caso o assistente oferece dicas locais. O administrador pode configurar a API Groq, com cota gratuita sujeita a limites.' },
+  { question: 'Posso usar no celular?', answer: 'Sim. O site é responsivo e existe também um aplicativo Expo/React Native separado, conectado ao mesmo backend.' }
 ];
 
 function toggleHelp(open) {
@@ -5099,7 +5099,7 @@ function renderFaq(query) {
   const faqs = ASCEND_FAQ.filter((faq) => (faq.question + ' ' + faq.answer).toLocaleLowerCase('pt-BR').includes(term));
   if (!faqs.length) {
     const notice = document.createElement('p');
-    notice.textContent = 'NÃƒÂ£o encontrei essa dÃƒÂºvida. Tente perguntar ÃƒÂ  IA.';
+    notice.textContent = 'Não encontrei essa dúvida. Tente perguntar à IA.';
     container.appendChild(notice);
   }
   faqs.forEach((faq) => {
@@ -5364,16 +5364,16 @@ async function connectLoadDetails(row){
  try{const profile=await apiRequest('/profile/players/'+row.userId);if(connectSelected!==row.id)return;
   const image=document.createElement('img');image.className='connect-detail-avatar';image.alt='';image.src=profile.profileImage||AVATAR_OPTIONS[profile.avatar]?.image||aetherImage;
   const title=document.createElement('h2');title.textContent=profile.name;const handle=document.createElement('p');handle.textContent='@'+profile.username;
-  const level=document.createElement('p');level.textContent='NÃƒÂ­vel '+profile.level+' Ã‚Â· Rank '+profile.rank;
-  const bio=document.createElement('p');bio.textContent=profile.bio || 'Este jogador ainda nÃƒÂ£o adicionou uma bio.';
-  const tags=document.createElement('p');tags.textContent=(profile.tags||[]).join(' Ã‚Â· ');
+  const level=document.createElement('p');level.textContent='Nível '+profile.level+' · Rank '+profile.rank;
+  const bio=document.createElement('p');bio.textContent=profile.bio || 'Este jogador ainda não adicionou uma bio.';
+  const tags=document.createElement('p');tags.textContent=(profile.tags||[]).join(' · ');
   const button=document.createElement('button');button.type='button';button.className='btn-timer';button.textContent='Ver perfil';button.onclick=()=>{showView('profile');loadProfileView(row.userId);};panel.append(cosmeticAvatar(image.src,profile.equippedCosmetics?.find(i=>i.category==="PROFILE_FRAME"),{size:76,animated:false}),title,handle,level,bio,tags,button);
- }catch(error){if(connectSelected===row.id)panel.textContent='Perfil indisponÃƒÂ­vel.';}
+ }catch(error){if(connectSelected===row.id)panel.textContent='Perfil indisponível.';}
 }
 function connectTime(value) { return value ? new Date(value).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : ''; }
 function connectRenderList() {
   const list = connectEl('connect-list'); list.replaceChildren();
-  if (!connectRows.length) { list.textContent = 'Nenhuma conversa ainda. Busque um jogador para comeÃƒÂ§ar.'; return; }
+  if (!connectRows.length) { list.textContent = 'Nenhuma conversa ainda. Busque um jogador para começar.'; return; }
   connectRows.forEach(row => {
     const button = document.createElement('button'); button.type='button'; button.className='connect-row' + (row.id === connectSelected ? ' selected' : '');
     const avatar=document.createElement('span'); avatar.className='connect-avatar';
@@ -5384,22 +5384,22 @@ function connectRenderList() {
 }
 function connectRenderMessages(scroll=false) {
  const box=connectEl('connect-messages'); const nearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<100; box.replaceChildren();
- if(!connectHistory.length){box.textContent='Nenhuma mensagem ainda. Diga olÃƒÂ¡!';return;}
- connectHistory.forEach(m=>{const bubble=document.createElement('div');bubble.className='connect-bubble'+(String(m.senderId)===String(currentUser?.id)?' own':''); const content=document.createElement('span');content.textContent=m.content; const meta=document.createElement('small');meta.textContent=connectTime(m.createdAt)+(String(m.senderId)===String(currentUser?.id)?(m.read?' Ã‚Â· Lida':' Ã‚Â· Enviada'):'');bubble.append(content,meta);box.append(bubble);});
+ if(!connectHistory.length){box.textContent='Nenhuma mensagem ainda. Diga olá!';return;}
+ connectHistory.forEach(m=>{const bubble=document.createElement('div');bubble.className='connect-bubble'+(String(m.senderId)===String(currentUser?.id)?' own':''); const content=document.createElement('span');content.textContent=m.content; const meta=document.createElement('small');meta.textContent=connectTime(m.createdAt)+(String(m.senderId)===String(currentUser?.id)?(m.read?' · Lida':' · Enviada'):'');bubble.append(content,meta);box.append(bubble);});
  if(scroll||nearBottom)box.scrollTop=box.scrollHeight;
 }
 async function connectRefresh() {
  if(!getAuthToken()||connectBusy)return; connectBusy=true; const token=getAuthToken();
  try {const rows=await apiRequest('/connect/conversations'); if(token!==getAuthToken())return; if(connectSeen){for(const row of rows){const last=row.lastMessage;if(last && row.unread && String(last.senderId)!==String(currentUser?.id) && last.id>(connectSeen.get(row.id)||0) && !(connectSelected===row.id && !connectEl('view-connect').hidden && !document.hidden))connectNotify(row);}}connectSeen=new Map(rows.map(row=>[row.id,row.lastMessage?.id||0]));connectRows=rows; const total=connectRows.reduce((sum,r)=>sum+r.unread,0);for(const id of ['connect-unread','connect-navbar-unread']){const badge=connectEl(id);badge.hidden=!total;badge.textContent=total;}connectRenderList();
  if(connectSelected && !connectEl('view-connect').hidden){const selectedId=connectSelected;let latest=await apiRequest('/connect/conversations/'+selectedId+'/messages');if(selectedId!==connectSelected||token!==getAuthToken())return; const previous=connectHistory.length ? connectHistory[connectHistory.length-1].id : null; let batch=latest; while(previous && batch.length===50 && batch[0].id>previous){batch=await apiRequest('/connect/conversations/'+selectedId+'/messages?before='+batch[0].id); if(selectedId!==connectSelected||token!==getAuthToken())return; latest=[...batch,...latest];} const map=new Map(connectHistory.map(m=>[m.id,m]));latest.forEach(m=>map.set(m.id,m));connectHistory=[...map.values()].sort((a,b)=>a.id-b.id);connectRenderMessages(); if(latest.length)await apiRequest('/connect/conversations/'+selectedId+'/read',{method:'POST',body:JSON.stringify({messageId:latest[latest.length-1].id})});}connectEl('connect-status').textContent='';
- } catch(error){connectEl('connect-status').textContent='ConexÃƒÂ£o indisponÃƒÂ­vel. Tentando reconectar...';} finally{connectBusy=false;}
+ } catch(error){connectEl('connect-status').textContent='Conexão indisponível. Tentando reconectar...';} finally{connectBusy=false;}
 }
-async function connectOpen(id){connectSelected=id;connectHistory=[];connectEl('connect-layout').classList.add('has-selection');connectEl('connect-form').hidden=false;connectEl('connect-profile').hidden=false;const row=connectRows.find(r=>r.id===id);if(row)connectLoadDetails(row);connectEl('connect-recipient').textContent=row?.name || 'Conversa';connectEl('connect-messages').textContent='Carregando histÃƒÂ³rico...';connectRenderList();try{const data=await apiRequest('/connect/conversations/'+id+'/messages');if(connectSelected!==id)return;connectHistory=data;connectEl('connect-older').hidden=data.length<50;connectRenderMessages(true);if(data.length)await apiRequest('/connect/conversations/'+id+'/read',{method:'POST',body:JSON.stringify({messageId:data[data.length-1].id})});connectRefresh();}catch(e){connectEl('connect-status').textContent=e.message;}}
+async function connectOpen(id){connectSelected=id;connectHistory=[];connectEl('connect-layout').classList.add('has-selection');connectEl('connect-form').hidden=false;connectEl('connect-profile').hidden=false;const row=connectRows.find(r=>r.id===id);if(row)connectLoadDetails(row);connectEl('connect-recipient').textContent=row?.name || 'Conversa';connectEl('connect-messages').textContent='Carregando histórico...';connectRenderList();try{const data=await apiRequest('/connect/conversations/'+id+'/messages');if(connectSelected!==id)return;connectHistory=data;connectEl('connect-older').hidden=data.length<50;connectRenderMessages(true);if(data.length)await apiRequest('/connect/conversations/'+id+'/read',{method:'POST',body:JSON.stringify({messageId:data[data.length-1].id})});connectRefresh();}catch(e){connectEl('connect-status').textContent=e.message;}}
 async function connectStart(userId){try{const row=await apiRequest('/connect/conversations/'+userId,{method:'POST'});connectRows=[row,...connectRows.filter(r=>r.id!==row.id)];showView('connect');connectOpen(row.id);}catch(e){connectEl('profile-social-feedback').textContent=e.message;connectEl('connect-status').textContent=e.message;}}
 connectEl('profile-message-button').addEventListener('click',()=>{if(viewingProfileId)connectStart(viewingProfileId);});
 connectEl('connect-profile').addEventListener('click',()=>{const row=connectRows.find(r=>r.id===connectSelected);if(row){showView('profile');loadProfileView(row.userId);}});
 connectEl('connect-back').addEventListener('click',()=>{connectSelected=null;connectEl('connect-layout').classList.remove('has-selection');connectRefresh();});
-connectEl('connect-search').addEventListener('input',e=>{clearTimeout(connectSearchTimer);const q=e.target.value.trim(), results=connectEl('connect-search-results');results.replaceChildren();if(q.length<2)return;connectSearchTimer=setTimeout(async()=>{try{const rows=await apiRequest('/connect/users?q='+encodeURIComponent(q));if(connectEl('connect-search').value.trim()!==q)return;results.replaceChildren();if(!rows.length)results.textContent='Nenhum jogador encontrado.';rows.forEach(row=>{const b=document.createElement('button');b.type='button';b.className='connect-search-result';b.textContent=row.name+' Ã‚Â· @'+row.username;b.addEventListener('click',()=>{results.replaceChildren();connectEl('connect-search').value='';connectStart(row.id);});results.append(b);});}catch(error){results.textContent=error.message;}},300);});
+connectEl('connect-search').addEventListener('input',e=>{clearTimeout(connectSearchTimer);const q=e.target.value.trim(), results=connectEl('connect-search-results');results.replaceChildren();if(q.length<2)return;connectSearchTimer=setTimeout(async()=>{try{const rows=await apiRequest('/connect/users?q='+encodeURIComponent(q));if(connectEl('connect-search').value.trim()!==q)return;results.replaceChildren();if(!rows.length)results.textContent='Nenhum jogador encontrado.';rows.forEach(row=>{const b=document.createElement('button');b.type='button';b.className='connect-search-result';b.textContent=row.name+' · @'+row.username;b.addEventListener('click',()=>{results.replaceChildren();connectEl('connect-search').value='';connectStart(row.id);});results.append(b);});}catch(error){results.textContent=error.message;}},300);});
 connectEl('connect-navbar').addEventListener('click',()=>showView('connect'));
 connectEl('connect-notifications').addEventListener('change',e=>localStorage.setItem(connectPreferenceKey(),e.target.checked?'on':'off'));
 connectEl('connect-older').addEventListener('click',async()=>{if(!connectSelected||!connectHistory.length)return;try{const older=await apiRequest('/connect/conversations/'+connectSelected+'/messages?before='+connectHistory[0].id);connectHistory=[...older,...connectHistory];connectEl('connect-older').hidden=older.length<50;connectRenderMessages();}catch(e){connectEl('connect-status').textContent=e.message;}});
