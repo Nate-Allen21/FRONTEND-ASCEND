@@ -1205,7 +1205,7 @@ async function loadProfileView(profileId = viewingProfileId) {
     getElement('profile-follow-button').hidden = ownProfile;
     getElement('profile-friend-button').hidden = ownProfile;
     setFounderName('profile-title', profile.name || 'Meu perfil',profile.isAscendFounder);
-    setText('profile-handle', '@' + (profile.username || 'player') + ' Ã‚Â· ID ' + profile.id);
+    setText('profile-handle', '@' + (profile.username || 'player') + ' · ID ' + profile.id);
     setText('profile-bio', profile.bio || 'Adicione uma bio para contar sua jornada.');
     const joinedDate = profile.joinedAt ? new Date(profile.joinedAt) : null;
     setText('profile-joined', joinedDate && !Number.isNaN(joinedDate.getTime())
