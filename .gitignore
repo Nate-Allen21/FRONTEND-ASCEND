@@ -9,6 +9,13 @@ test-results/
 playwright-report/
 .env*.local
 .env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pfx
+google-services.json
 
 # Local design reference archive (source assets are versioned separately)
 ASCEND_Redesign_Cyberpunk.zip

@@ -601,7 +601,7 @@ test('new accounts choose an avatar before dashboard and can change it later', a
 
 test('mission filters, empty state and confirmed completion', async ({ page }) => {
   const errors = await setup(page);
-  await page.locator('[data-navigate=missions]').click();
+  await page.locator('.hero-actions [data-navigate=missions]').click();
   await page.locator('#mission-search').fill('revisao');
   await expect(page.locator('#missions-list .mission-card:visible')).toHaveCount(1);
   await page.locator('#mission-search').fill('not-found');
@@ -630,7 +630,7 @@ test('notification sound plays for system and message alerts and respects messag
   await page.locator('#btn-toggle-popup').click();
   expect(await page.evaluate(() => window.notificationSounds.length)).toBe(0);
   await page.locator('#popup-close').click();
-  await page.locator('[data-navigate=missions]').click();
+  await page.locator('.hero-actions [data-navigate=missions]').click();
   await page.locator('#mission-filter').selectOption('pending');
   await page.locator('#missions-list .mission-card:visible button').click();
   await expect.poll(() => page.evaluate(() => window.notificationSounds.length)).toBe(1);
@@ -670,7 +670,7 @@ test('command palette, history and all screens', async ({ page }) => {
   await page.locator('#btn-theme-toggle').click();
   await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
   await page.locator('#app-sidebar .sidebar-link[data-view=calendar]').click();
-  await page.screenshot({ path: 'test-results/calendar-light.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/calendar-light.png', fullPage: true, animations: 'disabled' });
   expect(errors).toEqual([]);
 });
 
@@ -776,4 +776,55 @@ test('compact layouts keep settings usable and cards free of internal overflow',
   expect((await request).postDataJSON().primaryGoals).toBe('Treinar com constância');
   await expect(page.locator('#planner-status-chip')).toHaveText('PRONTO');
   expect(errors).toEqual([]);
+});
+
+test('calendar saves and edits personal activities', async ({ page }) => {
+  await setup(page);
+  let events = [];
+  await page.route('**/api/calendar/events**', async route => {
+    const method = route.request().method();
+    if (method === 'POST') { const event = {...route.request().postDataJSON(), id: 1}; events.push(event); return route.fulfill({json:event}); }
+    if (method === 'PUT') { events[0] = {...route.request().postDataJSON(), id:1}; return route.fulfill({json:events[0]}); }
+    if (method === 'DELETE') { events=[]; return route.fulfill({status:204, body:''}); }
+    return route.fulfill({json:events});
+  });
+  await page.locator('#app-sidebar .sidebar-link[data-view=calendar]').click();
+  await page.locator('#calendar-add').click();
+  await page.locator('#calendar-event-form [name=title]').fill('Consulta');
+  await page.locator('#calendar-event-form [name=startTime]').fill('09:00');
+  await page.locator('#calendar-event-form [name=endTime]').fill('10:00');
+  await page.locator('#calendar-event-form [name=reminderMinutes]').fill('15');
+  await page.locator('#calendar-event-form button[type=submit]').click();
+  await expect(page.locator('.agenda-item').filter({hasText:'Consulta'})).toBeVisible();
+  await page.reload();
+  await page.locator('#app-sidebar .sidebar-link[data-view=calendar]').click();
+  await expect(page.locator('.agenda-item').filter({hasText:'Consulta'})).toBeVisible();
+  await page.locator('.agenda-item').filter({hasText:'Consulta'}).getByText('Editar').click();
+  await page.locator('#calendar-event-form [name=startTime]').fill('08:00');
+  await page.locator('#calendar-event-form button[type=submit]').click();
+  await expect(page.locator('.agenda-item').filter({hasText:'Consulta'})).toContainText('08:00');
+  expect(events[0].reminderMinutes).toBe(15);
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('.agenda-item').filter({hasText:'Consulta'}).getByText('Excluir').click();
+  await expect(page.locator('.agenda-item').filter({hasText:'Consulta'})).toHaveCount(0);
+});
+
+test('calendar event dialog stays readable and fits on mobile in the light theme', async ({ page }) => {
+  await setup(page);
+  await page.locator('#btn-theme-toggle').click();
+  await page.locator('#app-sidebar .sidebar-link[data-view=calendar]').click();
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('#calendar-add').click();
+  const dialog = page.locator('#calendar-event-dialog');
+  await expect(dialog).toBeVisible();
+  const result = await dialog.evaluate(el => {
+    const style = getComputedStyle(el), rect = el.getBoundingClientRect();
+    const rgb = value => value.match(/\d+/g).slice(0, 3).map(Number);
+    const luminance = value => rgb(value).map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((sum,v,i) => sum + v * [0.2126,0.7152,0.0722][i],0);
+    const a=luminance(style.color), b=luminance(style.backgroundColor);
+    return {contrast:(Math.max(a,b)+0.05)/(Math.min(a,b)+0.05), left:rect.left, right:rect.right, width:innerWidth};
+  });
+  expect(result.contrast).toBeGreaterThan(4.5);
+  expect(result.left).toBeGreaterThanOrEqual(0);
+  expect(result.right).toBeLessThanOrEqual(result.width);
 });

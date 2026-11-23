@@ -1,5 +1,6 @@
 import { initExperience } from './experience.js';
 import { renderAssistantMessage } from './chat-format.js';
+import { supportsCalendarReminders, syncCalendarReminders, clearCalendarReminders, requestCalendarReminderPermission, listenForCalendarReminder } from './calendar-reminders.js';
 import aetherImage from '../assets/aether.png';
 import astraImage from '../assets/astra.png';
 import notificationSoundUrl from '../assets/notificacao-ascend.mp3';
@@ -65,6 +66,12 @@ let currentRoutineProfile = null;
 let currentAdaptivePlan = null;
 let currentCalendarMonth = new Date();
 let selectedCalendarDateKey = null;
+let savedCalendarEvents = [];
+let calendarView = 'day';
+let editingCalendarEvent = null;
+let calendarLoadSequence = 0;
+let calendarLoadPromise = null;
+let pendingCalendarNotification = null;
 let aiConversation = [];
 let shopPurchasePending = false;
 let activeStoreCategory = 'TODAS';
@@ -1122,6 +1129,7 @@ async function handleAvatarConfirm() {
 function showView(viewName, activeLink = null, updateHistory = true) {
   const target = document.getElementById('view-' + viewName);
   if (!target?.matches('[data-view-panel]')) return;
+  if (viewName === 'calendar' && getAuthToken()) calendarLoadPromise = loadCalendarEvents();
   if (viewName === 'connect') { connectEl('connect-notifications').checked = localStorage.getItem(connectPreferenceKey()) !== 'off'; connectRefresh(); }
   if (viewName === 'profile') {
     viewingProfileId = null;
@@ -2107,11 +2115,14 @@ async function handleLogout() {
   }
 
   clearAuthToken();
+  clearCalendarReminders().catch(() => {});
   currentPlayerStatus = null;
   currentUser = null;
   currentStorageScope = 'guest';
   currentRoutineProfile = null;
   currentAdaptivePlan = null;
+  savedCalendarEvents = [];
+  calendarLoadSequence++;
   if (rewardInterval) {
     clearInterval(rewardInterval);
     rewardInterval = null;
@@ -2178,6 +2189,9 @@ async function loadRoutine() {
     }
     const status = await apiRequest('/player/status');
     renderPlayerStatus(status);
+    // A sessao e o status ja foram validados; a loja e o plano podem carregar
+    // sem manter a interface autenticada bloqueada em conexoes lentas.
+    showAppShell();
     setAuthMessage('Sincronizando sua rotina...');
     try {
       await syncShopFromServer();
@@ -2195,11 +2209,17 @@ async function loadRoutine() {
       renderRoadmap('monthly-missions-list', []);
       setText('planner-summary', plannerError.message);
     }
-    showAppShell();
+    if (supportsCalendarReminders()) {
+      loadCalendarEvents();
+      if (pendingCalendarNotification) openCalendarNotification(pendingCalendarNotification);
+    }
   } catch (error) {
     // Não apaga a sessão por um erro temporário de rede/hosting.
     if (error.status === 401 || error.status === 403) {
       clearAuthToken();
+      clearCalendarReminders().catch(() => {});
+      savedCalendarEvents = [];
+      calendarLoadSequence++;
       showAuthScreen();
       setAuthMessage(error.message);
     } else {
@@ -2510,7 +2530,7 @@ function renderSamsungCalendar(plan, profile) {
   monthTitle.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
   monthGrid.textContent = '';
 
-  const events = buildCalendarEvents(plan, normalizedProfile);
+  const events = mergeCalendarEvents(buildCalendarEvents(plan, normalizedProfile), year, month);
   const monthSummary = getElement('calendar-month-summary');
   if (monthSummary) {
     const activeDays = new Set(events.map((event) => event.dateKey)).size;
@@ -2575,7 +2595,10 @@ function renderAgendaForDate(dateKey, events, agendaList, agendaDate) {
     timeZone: APP_TIME_ZONE
   }).format(date);
 
-  const dayEvents = events.filter((event) => event.dateKey === dateKey);
+  const selected = parseDateKey(dateKey);
+  const weekStart = new Date(selected); weekStart.setDate(selected.getDate() - selected.getDay());
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 7);
+  const dayEvents = events.filter((event) => calendarView === 'month' ? event.dateKey.slice(0, 7) === dateKey.slice(0, 7) : calendarView === 'week' ? parseDateKey(event.dateKey) >= weekStart && parseDateKey(event.dateKey) < weekEnd : event.dateKey === dateKey).sort((a,b) => (a.dateKey + (a.startTime || '')).localeCompare(b.dateKey + (b.startTime || '')));
   if (!dayEvents.length) {
     const empty = document.createElement('div');
     empty.className = 'calendar-empty';
@@ -2593,7 +2616,13 @@ function renderAgendaForDate(dateKey, events, agendaList, agendaDate) {
     const meta = document.createElement('div');
     meta.className = 'agenda-item-meta';
     meta.textContent = event.meta;
-    item.append(title, meta);
+    const conflict = event.startTime && event.endTime && events.some(other => other !== event && other.dateKey === event.dateKey && other.startTime && other.endTime && event.startTime < other.endTime && other.startTime < event.endTime);
+    if (conflict) meta.textContent += ' · Conflito de horário';
+    if (calendarView !== 'day') meta.textContent = event.dateKey + ' · ' + meta.textContent;
+    const actions = document.createElement('div'); actions.className = 'calendar-item-actions';
+    const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = 'Editar'; edit.addEventListener('click', () => openCalendarEvent(event));
+    const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Excluir'; remove.addEventListener('click', () => deleteCalendarEvent(event));
+    actions.append(edit, remove); item.append(title, meta, actions);
     agendaList.appendChild(item);
   });
 }
@@ -2616,7 +2645,7 @@ function buildCalendarEvents(plan, profile) {
 
     if (mission) {
       events.push({
-        dateKey,
+        dateKey, sourceKey: dateKey + ':mission',
         kind: mission.type === 'penalidade' ? 'focus' : mission.type === 'treino' ? 'training' : 'mission',
         title: mission.title,
         meta: mission.rationale || mission.description
@@ -2625,7 +2654,7 @@ function buildCalendarEvents(plan, profile) {
 
     if (workoutDays.has(weekdayKey)) {
       events.push({
-        dateKey,
+        dateKey, sourceKey: dateKey + ':training',
         kind: 'training',
         title: 'Treino programado',
         meta: normalizedProfile.trainingGoal + ' | ' + normalizedProfile.bodyType
@@ -2633,7 +2662,7 @@ function buildCalendarEvents(plan, profile) {
     }
 
     events.push({
-      dateKey,
+      dateKey, sourceKey: dateKey + ':focus',
       kind: 'focus',
       title: 'Bloco de foco',
       meta: truncatePlannerText(normalizedProfile.currentPriorities || normalizedProfile.primaryGoals, 64)
@@ -2641,6 +2670,107 @@ function buildCalendarEvents(plan, profile) {
   }
 
   return events;
+}
+
+
+function refreshEditableCalendar() {
+  renderSamsungCalendar(currentAdaptivePlan || buildLocalAdaptivePlan(currentRoutineProfile || getRoutineProfile()), currentRoutineProfile || getRoutineProfile());
+}
+async function loadCalendarEvents() {
+  const sequence = ++calendarLoadSequence;
+  try {
+    const data = await apiRequest('/calendar/events');
+    if (sequence !== calendarLoadSequence) return;
+    if (!Array.isArray(data)) throw new Error('Resposta inválida do calendário.');
+    savedCalendarEvents = data; getElement('calendar-sync-status').textContent = ''; refreshEditableCalendar();
+    if (supportsCalendarReminders() && currentUser?.id) {
+      try {
+        const result = await syncCalendarReminders(data, currentUser.id);
+        if (sequence === calendarLoadSequence && result?.truncated) getElement('calendar-sync-status').textContent = 'Alguns lembretes não foram agendados: limite de 256 atingido.';
+      } catch (reminderError) {
+        if (sequence === calendarLoadSequence) getElement('calendar-sync-status').textContent = 'Não foi possível atualizar os lembretes neste aparelho.';
+      }
+    }
+  } catch (error) {
+    if (sequence === calendarLoadSequence) { getElement('calendar-sync-status').textContent = 'Não foi possível carregar as atividades salvas. Verifique a conexão e tente novamente.'; }
+    console.warn('Não foi possível carregar atividades:', error.message);
+  }
+}
+function mergeCalendarEvents(generated, year, month) {
+  const overridden = new Set(savedCalendarEvents.filter(e => e.sourceKey).map(e => e.sourceKey));
+  const result = generated.filter(e => !overridden.has(e.sourceKey));
+  const days = new Date(year, month + 1, 0).getDate();
+  for (const event of savedCalendarEvents.filter(e => !e.deleted)) {
+    const start = parseDateKey(event.date);
+    for (let day = 1; day <= days; day++) {
+      const date = new Date(year, month, day); const dateKey = getDateKeyForDate(date);
+      if (dateKey < event.date) continue;
+      const delta = Math.round((Date.UTC(year, month, day) - Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000);
+      if (!(dateKey === event.date || event.recurrence === 'daily' || event.recurrence === 'weekly' && delta % 7 === 0 || event.recurrence === 'monthly' && day === start.getDate())) continue;
+      result.push({...event, dateKey, kind: 'mission', meta: [event.startTime && (event.startTime + (event.endTime ? '–' + event.endTime : '')), event.category, event.completed ? 'Concluída' : '', event.protectedEvent ? 'Protegida' : '', event.description].filter(Boolean).join(' · ')});
+    }
+  }
+  return result;
+}
+function openCalendarEvent(event = null) {
+  editingCalendarEvent = event;
+  const form = getElement('calendar-event-form'); form.reset();
+  const values = event ? {...event, date: event.date || event.dateKey} : {date: selectedCalendarDateKey || getDateKeyForDate(new Date()), recurrence: 'none'};
+  for (const name of ['title','description','date','startTime','endTime','category','recurrence','reminderMinutes']) form.elements[name].value = values[name] ?? (name === 'description' ? values.meta || '' : '');
+  form.elements.recurrence.value = values.recurrence || 'none';
+  form.elements.completed.checked = !!values.completed; form.elements.protectedEvent.checked = !!values.protectedEvent;
+  getElement('calendar-event-error').textContent = '';
+  getElement('calendar-event-dialog').showModal();
+}
+async function deleteCalendarEvent(event) {
+  if (!window.confirm('Excluir esta atividade? Em atividades recorrentes, toda a série será excluída.')) return;
+  try {
+    if (event.id) await apiRequest('/calendar/events/' + event.id, {method:'DELETE'});
+    else { const created = await apiRequest('/calendar/events', {method:'POST', body:JSON.stringify({title:event.title, description:event.meta, date:event.dateKey, recurrence:'none', sourceKey:event.sourceKey})}); await apiRequest('/calendar/events/' + created.id, {method:'DELETE'}); }
+    await loadCalendarEvents();
+  } catch (error) { window.alert('Não foi possível excluir: ' + error.message); }
+}
+function setupEditableCalendar() {
+  getElement('calendar-add').addEventListener('click', () => openCalendarEvent());
+  const reminderButton = getElement('calendar-enable-reminders');
+  if (supportsCalendarReminders()) {
+    reminderButton.hidden = false;
+    getElement('calendar-reminder-help').textContent = 'No Android, os próximos 60 dias são atualizados ao abrir o aplicativo; o sistema pode atrasar o aviso.';
+    reminderButton.addEventListener('click', async () => {
+      try {
+        if (await requestCalendarReminderPermission()) await loadCalendarEvents();
+        else getElement('calendar-sync-status').textContent = 'Permissão de notificações não concedida.';
+      } catch (error) { getElement('calendar-sync-status').textContent = 'Não foi possível ativar os lembretes.'; }
+    });
+    listenForCalendarReminder(openCalendarNotification);
+  }
+  getElement('calendar-event-cancel').addEventListener('click', () => getElement('calendar-event-dialog').close());
+  document.querySelectorAll('[data-calendar-view]').forEach(button => button.addEventListener('click', () => { calendarView = button.dataset.calendarView; refreshEditableCalendar(); }));
+  getElement('calendar-event-form').addEventListener('submit', async (e) => {
+    e.preventDefault(); const f=e.currentTarget;
+    const data = Object.fromEntries(['title','description','date','startTime','endTime','category','recurrence'].map(name => [name, f.elements[name].value]));
+    data.completed=f.elements.completed.checked; data.protectedEvent=f.elements.protectedEvent.checked;
+    data.reminderMinutes=f.elements.reminderMinutes.value === '' ? null : Number(f.elements.reminderMinutes.value);
+    data.sourceKey=editingCalendarEvent?.sourceKey || null;
+    const id=editingCalendarEvent?.id;
+    const submit=f.querySelector('[type=submit]'); submit.disabled=true;
+    try { await apiRequest('/calendar/events' + (id ? '/' + id : ''), {method:id ? 'PUT' : 'POST', body:JSON.stringify(data)}); getElement('calendar-event-dialog').close(); await loadCalendarEvents(); }
+    catch (error) { getElement('calendar-event-error').textContent = error.message; }
+    finally { submit.disabled=false; }
+  });
+}
+async function openCalendarNotification(data) {
+  if (!currentUser?.id || !getAuthToken()) { pendingCalendarNotification = data; return; }
+  pendingCalendarNotification = null;
+  if (String(currentUser.id) !== String(data.ownerId) || !/^\d{4}-\d{2}-\d{2}$/.test(data.date || '')) return;
+  selectedCalendarDateKey = data.date;
+  currentCalendarMonth = parseDateKey(data.date);
+  showView('calendar');
+  refreshEditableCalendar();
+  await calendarLoadPromise;
+  if (String(currentUser?.id) !== String(data.ownerId) || selectedCalendarDateKey !== data.date) return;
+  const event = savedCalendarEvents.find(item => String(item.id) === String(data.eventId) && !item.deleted);
+  if (event) openCalendarEvent({...event, dateKey: data.date});
 }
 
 function getDateKeyForDate(date) {
@@ -5092,6 +5222,7 @@ function bindEvents() {
   if (aiCalendarButton) aiCalendarButton.addEventListener('click', openAiAssistant);
   if (calendarOpenAiButton) calendarOpenAiButton.addEventListener('click', openAiAssistant);
   if (aiOpenCalendarButton) aiOpenCalendarButton.addEventListener('click', openCalendarScreen);
+  setupEditableCalendar();
   if (calendarPrevButton) calendarPrevButton.addEventListener('click', () => changeCalendarMonth(-1));
   if (calendarNextButton) calendarNextButton.addEventListener('click', () => changeCalendarMonth(1));
   if (calendarTodayButton) calendarTodayButton.addEventListener('click', () => {

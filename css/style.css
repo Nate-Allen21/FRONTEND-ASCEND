@@ -4445,3 +4445,14 @@ body { background: radial-gradient(760px 520px at 88% -8%, color-mix(in srgb, va
   -webkit-backdrop-filter: blur(calc(var(--custom-blur) * .75)) saturate(135%);
   backdrop-filter: blur(calc(var(--custom-blur) * .75)) saturate(135%);
 }
+
+.calendar-event-dialog { max-width: min(94vw, 520px); max-height: 90vh; overflow: auto; background: var(--bg-card, #111827); color: var(--text-primary, #fff); border: 1px solid #1266ff; border-radius: 18px; padding: 24px; }
+.calendar-event-dialog::backdrop { background: rgba(8,13,25,.78); }
+.calendar-event-dialog form, .calendar-event-dialog label { display: grid; gap: 8px; }
+.calendar-event-dialog form { gap: 14px; }
+.calendar-event-dialog input[type=checkbox] { width: auto; }
+.calendar-form-row, .calendar-view-switch, .calendar-item-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.calendar-form-row > label { flex: 1 1 120px; }
+.calendar-view-switch { margin: 12px 0; }
+.calendar-view-switch button, .calendar-item-actions button { background: transparent; color: inherit; border: 1px solid #1266ff; border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+.calendar-item-actions { margin-top: 8px; }

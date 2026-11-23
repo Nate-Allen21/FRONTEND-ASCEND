@@ -570,11 +570,11 @@
             </div>
           </div>
 
-          <div class="calendar-app-grid">
+          <p id="calendar-sync-status" role="status"></p><div class="calendar-app-grid">
             <section class="calendar-month-panel">
               <div class="calendar-month-header">
                 <div><div class="calendar-panel-kicker">SEU MÊS</div><h2 class="calendar-month-title" id="calendar-month-title">Julho 2026</h2></div>
-                <button class="btn-timer calendar-configure" id="calendar-open-ai" type="button"><i class="bi bi-sliders2" aria-hidden="true"></i> Configurar rotina</button>
+                <button class="btn-timer" id="calendar-add" type="button">+ Nova atividade</button> <button class="btn-timer" id="calendar-enable-reminders" type="button" hidden>Ativar lembretes</button> <button class="btn-timer calendar-configure" id="calendar-open-ai" type="button"><i class="bi bi-sliders2" aria-hidden="true"></i> Configurar rotina</button>
               </div>
               <div class="calendar-weekdays" aria-hidden="true">
                 <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
@@ -589,7 +589,7 @@
                 <h2 class="feature-title mb-0" id="calendar-agenda-title">Agenda do dia</h2>
                 <div class="calendar-agenda-date" id="calendar-agenda-date">Selecione um dia</div>
               </div>
-              <div class="calendar-agenda-list" id="calendar-agenda-list"></div>
+              <div class="calendar-view-switch" role="group" aria-label="Período da agenda"><button type="button" data-calendar-view="day">Dia</button><button type="button" data-calendar-view="week">Semana</button><button type="button" data-calendar-view="month">Mês</button></div><div class="calendar-agenda-list" id="calendar-agenda-list"></div>
             </aside>
           </div>
         </div>
@@ -936,6 +936,18 @@
 </div>
 
 <button id="connect-toast" class="connect-toast" type="button" role="status" hidden></button>
+<dialog id="calendar-event-dialog" class="calendar-event-dialog" aria-labelledby="calendar-event-heading">
+<form id="calendar-event-form"><h2 id="calendar-event-heading">Atividade</h2>
+<label>Título<input class="auth-input" name="title" maxlength="160" required /></label>
+<label>Descrição<textarea class="auth-input" name="description" maxlength="2000"></textarea></label>
+<label>Data<input class="auth-input" name="date" type="date" required /></label>
+<div class="calendar-form-row"><label>Início<input class="auth-input" name="startTime" type="time" /></label><label>Fim<input class="auth-input" name="endTime" type="time" /></label></div>
+<label>Categoria<input class="auth-input" name="category" maxlength="80" placeholder="Ex.: Estudos" /></label>
+<label>Repetir<select class="auth-input" name="recurrence"><option value="none">Não repetir</option><option value="daily">Diariamente</option><option value="weekly">Semanalmente</option><option value="monthly">Mensalmente</option></select></label>
+<label>Lembrete em minutos antes<input class="auth-input" name="reminderMinutes" type="number" min="0" max="10080" placeholder="Sem lembrete" /></label>
+<small id="calendar-reminder-help">No navegador, o lembrete é apenas salvo. No Android, ative os lembretes no calendário.</small>
+<label><input name="protectedEvent" type="checkbox" /> Proteger contra reorganização</label><label><input name="completed" type="checkbox" /> Concluída</label>
+<p id="calendar-event-error" role="alert"></p><div class="calendar-form-row"><button class="btn-timer" type="button" id="calendar-event-cancel">Cancelar</button><button class="btn-timer" type="submit">Salvar</button></div></form></dialog>
 <script type="module" src="js/script.js?v=20261113-gold-theme"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
 <div class="connection-notice" id="connection-notice" role="status" hidden><i class="bi bi-wifi-off" aria-hidden="true"></i> Você está offline. Reconecte para salvar seu progresso.</div>
