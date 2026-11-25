@@ -1,0 +1,88 @@
+/* Launch refinements shared by the desktop and Android layouts. */
+#auth-screen .auth-tabs .auth-tab {
+  padding: 9px 14px;
+  min-width: 76px;
+  border-radius: 8px;
+}
+#auth-screen .auth-tabs .auth-tab:focus-visible { outline-offset: 2px; }
+#auth-screen .auth-panel-topline { gap: 12px; align-items: center; }
+#auth-screen .auth-status { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; width: auto; min-width: max-content; margin: 0; overflow: visible; white-space: nowrap; }
+#auth-screen .auth-status i { flex: 0 0 6px; margin: 0; }
+
+.coins-badge { cursor: pointer; font: inherit; }
+.coins-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+#coins-val-mobile { display: none; }
+.player-attributes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#app-shell .player-card .player-attributes > [role='listitem'] { width: 100%; min-width: 0; max-width: 100%; }
+
+.pomodoro-guide { display: flex; gap: 14px; align-items: flex-start; margin: 16px 0; padding: 17px 20px; border: 1px solid rgba(var(--accent-rgb), .35); border-radius: 16px; background: rgba(var(--accent-rgb), .08); }
+.pomodoro-guide-icon { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border-radius: 12px; background: rgba(var(--accent-rgb), .15); color: var(--accent); font-size: 1.15rem; }
+.pomodoro-guide h2 { margin: 0 0 5px; color: var(--text-primary, #f3f6ff); font-size: 1rem; font-weight: 700; }
+.pomodoro-guide p { margin: 0; color: var(--text-secondary, #bdcbe0); font-size: .85rem; line-height: 1.55; }
+
+/* Preserve the meaning of each calendar category across custom themes. */
+#view-calendar .calendar-day-dot--mission { background: #a855f7 !important; }
+#view-calendar .calendar-day-dot--training { background: #f59e0b !important; }
+#view-calendar .calendar-day-dot--focus { background: #14b8a6 !important; }
+
+@media (min-width: 901px) {
+  #app-shell > .d-flex { padding-left: 250px; }
+  #app-shell .sidebar { position: fixed !important; top: 92px !important; left: 14px !important; bottom: auto !important; height: calc(100dvh - 108px) !important; max-height: calc(100dvh - 108px) !important; margin: 0; overflow-y: auto !important; }
+}
+@media (min-width: 561px) and (max-width: 900px) {
+  #app-shell .sidebar { position: fixed !important; top: 12px !important; bottom: 12px !important; height: auto !important; max-height: calc(100dvh - 24px) !important; overflow-y: auto; }
+}
+
+@media (max-width: 600px) {
+  #app-shell .ascend-topbar { position: relative; top: auto; display: grid; gap: 8px; padding: 10px; }
+  #app-shell .topbar-brand { justify-content: center; }
+  #app-shell .topbar-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+  #app-shell .topbar-actions > :is(.btn-timer, .streak-badge, .coins-badge, .user-profile-trigger) { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 40px; margin: 0; padding: 5px 3px; border-radius: 12px; }
+  #app-shell .topbar-actions .coins-badge { gap: 4px; font-size: .78rem; font-weight: 700; }
+  #app-shell .topbar-actions .coins-badge { flex-direction: column; gap: 0; overflow: hidden; white-space: nowrap; line-height: 1.1; }
+  #app-shell .topbar-actions .coins-badge #coins-val { display: none; }
+  #app-shell .topbar-actions .coins-badge #coins-val-mobile { display: inline; min-width: 0; font-size: clamp(.6rem, 2.8vw, .78rem); }
+  #app-shell .topbar-actions .coins-badge i { flex: 0 0 auto; }
+  #app-shell .topbar-actions .streak-badge #streak-val { font-size: .75rem; }
+  #app-shell .topbar-actions .user-profile-trigger__label { display: none; }
+  .system-popup { top: max(12px, env(safe-area-inset-top)); bottom: auto; left: 12px; right: 12px; width: auto; max-width: 380px; height: auto; max-height: min(40dvh, 250px); overflow-y: auto; margin-inline: auto; padding: 14px 16px; z-index: 1600; }
+  .player-attributes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .player-attributes > [role='listitem']:last-child { grid-column: 1 / -1; }
+  #app-shell .player-attributes .mini-card { width: 100%; min-width: 0; }
+  #app-shell .player-attributes .mini-card-label { overflow-wrap: normal; word-break: normal; font-size: clamp(.65rem, 3vw, .78rem); letter-spacing: .03em; }
+}
+
+/* Light surfaces need dark text even when a custom accent is selected. */
+body[data-theme='light'] #app-shell .evolution-hero { background: linear-gradient(135deg, #fff, #e5edff) !important; border-color: #c7d6f0 !important; }
+body[data-theme='light'] #app-shell .evolution-hero :is(.hero-copy h1, .hero-copy p) { color: #172943 !important; }
+body[data-theme='light'] #app-shell .evolution-hero .hero-copy h1 span { color: #3156bd !important; background: none !important; -webkit-text-fill-color: currentColor; }
+body[data-theme='light'] #app-shell .evolution-hero :is(.hero-copy .ascend-eyebrow, #daily-progress-label) { color: #405779 !important; }
+body[data-theme='light'] #app-shell .pomodoro-guide { background: #edf3ff; border-color: #c8d7f5; }
+body[data-theme='light'] #app-shell .pomodoro-guide h2 { color: #172943; }
+body[data-theme='light'] #app-shell .pomodoro-guide p { color: #405574; }
+body[data-theme='light'] .system-popup { background: #f7f9ff !important; color: #172943; border-color: #bdcce5 !important; }
+@media (max-width: 560px) {
+  body[data-theme='light'] #app-shell .mobile-tabbar { background: #f7faff !important; border: 1px solid #b7c9e4; box-shadow: 0 8px 28px rgba(24, 49, 85, .18); }
+  body[data-theme='light'] #app-shell .mobile-nav-link { color: #435d7d !important; }
+  body[data-theme='light'] #app-shell .mobile-nav-link.active { color: #204db8 !important; background: #e2ebff !important; border-color: #8faeea !important; }
+}
+
+@media (max-width: 600px) {
+  #view-ai, #view-ai .ascend-ai-layout, #view-ai .ascend-ai-main, #view-ai .ascend-ai-aside,
+  #view-ai .ai-chat-history, #view-ai .chat-bubble, #view-ai .chat-bubble-meta, #view-ai .chat-markdown {
+    box-sizing: border-box; min-width: 0; max-width: 100%;
+  }
+  #view-ai .ascend-ai-layout { grid-template-columns: minmax(0, 1fr); }
+  #view-ai .ascend-ai-topline > div { min-width: 0; overflow-wrap: anywhere; }
+  #view-ai .chat-bubble { width: 100%; overflow-wrap: anywhere; }
+  #view-ai .chat-table-scroll { width: 100%; overflow: visible; }
+  #view-ai .chat-markdown table, #view-ai .chat-markdown tbody, #view-ai .chat-markdown tr, #view-ai .chat-markdown td { display: block; width: 100%; min-width: 0; max-width: 100%; }
+  #view-ai .chat-markdown thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  #view-ai .chat-markdown tbody tr + tr { border-top: 1px solid var(--border-dim); }
+  #view-ai .chat-markdown td { display: grid; grid-template-columns: minmax(65px, .42fr) minmax(0, 1fr); gap: 8px; padding: 8px 10px; overflow-wrap: anywhere; }
+  #view-ai .chat-markdown td::before { content: attr(data-label); color: var(--text-primary); font-weight: 700; }
+  #app-shell .topbar-actions .user-avatar--topbar { width: 30px; height: 30px; min-width: 30px; flex: 0 0 30px; aspect-ratio: 1; }
+  #app-shell .topbar-actions .user-avatar--topbar .user-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+  #app-shell .topbar-actions .streak-badge { gap: 4px; white-space: nowrap; overflow: hidden; }
+  #app-shell .topbar-actions .streak-badge #streak-val { display: inline; font-size: .75rem; }
+}

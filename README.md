@@ -19,9 +19,23 @@ npm run android:apk
 
 O arquivo é criado em `android/app/build/outputs/apk/debug/app-debug.apk`.
 É um APK de teste assinado com a chave de debug; para distribuição pública,
-configure uma chave própria e gere uma versão release. O login Google em uma
-WebView Android precisa de integração e configuração específicas e não foi
-validado para este APK; use o login por conta e senha.
+configure uma chave própria e gere uma versão release. O login Google no Android
+usa o Credential Manager nativo e precisa ser configurado antes do build:
+defina `VITE_GOOGLE_CLIENT_ID` com o ID OAuth Web que o backend valida em
+`ASCEND_GOOGLE_CLIENT_ID`. No mesmo projeto Google Cloud, crie um cliente OAuth
+Android com o pacote `br.com.ascend.mobile` e a impressão SHA-1 do certificado
+que assina o APK. A assinatura de debug usa outra impressão. Teste o login em um
+dispositivo com Google Play Services; sem essa configuração, use conta e senha.
+
+### APK de lançamento
+
+O APK de lançamento é gerado com Java 21, Android SDK e `npm run android:sync`,
+seguido de `android\gradlew.bat :app:assembleRelease`. O APK não assinado fica
+em `android/app/build/outputs/apk/release/app-release-unsigned.apk`: alinhe-o com
+`zipalign` e assine-o com `apksigner` e a chave de lançamento antes de distribuir.
+A chave e sua senha devem ser guardadas em local seguro, fora do repositório e
+com backup: futuras atualizações precisam usar a mesma chave. Incremente
+`versionCode` em `android/app/build.gradle` a cada lançamento.
 
 ## What is included
 

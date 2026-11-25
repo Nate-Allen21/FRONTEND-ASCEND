@@ -19,11 +19,15 @@ export function renderAssistantMessage(container, content) {
     }
   });
   container.querySelectorAll('table').forEach((table) => {
+    const headings = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+    table.querySelectorAll('tbody tr').forEach((row) => {
+      [...row.cells].forEach((cell, index) => { if (headings[index]) cell.dataset.label = headings[index]; });
+    });
     const wrapper = document.createElement('div');
     wrapper.className = 'chat-table-scroll';
     wrapper.tabIndex = 0;
     wrapper.setAttribute('role', 'region');
-    wrapper.setAttribute('aria-label', 'Tabela da resposta. Role horizontalmente para ver todas as colunas.');
+    wrapper.setAttribute('aria-label', 'Tabela da resposta');
     table.before(wrapper);
     wrapper.append(table);
   });

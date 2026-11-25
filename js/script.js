@@ -2,6 +2,7 @@ import { genesisViews } from './genesis.js';
 import { applyFrame, cosmeticAvatar } from './cosmetic-avatar.js';
 import { initExperience } from './experience.js';
 import { renderAssistantMessage } from './chat-format.js';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { supportsCalendarReminders, syncCalendarReminders, clearCalendarReminders, requestCalendarReminderPermission, listenForCalendarReminder } from './calendar-reminders.js';
 import aetherImage from '../assets/aether.png';
 import astraImage from '../assets/astra.png';
@@ -87,7 +88,8 @@ function ownFrames(item){
 function acceptGenesis(state){
   cosmeticStoreState=state;
   if(currentPlayerStatus)currentPlayerStatus.coins=state.coins;
-  for(const id of ['store-balance','vault-balance','status-coins-overview','coins-val'])setText(id,formatCurrencyValue(state.coins));
+  for(const id of ['store-balance','vault-balance','status-coins-overview'])setText(id,formatCurrencyValue(state.coins));
+  updateCoinBadge(state.coins);
   applyEquippedCosmeticTheme(state);
 }
 const genesis=genesisViews({api:apiRequest,token:getAuthToken,portrait:()=>currentUser?.profileImage || AVATAR_OPTIONS[currentUser?.avatar]?.image || aetherImage,commit:acceptGenesis,navigate:showView});
@@ -341,7 +343,7 @@ const ACHIEVEMENTS = [
   },
   {
     titulo: 'Caixa em ordem',
-    descricao: 'Acumule 300 moedas no Vault.',
+    descricao: 'Acumule 300 moedas no Cofre.',
     icone: 'bi-safe2',
     unlocked: (status) => status.coins >= 300
   },
@@ -649,6 +651,16 @@ function sanitizeTrainingLevel(value) {
 
 function formatCurrencyValue(value) {
   return value.toLocaleString('pt-BR');
+}
+
+function updateCoinBadge(coins) {
+  const full = formatCurrencyValue(coins);
+  const compact = Math.abs(coins) >= 10000
+    ? new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 }).format(coins)
+    : full;
+  setText('coins-val', full);
+  setText('coins-val-mobile', compact);
+  setAria('coins-badge', 'aria-label', 'Abrir Cofre. Moedas atuais: ' + full);
 }
 
 function formatDurationLabel(totalSecondsValue) {
@@ -2101,6 +2113,25 @@ function initGoogleSignIn() {
   const wrapper = button?.closest('.google-login-wrap');
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   if (!button) return;
+  if (Capacitor.getPlatform() === 'android') {
+    const nativeGoogle = registerPlugin('AscendGoogleSignIn');
+    button.addEventListener('click', async () => {
+      if (!clientId || !clientId.endsWith('.apps.googleusercontent.com')) {
+        setAuthMessage('O login Google ainda não está configurado no aplicativo.');
+        return;
+      }
+      button.disabled = true;
+      try {
+        const result = await nativeGoogle.signIn({ clientId });
+        await handleGoogleCredential(result);
+      } catch (error) {
+        setAuthMessage(error?.message || 'Não foi possível iniciar o login Google.');
+      } finally {
+        button.disabled = false;
+      }
+    });
+    return;
+  }
   if (!clientId) {
     button.addEventListener('click', () => setAuthMessage('Configure VITE_GOOGLE_CLIENT_ID para ativar o login Google.'));
     return;
@@ -2285,8 +2316,7 @@ function renderPlayerStatus(status) {
   setText('status-streak-overview', status.streakDays);
   setText('status-coins-overview', formatCurrencyValue(status.coins));
   setAria('streak-badge', 'aria-label', 'Sequencia atual: ' + status.streakDays + ' dias');
-  setText('coins-val', formatCurrencyValue(status.coins));
-  setAria('coins-badge', 'aria-label', 'Moedas atuais: ' + formatCurrencyValue(status.coins));
+  updateCoinBadge(status.coins);
   setText('vault-balance', formatCurrencyValue(status.coins));
   updateExperience(status.level, status.experience, status.nextLevelExperience);
   renderStats(status.stats || []);
@@ -3566,7 +3596,6 @@ function renderStats(stats) {
     agility: 'stat-agilidade',
     vitality: 'stat-vitalidade',
     intelligence: 'stat-int',
-    spirit: 'stat-espirito',
     missions: 'stat-missoes'
   };
 
@@ -3823,7 +3852,7 @@ function renderVaultHistory(history) {
   if (history.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'vault-empty';
-    empty.textContent = 'Nenhuma transacao ainda. Complete missoes para movimentar o Vault.';
+    empty.textContent = 'Nenhuma transação ainda. Complete missões para movimentar o Cofre.';
     container.appendChild(empty);
     return;
   }

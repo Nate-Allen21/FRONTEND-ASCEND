@@ -27,6 +27,27 @@ test('AI replies render readable Markdown and reject executable HTML', async ({ 
   expect(errors).toEqual([]);
 });
 
+test('long AI plans and account controls fit narrow mobile screens', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  const errors = await setup(page);
+  await page.route('**/api/ai/chat', (route) => route.fulfill({ json: {
+    reply: 'Rotina de hoje\n\n| Horário | Atividade | Duração | Observações |\n| --- | --- | --- | --- |\n| 06:30–07:00 | Café da manhã e planejamento | 30 minutos | Organize os compromissos do dia com tranquilidade. |',
+  } }));
+  await page.locator('#btn-command').click();
+  await page.locator('#command-search').fill('Assistente');
+  await page.locator('.command-result').first().click();
+  await page.locator('#ai-external-consent').check();
+  await page.locator('#ai-chat-input').fill('Organize minha rotina');
+  await page.locator('#ai-chat-form button[type=submit]').click();
+  const reply = page.locator('.chat-bubble--assistant').last();
+  await expect(reply.locator('tbody td')).toHaveCount(4);
+  await expect(reply.locator('tbody td').first()).toHaveAttribute('data-label', 'Horário');
+  expect(await page.locator('#view-ai').evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  const dimensions = await page.locator('.user-avatar--topbar').evaluate((el) => ({width: el.clientWidth, height: el.clientHeight}));
+  expect(Math.abs(dimensions.width - dimensions.height)).toBeLessThanOrEqual(1);
+  expect(errors).toEqual([]);
+});
+
 test('cosmetic store purchases, equips and applies profile themes', async ({ page }) => {
   const errors = await setup(page);
   let state = {
@@ -116,7 +137,7 @@ async function navigateOnMobile(page, view) {
   }
 
   const commandLabels = {
-    vault: 'The Vault',
+    vault: 'Cofre',
     shop: 'Loja',
     ai: 'Assistente IA',
     inventory: 'Inventario',
@@ -171,7 +192,7 @@ test('Genesis previews original artwork, filters ownership and equips one frame 
   expect(errors).toEqual([]);
 });
 
-async function setup(page, authenticated = true, onboardingCompleted = true) {
+async function setup(page, authenticated = true, onboardingCompleted = true, initialCoins = 300) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.route('https://accounts.google.com/gsi/client', (route) => route.abort());
@@ -187,7 +208,7 @@ async function setup(page, authenticated = true, onboardingCompleted = true) {
     nextLevelXp: 500, streakDays: 4, followers: 12, following: 8
   };
   let completed = ['training'];
-  const status = () => ({ name: 'Hunter Teste', handle: '@hunter', level: 3, rank: 'E', experience: 250, nextLevelExperience: 500, streakDays: 4, coins: 300, stats: [], dailyMissions: missions, completedMissionIds: completed });
+  const status = () => ({ name: 'Hunter Teste', handle: '@hunter', level: 3, rank: 'E', experience: 250, nextLevelExperience: 500, streakDays: 4, coins: initialCoins, stats: [], dailyMissions: missions, completedMissionIds: completed });
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     let data;
@@ -246,7 +267,7 @@ async function setup(page, authenticated = true, onboardingCompleted = true) {
     else if (path.endsWith('/complete')) { completed = ['training', 'study']; data = status(); }
     else if (path.endsWith('/player/status')) data = status();
     else if (path.endsWith('/planner')) data = { headline: 'Seu plano de evolução', summary: 'Um passo por dia.', insights: [], dailyMissions: missions, weeklyMissions: [], monthlyMissions: [], completedMissionIds: completed };
-    else if (path.endsWith('/shop')) data = { coins: 300, purchases: [], offers: [] };
+    else if (path.endsWith('/shop')) data = { coins: initialCoins, purchases: [], offers: [] };
     else if (path.endsWith('/ranking')) data = { players: [] };
     else if (path.endsWith('/ai/chat')) data = { reply: 'Comece com uma missão de estudo.', provider: 'local' };
     else data = {};
@@ -256,6 +277,82 @@ async function setup(page, authenticated = true, onboardingCompleted = true) {
   await expect(page.locator(authenticated ? '#app-shell' : '#auth-screen')).toBeVisible();
   return errors;
 }
+
+test('launch layout keeps navigation, balance and notifications usable', async ({ page }) => {
+  test.setTimeout(90000);
+  const errors = await setup(page);
+  const sidebar = page.locator('#app-sidebar');
+  await page.evaluate(() => window.scrollTo(0, 500));
+  const before = await sidebar.boundingBox();
+  await page.evaluate(() => window.scrollTo(0, 1000));
+  const after = await sidebar.boundingBox();
+  expect(Math.abs(before.y - after.y)).toBeLessThan(2);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(page.locator('#coins-val-mobile')).toBeVisible();
+  await expect(page.locator('#coins-val-mobile')).toHaveText('300');
+  await page.locator('.ascend-topbar').screenshot({ path: 'test-results/launch-mobile-header.png', animations: 'disabled' });
+  await page.locator('#coins-badge').click();
+  await expect(page.locator('#vault-title')).toHaveText('Cofre');
+  await page.locator('#btn-toggle-popup').click();
+  const popup = await page.locator('#system-popup').boundingBox();
+  expect(popup.height).toBeLessThan(300);
+  await page.locator('#popup-close').click();
+  await page.locator('.mobile-nav-link[data-view=studies]').click();
+  await expect(page.locator('#pomodoro-guide-title')).toBeVisible();
+  await page.locator('#btn-theme-toggle').click();
+  await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('.mobile-nav-link.active')).toBeVisible();
+  await page.locator('.mobile-nav-link[data-view=status]').click();
+  await page.screenshot({ path: 'test-results/launch-mobile-light.png', animations: 'disabled' });
+  expect(errors).toEqual([]);
+});
+
+test('large mobile balance fits its button and remains exact in the vault', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  const errors = await setup(page, true, true, 10090940);
+  const badge = page.locator('#coins-badge');
+  await expect(badge).toHaveAttribute('aria-label', 'Abrir Cofre. Moedas atuais: 10.090.940');
+  await expect(page.locator('#coins-val-mobile')).toHaveText('10,1 mi');
+  expect(await badge.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await badge.click();
+  await expect(page.locator('#vault-balance')).toHaveText('10.090.940');
+  expect(errors).toEqual([]);
+});
+
+test('mobile attribute cards fill their columns and labels remain readable', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  const errors = await setup(page);
+  const cards = page.locator('.player-attributes > [role=listitem]');
+  await expect(cards).toHaveCount(5);
+  const layout = await cards.evaluateAll((items) => items.map((item) => {
+    const card = item.querySelector('.mini-card');
+    const label = item.querySelector('.mini-card-label');
+    return { itemWidth: item.getBoundingClientRect().width, cardWidth: card.getBoundingClientRect().width, labelFits: label.scrollWidth <= label.clientWidth + 1, labelHeight: label.getBoundingClientRect().height, lineHeight: parseFloat(getComputedStyle(label).lineHeight) };
+  }));
+  for (const item of layout) {
+    expect(item.cardWidth).toBeGreaterThan(item.itemWidth * .85);
+    expect(item.labelFits).toBe(true);
+    expect(item.labelHeight).toBeLessThan(item.lineHeight * 1.5);
+  }
+  expect(errors).toEqual([]);
+});
+
+test('login tabs and security status have room for their text', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setup(page, false);
+  for (const selector of ['#tab-login', '.auth-status']) {
+    const fits = await page.locator(selector).evaluate((el) => el.scrollWidth <= el.clientWidth);
+    expect(fits).toBe(true);
+  }
+});
+
+test('calendar legend distinguishes mission, training and focus', async ({ page }) => {
+  await setup(page);
+  await page.locator('#app-sidebar [data-view=calendar]').click();
+  const colors = await page.locator('.calendar-legend .calendar-day-dot').evaluateAll((dots) => dots.map((dot) => getComputedStyle(dot).backgroundColor));
+  expect(new Set(colors).size).toBe(3);
+});
 
 test('authentication, password visibility and login', async ({ page }) => {
   const errors = await setup(page, false);
