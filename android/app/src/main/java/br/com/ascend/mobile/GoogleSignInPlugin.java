@@ -1,6 +1,7 @@
 package br.com.ascend.mobile;
 
 import android.content.MutableContextWrapper;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.credentials.Credential;
@@ -21,6 +22,8 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 
 @CapacitorPlugin(name = "AscendGoogleSignIn")
 public class GoogleSignInPlugin extends Plugin {
+    private static final String TAG = "AscendGoogleSignIn";
+
     @PluginMethod
     public void signIn(PluginCall call) {
         String clientId = call.getString("clientId", "").trim();
@@ -54,10 +57,19 @@ public class GoogleSignInPlugin extends Plugin {
 
                 @Override
                 public void onError(@NonNull GetCredentialException error) {
+                    // Do not log the ID token or account details. The exception type
+                    // is enough to diagnose Credential Manager configuration issues.
+                    Log.w(TAG, "Credential Manager sign-in error: " + error.getType());
                     if (error instanceof GetCredentialCancellationException) {
-                        call.reject("Login Google cancelado.", "CANCELLED");
+                        call.reject(
+                            "O Google não concluiu a autorização. Se você não cancelou, confira o cliente OAuth Android do pacote br.com.ascend.mobile e o SHA-1 usado para assinar este APK.",
+                            "GOOGLE_AUTH_NOT_GRANTED"
+                        );
                     } else {
-                        call.reject("Não foi possível iniciar o login Google. Confira sua conexão e a configuração do aplicativo.", "GOOGLE_SIGN_IN_FAILED");
+                        call.reject(
+                            "Não foi possível iniciar o login Google. Confira a conexão, o cliente OAuth Android e o SHA-1 da assinatura do APK.",
+                            "GOOGLE_SIGN_IN_FAILED"
+                        );
                     }
                 }
             });

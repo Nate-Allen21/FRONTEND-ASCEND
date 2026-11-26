@@ -62,6 +62,9 @@ let running = false;
 let timerDeadline = null;
 let currentPlayerStatus = null;
 let currentUser = null;
+let accountDeletionGooglePending = false;
+let accountDeletionGoogleCredential = null;
+let accountDeletionStep = 1;
 let viewingProfileId = null;
 let profileImageDraft = null;
 let profileImageChanged = false;
@@ -1206,6 +1209,7 @@ async function loadProfileView(profileId = viewingProfileId) {
     postsContainer.classList.remove('is-loading');
     viewingProfileId = profileId || null;
     const ownProfile = !profileId || String(profile.id) === String(currentUser?.id);
+    getElement('account-privacy-settings').hidden = !ownProfile;
     const status = ownProfile ? currentPlayerStatus : null;
     const unlockedAchievements = status
       ? ACHIEVEMENTS.filter((achievement) => achievement.unlocked(status))
@@ -2089,6 +2093,13 @@ async function handleGoogleCredential(response) {
     setAuthMessage('O Google não retornou uma credencial válida.');
     return;
   }
+  if (accountDeletionGooglePending) {
+    accountDeletionGooglePending = false;
+    accountDeletionGoogleCredential = response.credential;
+    getElement('account-delete-feedback').textContent = 'Credencial Google recebida. Continue para confirmar a exclusão.';
+    getElement('account-delete-feedback').classList.remove('is-error');
+    return;
+  }
   const button = getElement('btn-google-login');
   if (button) button.disabled = true;
   setAuthMessage('Validando sua conta Google...');
@@ -2187,6 +2198,126 @@ async function handleLogout() {
   renderAiChat();
   showAuthScreen();
   setAuthMessage('Sessao encerrada.');
+}
+
+function setAccountDeletionStep(step) {
+  accountDeletionStep = step;
+  document.querySelectorAll('[data-delete-step]').forEach((panel) => { panel.hidden = Number(panel.dataset.deleteStep) !== step; });
+  document.querySelectorAll('[data-delete-progress]').forEach((item) => item.classList.toggle('is-active', Number(item.dataset.deleteProgress) === step));
+  getElement('account-delete-back').hidden = step === 1;
+  getElement('account-delete-next').hidden = step === 4;
+  getElement('account-delete-confirm').hidden = step !== 4;
+  getElement('account-delete-feedback').textContent = '';
+  getElement('account-delete-feedback').classList.remove('is-error');
+}
+
+function openAccountDeletion() {
+  accountDeletionGoogleCredential = null;
+  getElement('account-delete-password').value = '';
+  getElement('account-delete-phrase').value = '';
+  getElement('account-delete-reason').value = '';
+  getElement('account-delete-ack').checked = false;
+  getElement('account-delete-confirm').disabled = true;
+  getElement('account-delete-google').hidden = !import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  setAccountDeletionStep(1);
+  getElement('account-delete-dialog').showModal();
+}
+
+function closeAccountDeletion() {
+  accountDeletionGooglePending = false;
+  accountDeletionGoogleCredential = null;
+  getElement('account-delete-password').value = '';
+  const dialog = getElement('account-delete-dialog');
+  if (dialog.open) dialog.close();
+}
+
+async function reauthenticateAccountDeletionWithGoogle() {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const button = getElement('account-delete-google');
+  button.disabled = true;
+  try {
+    if (Capacitor.getPlatform() === 'android') {
+      if (!clientId) throw new Error('O login Google não está configurado neste aplicativo.');
+      const result = await registerPlugin('AscendGoogleSignIn').signIn({ clientId });
+      accountDeletionGoogleCredential = result?.credential || null;
+      if (!accountDeletionGoogleCredential) throw new Error('O Google não retornou uma credencial válida.');
+      getElement('account-delete-feedback').textContent = 'Credencial Google recebida. Continue para confirmar a exclusão.';
+    } else if (window.google?.accounts?.id) {
+      accountDeletionGooglePending = true;
+      getElement('account-delete-feedback').textContent = 'Confirme sua conta na janela do Google.';
+      window.google.accounts.id.prompt();
+    } else {
+      throw new Error('O Google ainda está carregando. Tente novamente em instantes.');
+    }
+  } catch (error) {
+    accountDeletionGooglePending = false;
+    getElement('account-delete-feedback').textContent = error.message || 'Não foi possível confirmar sua conta Google.';
+    getElement('account-delete-feedback').classList.add('is-error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function updateAccountDeletionConfirmation() {
+  const confirmed = getElement('account-delete-phrase').value.trim() === 'EXCLUIR MINHA CONTA';
+  getElement('account-delete-confirm').disabled = !confirmed || !getElement('account-delete-ack').checked;
+}
+
+async function submitAccountDeletion() {
+  const button = getElement('account-delete-confirm');
+  const feedback = getElement('account-delete-feedback');
+  button.disabled = true;
+  feedback.textContent = 'Excluindo sua conta…';
+  feedback.classList.remove('is-error');
+  try {
+    await apiRequest('/users/me', {
+      method: 'DELETE',
+      body: JSON.stringify({
+        password: getElement('account-delete-password').value || null,
+        googleCredential: accountDeletionGoogleCredential,
+        reason: getElement('account-delete-reason').value || null,
+        confirmation: getElement('account-delete-phrase').value.trim(),
+        acknowledged: getElement('account-delete-ack').checked
+      })
+    });
+    const deletedScope = String(currentUser?.id || currentStorageScope);
+    try { await clearCalendarReminders(); } catch (ignored) {}
+    for (const key of Object.keys(localStorage)) {
+      if (key.endsWith('.' + deletedScope) || key === 'ascend.connect.notifications.' + deletedScope) localStorage.removeItem(key);
+    }
+    clearAuthToken();
+    currentPlayerStatus = null;
+    currentUser = null;
+    currentStorageScope = 'guest';
+    currentRoutineProfile = null;
+    currentAdaptivePlan = null;
+    savedCalendarEvents = [];
+    calendarLoadSequence++;
+    if (rewardInterval) { clearInterval(rewardInterval); rewardInterval = null; }
+    if (dailyRefreshInterval) { clearInterval(dailyRefreshInterval); dailyRefreshInterval = null; }
+    aiConversation = [];
+    renderAiChat();
+    resetTimer();
+    cycles = 0;
+    setText('cycle-count', 0);
+    closeAccountDeletion();
+    showAuthScreen();
+    setAuthMessage('Sua conta ASCEND foi excluída. Obrigado por ter feito parte da nossa jornada.');
+  } catch (error) {
+    feedback.textContent = error.message || 'Não foi possível excluir sua conta. Seus dados continuam intactos.';
+    feedback.classList.add('is-error');
+    updateAccountDeletionConfirmation();
+  }
+}
+
+function advanceAccountDeletion() {
+  if (accountDeletionStep === 3 && !getElement('account-delete-password').value && !accountDeletionGoogleCredential) {
+    const feedback = getElement('account-delete-feedback');
+    feedback.textContent = 'Informe sua senha ou reautentique com Google.';
+    feedback.classList.add('is-error');
+    return;
+  }
+  setAccountDeletionStep(Math.min(4, accountDeletionStep + 1));
 }
 
 async function handlePlannerSubmit(event) {
@@ -5323,6 +5454,23 @@ function bindEvents() {
   });
 
   getElement('profile-post-form')?.addEventListener('submit', saveProfilePost);
+  getElement('account-delete-open')?.addEventListener('click', openAccountDeletion);
+  getElement('account-delete-close')?.addEventListener('click', closeAccountDeletion);
+  getElement('account-delete-cancel')?.addEventListener('click', closeAccountDeletion);
+  getElement('account-delete-back')?.addEventListener('click', () => setAccountDeletionStep(Math.max(1, accountDeletionStep - 1)));
+  getElement('account-delete-next')?.addEventListener('click', advanceAccountDeletion);
+  getElement('account-delete-confirm')?.addEventListener('click', submitAccountDeletion);
+  getElement('account-delete-google')?.addEventListener('click', reauthenticateAccountDeletionWithGoogle);
+  getElement('account-delete-phrase')?.addEventListener('input', updateAccountDeletionConfirmation);
+  getElement('account-delete-ack')?.addEventListener('change', updateAccountDeletionConfirmation);
+  getElement('account-delete-dialog')?.addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) closeAccountDeletion();
+  });
+  getElement('account-delete-dialog')?.addEventListener('close', () => {
+    accountDeletionGooglePending = false;
+    accountDeletionGoogleCredential = null;
+    getElement('account-delete-password').value = '';
+  });
   getElement('profile-edit')?.addEventListener('click', editProfile);
   getElement('profile-edit-form')?.addEventListener('submit', saveProfileEdits);
   getElement('profile-edit-close')?.addEventListener('click', () => getElement('profile-edit-dialog').close());
@@ -5390,6 +5538,7 @@ function connectNotify(row){
 }
 async function connectLoadDetails(row){
  const panel=connectEl('connect-details');panel.replaceChildren();
+ if(row.userId==null){const title=document.createElement('h2');title.textContent='Usuário excluído';const copy=document.createElement('p');copy.textContent='Esta conta foi removida do ASCEND. As mensagens restantes pertencem aos outros participantes.';panel.append(title,copy);return;}
  try{const profile=await apiRequest('/profile/players/'+row.userId);if(connectSelected!==row.id)return;
   const image=document.createElement('img');image.className='connect-detail-avatar';image.alt='';image.src=profile.profileImage||AVATAR_OPTIONS[profile.avatar]?.image||aetherImage;
   const title=document.createElement('h2');title.textContent=profile.name;const handle=document.createElement('p');handle.textContent='@'+profile.username;
@@ -5414,7 +5563,7 @@ function connectRenderList() {
 function connectRenderMessages(scroll=false) {
  const box=connectEl('connect-messages'); const nearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<100; box.replaceChildren();
  if(!connectHistory.length){box.textContent='Nenhuma mensagem ainda. Diga olá!';return;}
- connectHistory.forEach(m=>{const bubble=document.createElement('div');bubble.className='connect-bubble'+(String(m.senderId)===String(currentUser?.id)?' own':''); const content=document.createElement('span');content.textContent=m.content; const meta=document.createElement('small');meta.textContent=connectTime(m.createdAt)+(String(m.senderId)===String(currentUser?.id)?(m.read?' · Lida':' · Enviada'):'');bubble.append(content,meta);box.append(bubble);});
+  connectHistory.forEach(m=>{const bubble=document.createElement('div');bubble.className='connect-bubble'+(String(m.senderId)===String(currentUser?.id)?' own':''); const content=document.createElement('span');content.textContent=m.content; const meta=document.createElement('small');meta.textContent=(m.senderId==null?'Usuário excluído · ':'')+connectTime(m.createdAt)+(String(m.senderId)===String(currentUser?.id)?(m.read?' · Lida':' · Enviada'):'');bubble.append(content,meta);box.append(bubble);});
  if(scroll||nearBottom)box.scrollTop=box.scrollHeight;
 }
 async function connectRefresh() {
@@ -5423,7 +5572,7 @@ async function connectRefresh() {
  if(connectSelected && !connectEl('view-connect').hidden){const selectedId=connectSelected;let latest=await apiRequest('/connect/conversations/'+selectedId+'/messages');if(selectedId!==connectSelected||token!==getAuthToken())return; const previous=connectHistory.length ? connectHistory[connectHistory.length-1].id : null; let batch=latest; while(previous && batch.length===50 && batch[0].id>previous){batch=await apiRequest('/connect/conversations/'+selectedId+'/messages?before='+batch[0].id); if(selectedId!==connectSelected||token!==getAuthToken())return; latest=[...batch,...latest];} const map=new Map(connectHistory.map(m=>[m.id,m]));latest.forEach(m=>map.set(m.id,m));connectHistory=[...map.values()].sort((a,b)=>a.id-b.id);connectRenderMessages(); if(latest.length)await apiRequest('/connect/conversations/'+selectedId+'/read',{method:'POST',body:JSON.stringify({messageId:latest[latest.length-1].id})});}connectEl('connect-status').textContent='';
  } catch(error){connectEl('connect-status').textContent='Conexão indisponível. Tentando reconectar...';} finally{connectBusy=false;}
 }
-async function connectOpen(id){connectSelected=id;connectHistory=[];connectEl('connect-layout').classList.add('has-selection');connectEl('connect-form').hidden=false;connectEl('connect-profile').hidden=false;const row=connectRows.find(r=>r.id===id);if(row)connectLoadDetails(row);connectEl('connect-recipient').textContent=row?.name || 'Conversa';connectEl('connect-messages').textContent='Carregando histórico...';connectRenderList();try{const data=await apiRequest('/connect/conversations/'+id+'/messages');if(connectSelected!==id)return;connectHistory=data;connectEl('connect-older').hidden=data.length<50;connectRenderMessages(true);if(data.length)await apiRequest('/connect/conversations/'+id+'/read',{method:'POST',body:JSON.stringify({messageId:data[data.length-1].id})});connectRefresh();}catch(e){connectEl('connect-status').textContent=e.message;}}
+async function connectOpen(id){connectSelected=id;connectHistory=[];connectEl('connect-layout').classList.add('has-selection');const row=connectRows.find(r=>r.id===id);connectEl('connect-form').hidden=row?.userId==null;connectEl('connect-profile').hidden=row?.userId==null;if(row)connectLoadDetails(row);connectEl('connect-recipient').textContent=row?.name || 'Conversa';connectEl('connect-messages').textContent='Carregando histórico...';connectRenderList();try{const data=await apiRequest('/connect/conversations/'+id+'/messages');if(connectSelected!==id)return;connectHistory=data;connectEl('connect-older').hidden=data.length<50;connectRenderMessages(true);if(data.length)await apiRequest('/connect/conversations/'+id+'/read',{method:'POST',body:JSON.stringify({messageId:data[data.length-1].id})});connectRefresh();}catch(e){connectEl('connect-status').textContent=e.message;}}
 async function connectStart(userId){try{const row=await apiRequest('/connect/conversations/'+userId,{method:'POST'});connectRows=[row,...connectRows.filter(r=>r.id!==row.id)];showView('connect');connectOpen(row.id);}catch(e){connectEl('profile-social-feedback').textContent=e.message;connectEl('connect-status').textContent=e.message;}}
 connectEl('profile-message-button').addEventListener('click',()=>{if(viewingProfileId)connectStart(viewingProfileId);});
 connectEl('connect-profile').addEventListener('click',()=>{const row=connectRows.find(r=>r.id===connectSelected);if(row){showView('profile');loadProfileView(row.userId);}});
