@@ -442,6 +442,9 @@ function normalizeApiBaseUrl(value) {
 }
 
 function resolveApiBaseUrl() {
+  if (import.meta.env.PROD) {
+    return normalizeApiBaseUrl(import.meta.env.VITE_API_URL) || DEFAULT_PUBLIC_API_BASE_URL;
+  }
   const viteValue = typeof import.meta !== 'undefined' && import.meta.env
     ? import.meta.env.VITE_API_URL
     : '';
@@ -464,6 +467,7 @@ let activeApiBaseUrl = null;
 let apiDiscoveryPromise = null;
 
 function buildApiBaseUrlCandidates() {
+  if (import.meta.env.PROD) return [apiBaseUrl];
   // An explicitly selected server owns this account's data. Do not silently
   // send credentials to a different environment when that server is offline.
   const queryValue = new URLSearchParams(window.location.search).get('apiBase');

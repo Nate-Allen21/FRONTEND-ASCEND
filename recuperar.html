@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#080d20">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <title>Recuperar acesso · ASCEND</title>
+  <link rel="icon" href="./assets/brand-icon.svg">
+  <link rel="stylesheet" href="./css/brand.css">
+  <link rel="stylesheet" href="./css/password-recovery.css">
+  <script type="module" src="./js/password-recovery.js"></script>
+</head>
+<body>
+  <main>
+    <span class="brand-art brand-art--wordmark" role="img" aria-label="ASCEND"></span>
+    <h1 id="title" tabindex="-1">Recupere seu acesso</h1>
+    <p id="description">Informe seu e-mail de cadastro para receber as instruções.</p>
+    <noscript>Ative o JavaScript para recuperar sua conta.</noscript>
+    <form id="request-form" method="post" hidden>
+      <label for="email">E-mail cadastrado</label>
+      <input id="email" type="email" autocomplete="email" required maxlength="160">
+      <button type="submit">Enviar instruções</button>
+    </form>
+    <form id="reset-form" method="post" hidden>
+      <label for="password">Nova senha</label>
+      <div class="field">
+        <input id="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" aria-describedby="strength-label" required>
+        <button type="button" aria-controls="password" aria-label="Mostrar nova senha" aria-pressed="false">Mostrar</button>
+      </div>
+      <meter id="strength" min="0" max="4" value="0" aria-label="Segurança da senha"></meter>
+      <small id="strength-label">Use entre 8 e 128 caracteres.</small>
+      <label for="confirmation">Confirme a nova senha</label>
+      <div class="field">
+        <input id="confirmation" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+        <button type="button" aria-controls="confirmation" aria-label="Mostrar confirmação" aria-pressed="false">Mostrar</button>
+      </div>
+      <button type="submit">Redefinir minha senha</button>
+    </form>
+    <p id="feedback" role="status" aria-live="polite"></p>
+    <a id="again" href="./recuperar.html" hidden>Solicitar novo link</a>
+    <a class="login" href="./index.html">Voltar ao login</a>
+  </main>
+</body>
+</html>
